@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paco 影片製作 Skill"
+  short_description: "Paco 的4K九宮格故事板、Remotion與HyperFrames多引擎影片製作流程"
+  default_prompt: "使用 $paco-video-production 規劃並製作一支具高級鏡頭語言的影片。"
