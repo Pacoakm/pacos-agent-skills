@@ -96,20 +96,34 @@ Never set DM Sans below `DISPLAY_MIN`. If a label is small, it is `body()` or `M
 `SIZE_MIN` is 22. Nothing smaller survives a phone screen. Captions are `SIZE_CAPTION` = 23 —
 small enough to stay out of the way, large enough to read on a phone.
 
-### The caption band is a dark surface
+### Captions are Shorts-style
 
-Captions sit on a translucent dark bar (`CAPTION_BAND` `#0F172A` at `CAPTION_BAND_OPACITY` 0.70)
-with white text, so a caption stays readable over anything. That bar is a **dark surface on a
-light page**, so it needs its own tokens:
+Reels/Shorts/TikTok convention: **bold white type with a dark outline and no background bar.**
+The outline is what keeps a caption readable over any part of the frame, and unlike a bar it
+costs no screen area.
 
-| Token | Value | Measured contrast on the composited band |
+| Token | Value | |
 |---|---|---|
-| `CAPTION_INK` | `#FFFFFF` | 6.11:1 |
-| `CAPTION_TERM` | `#FDE047` | 4.63:1 |
+| `CAPTION_INK` | `#FFFFFF` | fill |
+| `CAPTION_OUTLINE` | `#0B1220` | `set_stroke(..., background=True)` |
+| `CAPTION_OUTLINE_W` | `5` | heavier than this and CJK strokes clog up — 9 was visibly blobby |
+| `CAPTION_TERM` | `#FDE047` | inline English term |
+| `SIZE_CAPTION` | `28` | **fixed for every cue** |
 
-Do **not** use `AUX` for an English term inside a caption. `AUX` is chosen against the light
-page and measures **1.47:1** on the band — it looks muddy and fails badly. `body()` takes
-`term_color=` for exactly this reason.
+Do not use `AUX` for a term inside a caption — that hue is chosen against the light page and
+goes muddy against white-on-outline.
+
+**Fixed size, wrap instead of shrink.** A caption that scales down to fit reads as inconsistent
+from cue to cue. `caption_text()` never scales; if a line does not fit, `wrap_caption()` inserts
+one newline near the weight midpoint at a natural boundary — after a comma-class punctuation
+first, then a space, then any CJK boundary. It refuses to break inside a Latin word **or inside
+a declared term**, so `inscribed angle` is never split across lines.
+
+Captions are anchored by `Stage.caption_bottom`, their **bottom edge**, so a one-line and a
+two-line cue share a baseline and the block grows upward.
+
+`Stage.caption_band` must reserve the platform-UI margin **plus a full two-line caption**. Size
+it for one line and the first wrapped cue lands on the diagram — that happened here.
 
 ## Layout
 

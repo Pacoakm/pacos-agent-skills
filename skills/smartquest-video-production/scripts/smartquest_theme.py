@@ -18,6 +18,7 @@ of what a first-encounter lesson wants.
 """
 from manim import *
 import numpy as np
+import re
 
 # --------------------------------------------------------------- palette ----
 # Light theme. A dark field reads as "advanced" to a secondary student; a clean
@@ -41,11 +42,12 @@ AUX = "#6D28D9"         # violet-700   construction, first-use terms    6.92:1
 BRAND_FROM = "#4B60D6"  # gradient start — brand primary
 BRAND_TO = "#9747FF"    # gradient end
 
-# Subtitle band: a square-cornered, semi-transparent black bar with white text,
-# so a caption stays readable whatever it happens to sit over.
-CAPTION_BAND = "#000000"
-CAPTION_BAND_OPACITY = 0.62
+# Captions follow the Reels/Shorts/TikTok convention: heavy white type with a
+# dark outline and NO background bar. The outline is what keeps it readable over
+# any part of the frame, and it costs no screen area.
 CAPTION_INK = "#FFFFFF"
+CAPTION_OUTLINE = "#0B1220"
+CAPTION_OUTLINE_W = 5   # heavier than this and CJK strokes clog up
 # The band is a DARK surface sitting on a light page, so an English term inside
 # a caption cannot use AUX — that hue is chosen for contrast against the page
 # and goes muddy here. Measured 4.63:1 against the composited band.
@@ -89,7 +91,7 @@ SIZE_TITLE = 52
 SIZE_HEADING = 38
 SIZE_BODY = 32
 SIZE_LABEL = 26
-SIZE_CAPTION = 23       # the subtitle track
+SIZE_CAPTION = 28       # the subtitle track — fixed, never scaled per cue
 SIZE_MIN = 22
 
 
@@ -126,9 +128,10 @@ class Stage:
     def __init__(self):
         self.w, self.h = sync_frame()
         self.portrait = self.h > self.w
-        # Reserved bands. Portrait keeps more at the bottom because the
-        # platform UI (Shorts/Reels/TikTok) covers roughly the lowest 15%.
-        self.caption_band = self.h * (0.22 if self.portrait else 0.13)
+        # Reserved bands. The caption band must hold the platform-UI margin
+        # PLUS a two-line caption, because captions wrap rather than shrink —
+        # size it for one line and a wrapped cue lands on the diagram.
+        self.caption_band = self.h * (0.30 if self.portrait else 0.16)
         self.title_band = self.h * (0.11 if self.portrait else 0.10)
         self.margin = self.w * 0.045
 
@@ -138,9 +141,20 @@ class Stage:
         return self.h / 2 - self.title_band * 0.55
 
     @property
+    def caption_bottom(self):
+        """Bottom edge of the caption block.
+
+        Captions are anchored by their bottom, not their centre, so a one-line
+        and a two-line cue share a baseline and the block grows upward. In
+        portrait this sits clear of the ~15% of height that Shorts/Reels/TikTok
+        cover with their own UI.
+        """
+        return -self.h / 2 + self.h * (0.175 if self.portrait else 0.060)
+
+    @property
     def caption_y(self):
-        """Baseline for the subtitle track — inside the safe band, not at the edge."""
-        return -self.h / 2 + self.caption_band * (0.62 if self.portrait else 0.48)
+        """Deprecated centre anchor — prefer caption_bottom."""
+        return self.caption_bottom + 0.25
 
     @property
     def content_top(self):
@@ -221,7 +235,7 @@ def brand_field():
 # of the frame width in 16:9 but 47.5% in 9:16 — portrait text comes out roughly
 # three times too big. Scale type to the frame, with a readability boost for
 # portrait because a short is watched on a small screen.
-_PORTRAIT_BOOST = 2.0
+_PORTRAIT_BOOST = 1.7
 TYPE_SCALE = (config.frame_width / 14.2222) * (
     _PORTRAIT_BOOST if config.pixel_height > config.pixel_width else 1.0)
 
@@ -259,6 +273,70 @@ def mtex(expression, color=INK, size=SIZE_BODY, **kw):
     applies the aspect-aware type scale."""
     return MathTex(expression, color=color, font_size=_pt(size),
                    tex_template=TEX_SANS, **kw)
+
+
+# ------------------------------------------------------------- captions ----
+_LATIN_RUN = re.compile(r"[A-Za-z][A-Za-z'\-]*")
+_BREAK_AFTER = "，、；：,;"     # a comma-class break reads naturally
+_NO_BREAK_BEFORE = "。，、；：？！)）」』"
+
+
+def _weight(t):
+    """Reading weight in 全形字; a Latin word costs 2."""
+    return len([c for c in _LATIN_RUN.sub("", t) if not c.isspace()]) \
+        + 2 * len(_LATIN_RUN.findall(t))
+
+
+def wrap_caption(text, terms=None):
+    """Insert one newline near the weight midpoint, at a natural boundary.
+
+    A break is refused inside a Latin word AND inside any declared term, so a
+    two-word term like "inscribed angle" is never split across lines. Prefers a
+    comma-class punctuation, then a space, then any CJK boundary.
+
+    Call this only when the single line genuinely does not fit — the caller
+    measures, because it is the frame width that decides, not the character
+    count.
+    """
+    if "\n" in text:
+        return text
+    spans = [m.span() for m in _LATIN_RUN.finditer(text)]
+    for t in (terms or []):                      # keep declared terms intact
+        start = 0
+        while (i := text.find(t, start)) != -1:
+            spans.append((i, i + len(t)))
+            start = i + 1
+    inside = lambda i: any(a < i < b for a, b in spans)
+    mid = len(text) / 2
+    best, best_key = None, None
+    for i in range(1, len(text)):
+        if inside(i) or text[i] in _NO_BREAK_BEFORE:
+            continue
+        if text[i - 1] in _BREAK_AFTER:
+            rank = 0
+        elif text[i - 1] == " " or text[i] == " ":
+            rank = 1
+        else:
+            rank = 2
+        key = (rank, abs(i - mid))
+        if best_key is None or key < best_key:
+            best, best_key = i, key
+    if best is None:
+        return text
+    return text[:best].rstrip() + "\n" + text[best:].lstrip()
+
+
+def caption_text(text, terms=None):
+    """Shorts-style caption: bold white, dark outline, no background bar.
+
+    The size is fixed (`SIZE_CAPTION`) and identical for every cue — a caption
+    that shrinks to fit reads as inconsistent. Long lines wrap instead.
+    """
+    t2c = {k: CAPTION_TERM for k in (terms or [])}
+    m = Text(text, font=FONT_TEXT, weight=BOLD, font_size=SIZE_CAPTION,
+             color=CAPTION_INK, t2c=t2c, line_spacing=0.9)
+    m.set_stroke(CAPTION_OUTLINE, width=CAPTION_OUTLINE_W, background=True)
+    return m
 
 
 def brand_rule(width=3.0, thickness=0.07):

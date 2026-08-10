@@ -74,12 +74,16 @@ def check(plan: dict, cues: list[dict]) -> list[str]:
         if c["start"] < c["shotStart"] - 1e-6 or c["end"] > c["shotEnd"] + 1e-6:
             problems.append(f'{c["shot"]} {c["start"]:.2f}s: cue escapes its shot '
                             f'[{c["shotStart"]:.2f}, {c["shotEnd"]:.2f}]')
-        for line in c["text"].split("\n"):
-            if weight(line) > MAX_LINE:
-                problems.append(f'{c["shot"]} {c["start"]:.2f}s: line is '
-                                f'{weight(line)} 字, limit {MAX_LINE}')
-        if len(c["text"].split("\n")) > 2:
-            problems.append(f'{c["shot"]} {c["start"]:.2f}s: more than 2 lines')
+        if "\n" in c["text"]:                       # author-chosen line breaks
+            for line in c["text"].split("\n"):
+                if weight(line) > MAX_LINE:
+                    problems.append(f'{c["shot"]} {c["start"]:.2f}s: line is '
+                                    f'{weight(line)} 字, limit {MAX_LINE}')
+            if len(c["text"].split("\n")) > 2:
+                problems.append(f'{c["shot"]} {c["start"]:.2f}s: more than 2 lines')
+        elif w > 2 * MAX_LINE:                      # will be auto-wrapped to 2 lines
+            problems.append(f'{c["shot"]} {c["start"]:.2f}s: {w} 字 will not fit two '
+                            f'lines of {MAX_LINE} — split the cue')
     for a, b in zip(cues, cues[1:]):
         if b["start"] < a["end"] - 1e-6:
             problems.append(f'cues overlap: {a["shot"]} ends {a["end"]:.2f}s, '
@@ -109,10 +113,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import numpy as np
 from manim import *
-from smartquest_theme import (sync_frame, Stage, body, SIZE_CAPTION,
-                              CAPTION_BAND, CAPTION_BAND_OPACITY, CAPTION_INK,
-                              CAPTION_TERM)
+from smartquest_theme import sync_frame, Stage, caption_text, wrap_caption
 
 sync_frame()
 
@@ -123,23 +126,22 @@ class CaptionTrack(Scene):
     def construct(self):
         st = Stage()
         self.camera.background_color = "#00000000"
+        max_w = st.w - 2 * st.margin
         t = 0.0
         for start, end, text, terms in CUES:
             if start > t:
                 self.wait(start - t)
-            cap = body(text, color=CAPTION_INK, size=SIZE_CAPTION, terms=terms,
-                       term_color=CAPTION_TERM, scale=False)
-            max_w = st.w - 2 * st.margin
+            # Size is fixed for every cue. If a line does not fit we WRAP, never
+            # shrink — a caption that changes size cue to cue reads as sloppy.
+            cap = caption_text(text, terms)
             if cap.width > max_w:
-                cap.scale_to_fit_width(max_w)
-            cap.move_to(UP * st.caption_y)
-            band = Rectangle(
-                width=min(cap.width + 0.30, max_w + 0.2), height=cap.height + 0.18,
-                stroke_width=0, fill_color=CAPTION_BAND,
-                fill_opacity=CAPTION_BAND_OPACITY).move_to(cap)
-            self.add(band, cap)
+                cap = caption_text(wrap_caption(text, terms), terms)
+            if cap.width > max_w:
+                cap.scale_to_fit_width(max_w)   # last resort, should be rare
+            cap.move_to(np.array([0.0, st.caption_bottom + cap.height / 2, 0.0]))
+            self.add(cap)
             self.wait(end - start)
-            self.remove(band, cap)
+            self.remove(cap)
             t = end
         if {duration!r} > t:
             self.wait({duration!r} - t)
