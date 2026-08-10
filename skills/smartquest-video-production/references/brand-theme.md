@@ -10,11 +10,11 @@ tuned for, so the brand hues transfer directly.
 
 | Token | Value | |
 |---|---|---|
-| `BG` | `#F8FAFC` | slate-50; softer on screen than pure white |
-| `BG_LIFT` | `#FFFFFF` | a gentle white-to-slate wash, top to bottom |
-| `INK` | `#0F172A` | SmartQuest foreground navy, now the **text** colour |
-| `MUTED` | `#64748B` | secondary notes, DSE reasons |
-| `LINE` | `#94A3B8` | neutral geometry, axes, unemphasised strokes |
+| `BG` | `#FBFCFE` | barely-tinted cool white |
+| `BG_LIFT` | `#FFFFFF` | a gentle white wash, top to bottom |
+| `INK` | `#1B2440` | deep indigo-slate — softer than black, still brand-cool · 14.9:1 |
+| `MUTED` | `#64748B` | secondary notes, DSE reasons · 4.64:1 |
+| `LINE` | `#7C8AA3` | neutral geometry · 3.49:1 (WCAG non-text minimum is 3:1) |
 
 The field is deliberately light. A dark video reads as "advanced" to a secondary student meeting
 an idea for the first time; a clean near-white page reads as a well-set textbook. That is the
@@ -26,14 +26,23 @@ A colour means one thing for a whole video **and across the whole library**. Nev
 
 | Token | Value | Meaning |
 |---|---|---|
-| `GIVEN` | `#4B60D6` | what the question gives you (brand primary, full strength) |
-| `UNKNOWN` | `#9747FF` | what you are solving for (brand gradient end) |
-| `RESULT` | `#059669` | a confirmed result, a correct step |
-| `WARN` | `#DC2626` | the misconception, the trap, the wrong turn |
-| `AUX` | `#C2620A` | construction: added lines, radii, tick marks, first-use English terms |
+| Token | Value | Meaning | on page |
+|---|---|---|---|
+| `GIVEN` | `#1D4ED8` blue-700 | what the question gives you | 6.53:1 |
+| `UNKNOWN` | `#C2410C` orange-700 | what you are solving for | 5.04:1 |
+| `RESULT` | `#047857` emerald-700 | a confirmed result, a correct step | 5.34:1 |
+| `WARN` | `#BE123C` rose-700 | the misconception, the trap, the wrong turn | 6.12:1 |
+| `AUX` | `#6D28D9` violet-700 | construction, first-use English terms | 6.92:1 |
 
-On a light field the brand hues are used at full strength — there is no need to lift them, and
-darkening `RESULT`, `WARN` and `AUX` is what keeps them legible as **text** on near-white.
+Five inks at the **same tonal step**, so they read as one set of pens rather than five unrelated
+colours. Hue separation was chosen first and contrast measured second.
+
+`GIVEN` and `UNKNOWN` share almost every frame, so they are **complementary** — blue against
+burnt orange — instead of two neighbouring blues. An earlier version used brand indigo and brand
+purple side by side and they were genuinely hard to tell apart in the figure.
+
+Measure before adopting a colour. A previous `RESULT` at `#059669` looked fine and measured
+**3.67:1**, which fails as text on a light page.
 
 This is the mechanism that makes a series feel like a series. A student who has watched three
 SmartQuest videos already knows purple is the unknown before you say so.

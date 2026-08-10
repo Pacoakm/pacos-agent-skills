@@ -133,10 +133,9 @@ class CaptionTrack(Scene):
             if cap.width > max_w:
                 cap.scale_to_fit_width(max_w)
             cap.move_to(UP * st.caption_y)
-            band = RoundedRectangle(
-                width=min(cap.width + 0.55, max_w + 0.2), height=cap.height + 0.40,
-                corner_radius=0.14, stroke_width=0,
-                fill_color=CAPTION_BAND,
+            band = Rectangle(
+                width=min(cap.width + 0.50, max_w + 0.2), height=cap.height + 0.34,
+                stroke_width=0, fill_color=CAPTION_BAND,
                 fill_opacity=CAPTION_BAND_OPACITY).move_to(cap)
             self.add(band, cap)
             self.wait(end - start)

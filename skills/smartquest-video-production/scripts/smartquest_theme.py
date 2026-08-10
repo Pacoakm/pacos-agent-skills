@@ -22,27 +22,29 @@ import numpy as np
 # --------------------------------------------------------------- palette ----
 # Light theme. A dark field reads as "advanced" to a secondary student; a clean
 # near-white page reads as a well-set textbook, which is what we want.
-BG = "#F8FAFC"          # slate-50, softer on screen than pure white
-BG_LIFT = "#FFFFFF"     # a gentle white-to-slate wash, top to bottom
-INK = "#0F172A"         # SmartQuest foreground navy — now the text colour
-MUTED = "#64748B"       # captions, secondary notes, DSE reasons
-LINE = "#94A3B8"        # neutral geometry: axes, unemphasised strokes
+BG = "#FBFCFE"          # barely-tinted cool white
+BG_LIFT = "#FFFFFF"     # a gentle white wash, top to bottom
+INK = "#1B2440"         # deep indigo-slate — softer than black, still brand-cool
+MUTED = "#64748B"       # captions, secondary notes, DSE reasons        4.64:1
+LINE = "#7C8AA3"        # neutral geometry                              3.49:1
 
-# Teaching semantics. On a light field the brand hues are used at full strength
-# — no lifting, because contrast now runs the other way.
-GIVEN = "#4B60D6"       # what the question gives you           (brand primary)
-UNKNOWN = "#9747FF"     # what you are solving for              (brand gradient end)
-RESULT = "#059669"      # a confirmed result / correct step
-WARN = "#DC2626"        # the misconception, the trap, the wrong turn
-AUX = "#C2620A"         # construction lines, first-use English terms
+# Teaching semantics — five inks at the same tonal step, chosen for hue
+# separation first and measured for contrast second. GIVEN and UNKNOWN appear
+# together in almost every frame, so they are complementary (blue vs burnt
+# orange) rather than two neighbouring blues.
+GIVEN = "#1D4ED8"       # blue-700     what the question gives you      6.53:1
+UNKNOWN = "#C2410C"     # orange-700   what you are solving for         5.04:1
+RESULT = "#047857"      # emerald-700  a confirmed result               5.34:1
+WARN = "#BE123C"        # rose-700     the misconception, the trap      6.12:1
+AUX = "#6D28D9"         # violet-700   construction, first-use terms    6.92:1
 
 BRAND_FROM = "#4B60D6"  # gradient start — brand primary
 BRAND_TO = "#9747FF"    # gradient end
 
-# Subtitle band: a translucent dark bar with white text, so a caption stays
-# readable whatever it happens to sit over.
-CAPTION_BAND = "#0F172A"
-CAPTION_BAND_OPACITY = 0.70
+# Subtitle band: a square-cornered, semi-transparent black bar with white text,
+# so a caption stays readable whatever it happens to sit over.
+CAPTION_BAND = "#000000"
+CAPTION_BAND_OPACITY = 0.62
 CAPTION_INK = "#FFFFFF"
 # The band is a DARK surface sitting on a light page, so an English term inside
 # a caption cannot use AUX — that hue is chosen for contrast against the page
@@ -65,7 +67,7 @@ SIZE_TITLE = 52
 SIZE_HEADING = 38
 SIZE_BODY = 32
 SIZE_LABEL = 26
-SIZE_CAPTION = 26       # the subtitle track
+SIZE_CAPTION = 23       # the subtitle track
 SIZE_MIN = 22
 
 
