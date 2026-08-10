@@ -11,7 +11,7 @@
 | `video-use` | 訪談、talking head、tutorial、多 take 原始片剪輯 |
 | `manim-video` | 3Blue1Brown 風格的數學、物理與技術概念動畫 |
 
-Remotion 和 HyperFrames 保留為完整、有命名空間的 Codex plugin bundles，避免破壞 `$remotion:…` 及 `$hyperframes:…` 呼叫方式。來源與授權記錄在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
+Repository 名稱是 `pacos-agent-skills`。Remotion 和 HyperFrames 保留為完整、有命名空間的 Codex plugin bundles，避免破壞 `$remotion:…` 及 `$hyperframes:…` 呼叫方式。來源與授權記錄在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 倉庫結構
 
