@@ -7,12 +7,12 @@
 | `paco-video-production` | 從創意方向、逐秒腳本和故事板，到 Animatic、多引擎製作及成片驗證 |
 | `paco-interactive-educator` | 以 Puzzle → Explore → Name → Challenge 建立 Codex 原生探索式互動教材 |
 
-倉庫保留原來的 `paco-video-production-skill` 名稱，但 `skills/` 現在是兩個工作流的共同來源。
+Repository 名稱是 `pacos-agent-skills`，`skills/` 是兩個工作流的共同來源。
 
 ## 倉庫結構
 
 ```text
-paco-video-production-skill/
+pacos-agent-skills/
 ├── README.md
 ├── install.sh
 └── skills/
@@ -36,15 +36,15 @@ paco-video-production-skill/
 
 ```bash
 mkdir -p "$HOME/.local/share"
-gh repo clone Pacoakm/paco-video-production-skill "$HOME/.local/share/paco-video-production-skill"
-cd "$HOME/.local/share/paco-video-production-skill"
+gh repo clone Pacoakm/pacos-agent-skills "$HOME/.local/share/pacos-agent-skills"
+cd "$HOME/.local/share/pacos-agent-skills"
 ```
 
 亦可使用已設定好的 SSH key：
 
 ```bash
-git clone git@github.com:Pacoakm/paco-video-production-skill.git "$HOME/.local/share/paco-video-production-skill"
-cd "$HOME/.local/share/paco-video-production-skill"
+git clone git@github.com:Pacoakm/pacos-agent-skills.git "$HOME/.local/share/pacos-agent-skills"
+cd "$HOME/.local/share/pacos-agent-skills"
 ```
 
 ## 安裝
@@ -114,8 +114,8 @@ cd "$HOME/.local/share/paco-video-production-skill"
 私人 repository 需要先提供有權讀取的 `GITHUB_TOKEN`，或先 clone 再執行 `./install.sh hermes`。若日後設為公開，可直接指定其中一個 Skill：
 
 ```bash
-hermes skills install Pacoakm/paco-video-production-skill/skills/paco-video-production
-hermes skills install Pacoakm/paco-video-production-skill/skills/paco-interactive-educator
+hermes skills install Pacoakm/pacos-agent-skills/skills/paco-video-production
+hermes skills install Pacoakm/pacos-agent-skills/skills/paco-interactive-educator
 ```
 
 不要把 token 寫入 repository。
@@ -125,7 +125,7 @@ hermes skills install Pacoakm/paco-video-production-skill/skills/paco-interactiv
 因安裝器使用 symbolic link，只需更新這個 repository：
 
 ```bash
-cd "$HOME/.local/share/paco-video-production-skill"
+cd "$HOME/.local/share/pacos-agent-skills"
 git pull --ff-only
 ```
 
