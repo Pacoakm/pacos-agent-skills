@@ -63,6 +63,25 @@ WEIGHT_TEXT = MEDIUM    # 蘋方 Medium — steadier than Regular at video sizes
 FONT_DISPLAY = "DM Sans"
 DISPLAY_MIN = 44        # never set DM Sans smaller than this
 
+# ---- mathematics is set sans-serif, to sit with PingFang and DM Sans --------
+# Computer Modern's serif italic is the 3Blue1Brown look and clashes with a
+# sans interface. \mathsf{} alone is not enough: it leaves Greek letters and
+# anything inside \text{} serif, so the line ends up mixed. helvet + sfmath
+# converts equations, Greek and \text{} together.
+#
+# Needs two TeX packages:  tlmgr install sfmath helvet
+def _sans_tex_template():
+    t = TexTemplate()
+    t.add_to_preamble(r"\usepackage{helvet}")
+    t.add_to_preamble(r"\renewcommand{\familydefault}{\sfdefault}")
+    t.add_to_preamble(r"\usepackage{sfmath}")
+    return t
+
+
+TEX_SANS = _sans_tex_template()
+config.tex_template = TEX_SANS   # every MathTex/Tex picks this up automatically
+
+
 SIZE_TITLE = 52
 SIZE_HEADING = 38
 SIZE_BODY = 32

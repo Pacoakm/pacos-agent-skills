@@ -62,14 +62,38 @@ the title card. It is a signature, not a decoration; repeating it cheapens it.
 |---|---|---|---|
 | Body, captions, all Chinese | **PingFang HK Medium** | 22–32 | 蘋方 Medium; steadier than Regular at video sizes |
 | Display titles | **DM Sans Bold** | **≥ 44 only** | brand face; its Latin kerning breaks under Pango below ~44 |
-| Mathematics, point labels, DSE reasons | `MathTex` | — | LaTeX, always |
+| Mathematics, point labels, DSE reasons | `MathTex`, **sans-serif** | — | LaTeX via `TEX_SANS` |
 
 Use **PingFang HK, not PingFang SC** — SC sets 全形 punctuation centred, which reads as
 Mainland typesetting to a Hong Kong student.
 
+### Mathematics is set sans-serif
+
+Computer Modern's serif italic is the 3Blue1Brown look and clashes with a sans interface. The
+theme installs `TEX_SANS` on `config.tex_template` at import, so every `MathTex`/`Tex` is sans
+without touching the call sites.
+
+`\mathsf{}` on its own is **not** enough — it converts letters but leaves Greek and anything
+inside `\text{}` serif, so a single line ends up mixed. The template uses
+`helvet` + `\renewcommand{\familydefault}{\sfdefault}` + `sfmath`, which converts equations,
+Greek and `\text{}` together. Install once:
+
+```bash
+tlmgr install sfmath helvet
+```
+
+**The Tex cache does not know the template changed.** `media/Tex/*.svg` is keyed by the
+expression string, not the preamble, so after editing `TEX_SANS` — or any font setting — old
+serif SVGs are silently reused and the render looks unchanged. `--disable_caching` does not
+help; it only affects partial movie files. Delete the cache:
+
+```bash
+rm -rf media/Tex media/texts
+```
+
 Never set DM Sans below `DISPLAY_MIN`. If a label is small, it is `body()` or `MathTex`.
 
-`SIZE_MIN` is 22. Nothing smaller survives a phone screen. Captions are `SIZE_CAPTION` = 26 —
+`SIZE_MIN` is 22. Nothing smaller survives a phone screen. Captions are `SIZE_CAPTION` = 23 —
 small enough to stay out of the way, large enough to read on a phone.
 
 ### The caption band is a dark surface

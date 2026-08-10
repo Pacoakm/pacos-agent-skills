@@ -107,6 +107,8 @@ cut that is invisible at draft resolution and obvious in the master.
 
 ```bash
 export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"   # if MathTex is used
+rm -rf media/Tex media/texts    # after ANY font or TeX-template change — the Tex
+                                # SVG cache is keyed by the expression, not the preamble
 
 # draft — review pacing here, not resolution
 manim -ql src/script.py S01Hook S02Setup ...

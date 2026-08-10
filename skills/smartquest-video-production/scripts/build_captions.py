@@ -134,7 +134,7 @@ class CaptionTrack(Scene):
                 cap.scale_to_fit_width(max_w)
             cap.move_to(UP * st.caption_y)
             band = Rectangle(
-                width=min(cap.width + 0.50, max_w + 0.2), height=cap.height + 0.34,
+                width=min(cap.width + 0.30, max_w + 0.2), height=cap.height + 0.18,
                 stroke_width=0, fill_color=CAPTION_BAND,
                 fill_opacity=CAPTION_BAND_OPACITY).move_to(cap)
             self.add(band, cap)
