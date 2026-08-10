@@ -12,30 +12,42 @@ both the 16:9 lesson and the 9:16 short.
             fig = self.stage.figure_box()
             ...
 
-Everything here is derived from SmartQuestApp/DESIGN.md. Colours are lifted for
-legibility on the dark navy field; the brand hues themselves are too dark to
-draw thin lines with.
+Everything here is derived from SmartQuestApp/DESIGN.md. The field is light —
+a dark video reads as 'advanced' to a secondary student, which is the opposite
+of what a first-encounter lesson wants.
 """
 from manim import *
 import numpy as np
 
 # --------------------------------------------------------------- palette ----
-BG = "#0F172A"          # SmartQuest foreground navy, used here as the field
-BG_LIFT = "#152037"     # subtle vertical lift so the frame is not flat black
-INK = "#F1F5F9"         # primary text
-MUTED = "#94A3B8"       # captions, secondary notes
-LINE = "#64748B"        # neutral geometry: axes, unemphasised strokes
+# Light theme. A dark field reads as "advanced" to a secondary student; a clean
+# near-white page reads as a well-set textbook, which is what we want.
+BG = "#F8FAFC"          # slate-50, softer on screen than pure white
+BG_LIFT = "#FFFFFF"     # a gentle white-to-slate wash, top to bottom
+INK = "#0F172A"         # SmartQuest foreground navy — now the text colour
+MUTED = "#64748B"       # captions, secondary notes, DSE reasons
+LINE = "#94A3B8"        # neutral geometry: axes, unemphasised strokes
 
-# Teaching semantics. A colour means one thing for a whole video AND across the
-# series. Never reassign inside a lesson.
-GIVEN = "#7C8CF8"       # what the question gives you          (brand indigo, lifted)
-UNKNOWN = "#C084FC"     # what you are solving for             (brand purple, lifted)
-RESULT = "#34D399"      # a confirmed result / correct step
-WARN = "#F87171"        # the misconception, the trap, the wrong turn
-AUX = "#FBBF24"         # construction: added lines, radii, tick marks
+# Teaching semantics. On a light field the brand hues are used at full strength
+# — no lifting, because contrast now runs the other way.
+GIVEN = "#4B60D6"       # what the question gives you           (brand primary)
+UNKNOWN = "#9747FF"     # what you are solving for              (brand gradient end)
+RESULT = "#059669"      # a confirmed result / correct step
+WARN = "#DC2626"        # the misconception, the trap, the wrong turn
+AUX = "#C2620A"         # construction lines, first-use English terms
 
 BRAND_FROM = "#4B60D6"  # gradient start — brand primary
 BRAND_TO = "#9747FF"    # gradient end
+
+# Subtitle band: a translucent dark bar with white text, so a caption stays
+# readable whatever it happens to sit over.
+CAPTION_BAND = "#0F172A"
+CAPTION_BAND_OPACITY = 0.70
+CAPTION_INK = "#FFFFFF"
+# The band is a DARK surface sitting on a light page, so an English term inside
+# a caption cannot use AUX — that hue is chosen for contrast against the page
+# and goes muddy here. Measured 4.63:1 against the composited band.
+CAPTION_TERM = "#FDE047"
 
 PALETTE = dict(bg=BG, ink=INK, muted=MUTED, line=LINE, given=GIVEN,
                unknown=UNKNOWN, result=RESULT, warn=WARN, aux=AUX)
@@ -45,6 +57,7 @@ PALETTE = dict(bg=BG, ink=INK, muted=MUTED, line=LINE, given=GIVEN,
 # renderer, so it is the single Text() face. DM Sans is brand, but its Latin
 # kerning breaks under Pango below ~44pt, so it is display-only.
 FONT_TEXT = "PingFang HK"
+WEIGHT_TEXT = MEDIUM    # 蘋方 Medium — steadier than Regular at video sizes
 FONT_DISPLAY = "DM Sans"
 DISPLAY_MIN = 44        # never set DM Sans smaller than this
 
@@ -52,7 +65,7 @@ SIZE_TITLE = 52
 SIZE_HEADING = 38
 SIZE_BODY = 32
 SIZE_LABEL = 26
-SIZE_CAPTION = 30       # the subtitle track
+SIZE_CAPTION = 26       # the subtitle track
 SIZE_MIN = 22
 
 
@@ -168,8 +181,8 @@ class SQScene(Scene):
 
 
 def brand_field():
-    """A very low-contrast vertical lift so the frame reads as SmartQuest navy
-    rather than as a flat black slide."""
+    """A very low-contrast white-to-slate wash, so the frame reads as a designed
+    page rather than a blank white slide."""
     r = Rectangle(width=config.frame_width * 1.02, height=config.frame_height * 1.02,
                   stroke_width=0)
     r.set_fill(color=[BG_LIFT, BG], opacity=1.0)
@@ -185,17 +198,21 @@ def title(text, color=INK, size=SIZE_TITLE):
                 font_size=max(size, DISPLAY_MIN), color=color)
 
 
-def body(text, color=INK, size=SIZE_BODY, terms=None):
+def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX):
     """繁中書面語 body text. `terms` colours inline English subject terms.
 
         body("同一弧上的 inscribed angle 相等。", terms=["inscribed angle"])
+
+    Pass `term_color=CAPTION_TERM` when the text sits on the dark caption band.
     """
-    t2c = {k: AUX for k in (terms or [])}
-    return Text(text, font=FONT_TEXT, font_size=max(size, SIZE_MIN), color=color, t2c=t2c)
+    t2c = {k: term_color for k in (terms or [])}
+    return Text(text, font=FONT_TEXT, weight=WEIGHT_TEXT,
+                font_size=max(size, SIZE_MIN), color=color, t2c=t2c)
 
 
 def label(text, color=MUTED, size=SIZE_LABEL):
-    return Text(text, font=FONT_TEXT, font_size=max(size, SIZE_MIN), color=color)
+    return Text(text, font=FONT_TEXT, weight=WEIGHT_TEXT,
+                font_size=max(size, SIZE_MIN), color=color)
 
 
 def brand_rule(width=3.0, thickness=0.07):

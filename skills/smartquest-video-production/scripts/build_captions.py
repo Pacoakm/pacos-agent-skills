@@ -110,7 +110,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from manim import *
-from smartquest_theme import (sync_frame, Stage, body, SIZE_CAPTION, INK)
+from smartquest_theme import (sync_frame, Stage, body, SIZE_CAPTION,
+                              CAPTION_BAND, CAPTION_BAND_OPACITY, CAPTION_INK,
+                              CAPTION_TERM)
 
 sync_frame()
 
@@ -125,7 +127,8 @@ class CaptionTrack(Scene):
         for start, end, text, terms in CUES:
             if start > t:
                 self.wait(start - t)
-            cap = body(text, color=INK, size=SIZE_CAPTION, terms=terms)
+            cap = body(text, color=CAPTION_INK, size=SIZE_CAPTION, terms=terms,
+                       term_color=CAPTION_TERM)
             max_w = st.w - 2 * st.margin
             if cap.width > max_w:
                 cap.scale_to_fit_width(max_w)
@@ -133,7 +136,8 @@ class CaptionTrack(Scene):
             band = RoundedRectangle(
                 width=min(cap.width + 0.55, max_w + 0.2), height=cap.height + 0.40,
                 corner_radius=0.14, stroke_width=0,
-                fill_color="#000000", fill_opacity=0.55).move_to(cap)
+                fill_color=CAPTION_BAND,
+                fill_opacity=CAPTION_BAND_OPACITY).move_to(cap)
             self.add(band, cap)
             self.wait(end - start)
             self.remove(band, cap)

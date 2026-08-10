@@ -3,22 +3,22 @@
 One theme for the whole library. A student should recognise a SmartQuest lesson before the
 title appears. Import `scripts/smartquest_theme.py`; do not redefine colours per video.
 
-Derived from `SmartQuestApp/DESIGN.md`. The brand hues are lifted for legibility — the web
-palette is tuned for a white page and is too dark to draw thin lines on a dark field.
+Derived from `SmartQuestApp/DESIGN.md`, and on the same light ground the web palette was
+tuned for, so the brand hues transfer directly.
 
-## Field
+## Field — light
 
 | Token | Value | |
 |---|---|---|
-| `BG` | `#0F172A` | SmartQuest navy. **Not** 3Blue1Brown's neutral `#1C1C1C` |
-| `BG_LIFT` | `#152037` | a very slight vertical lift, so the frame is not a flat slide |
-| `INK` | `#F1F5F9` | primary text |
-| `MUTED` | `#94A3B8` | secondary notes, DSE reasons |
-| `LINE` | `#64748B` | neutral geometry, axes, unemphasised strokes |
+| `BG` | `#F8FAFC` | slate-50; softer on screen than pure white |
+| `BG_LIFT` | `#FFFFFF` | a gentle white-to-slate wash, top to bottom |
+| `INK` | `#0F172A` | SmartQuest foreground navy, now the **text** colour |
+| `MUTED` | `#64748B` | secondary notes, DSE reasons |
+| `LINE` | `#94A3B8` | neutral geometry, axes, unemphasised strokes |
 
-The navy is the single strongest brand signal. Keep it. If a topic genuinely needs a light
-field (an optics ray diagram, a titration colour change), invert locally inside the figure and
-keep the frame navy.
+The field is deliberately light. A dark video reads as "advanced" to a secondary student meeting
+an idea for the first time; a clean near-white page reads as a well-set textbook. That is the
+feeling we want, and it is the main reason this theme is not a 3Blue1Brown clone.
 
 ## Teaching semantics
 
@@ -26,11 +26,14 @@ A colour means one thing for a whole video **and across the whole library**. Nev
 
 | Token | Value | Meaning |
 |---|---|---|
-| `GIVEN` | `#7C8CF8` | what the question gives you |
-| `UNKNOWN` | `#C084FC` | what you are solving for |
-| `RESULT` | `#34D399` | a confirmed result, a correct step |
-| `WARN` | `#F87171` | the misconception, the trap, the wrong turn |
-| `AUX` | `#FBBF24` | construction: added lines, radii, tick marks, first-use English terms |
+| `GIVEN` | `#4B60D6` | what the question gives you (brand primary, full strength) |
+| `UNKNOWN` | `#9747FF` | what you are solving for (brand gradient end) |
+| `RESULT` | `#059669` | a confirmed result, a correct step |
+| `WARN` | `#DC2626` | the misconception, the trap, the wrong turn |
+| `AUX` | `#C2620A` | construction: added lines, radii, tick marks, first-use English terms |
+
+On a light field the brand hues are used at full strength — there is no need to lift them, and
+darkening `RESULT`, `WARN` and `AUX` is what keeps them legible as **text** on near-white.
 
 This is the mechanism that makes a series feel like a series. A student who has watched three
 SmartQuest videos already knows purple is the unknown before you say so.
@@ -48,7 +51,7 @@ the title card. It is a signature, not a decoration; repeating it cheapens it.
 
 | Role | Face | Size | Note |
 |---|---|---|---|
-| Body, captions, all Chinese | **PingFang HK** | 22–32 | renders 繁中 and inline Latin cleanly under Pango |
+| Body, captions, all Chinese | **PingFang HK Medium** | 22–32 | 蘋方 Medium; steadier than Regular at video sizes |
 | Display titles | **DM Sans Bold** | **≥ 44 only** | brand face; its Latin kerning breaks under Pango below ~44 |
 | Mathematics, point labels, DSE reasons | `MathTex` | — | LaTeX, always |
 
@@ -57,7 +60,23 @@ Mainland typesetting to a Hong Kong student.
 
 Never set DM Sans below `DISPLAY_MIN`. If a label is small, it is `body()` or `MathTex`.
 
-`SIZE_MIN` is 22. Nothing smaller survives a phone screen.
+`SIZE_MIN` is 22. Nothing smaller survives a phone screen. Captions are `SIZE_CAPTION` = 26 —
+small enough to stay out of the way, large enough to read on a phone.
+
+### The caption band is a dark surface
+
+Captions sit on a translucent dark bar (`CAPTION_BAND` `#0F172A` at `CAPTION_BAND_OPACITY` 0.70)
+with white text, so a caption stays readable over anything. That bar is a **dark surface on a
+light page**, so it needs its own tokens:
+
+| Token | Value | Measured contrast on the composited band |
+|---|---|---|
+| `CAPTION_INK` | `#FFFFFF` | 6.11:1 |
+| `CAPTION_TERM` | `#FDE047` | 4.63:1 |
+
+Do **not** use `AUX` for an English term inside a caption. `AUX` is chosen against the light
+page and measures **1.47:1** on the band — it looks muddy and fails badly. `body()` takes
+`term_color=` for exactly this reason.
 
 ## Layout
 
