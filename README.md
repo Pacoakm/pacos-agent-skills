@@ -1,21 +1,33 @@
 # Paco Agent Skills
 
-一套可安裝到 Codex、Claude Code 與 Hermes Agent 的 Paco 個人工作流。目前包含兩個並列 Skill：
+一套可安裝到 Codex、Claude Code 與 Hermes Agent 的 Paco 個人工作流，以及 `paco-video-production` 直接引用的 companion skills／plugins。
 
 | Skill | 用途 |
 |---|---|
 | `paco-video-production` | 從創意方向、逐秒腳本和故事板，到 Animatic、多引擎製作及成片驗證 |
 | `paco-interactive-educator` | 以 Puzzle → Explore → Name → Challenge 建立 Codex 原生探索式互動教材 |
+| `edge-tts` | 旁白試音、語音輸出及字幕時間 |
+| `seedance` | Seedance／即夢中文影片 prompt packet；由用戶手動生成影片 |
+| `video-use` | 訪談、talking head、tutorial、多 take 原始片剪輯 |
+| `manim-video` | 3Blue1Brown 風格的數學、物理與技術概念動畫 |
 
-倉庫保留原來的 `paco-video-production-skill` 名稱，但 `skills/` 現在是兩個工作流的共同來源。
+Remotion 和 HyperFrames 保留為完整、有命名空間的 Codex plugin bundles，避免破壞 `$remotion:…` 及 `$hyperframes:…` 呼叫方式。來源與授權記錄在 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 倉庫結構
 
 ```text
-paco-video-production-skill/
+pacos-agent-skills/
 ├── README.md
 ├── install.sh
+├── THIRD_PARTY_NOTICES.md
+├── plugins/
+│   ├── remotion/
+│   └── hyperframes/
 └── skills/
+    ├── edge-tts/
+    ├── seedance/
+    ├── video-use/
+    ├── manim-video/
     ├── paco-video-production/
     │   ├── SKILL.md
     │   ├── agents/openai.yaml
@@ -36,20 +48,20 @@ paco-video-production-skill/
 
 ```bash
 mkdir -p "$HOME/.local/share"
-gh repo clone Pacoakm/paco-video-production-skill "$HOME/.local/share/paco-video-production-skill"
-cd "$HOME/.local/share/paco-video-production-skill"
+gh repo clone Pacoakm/pacos-agent-skills "$HOME/.local/share/pacos-agent-skills"
+cd "$HOME/.local/share/pacos-agent-skills"
 ```
 
 亦可使用已設定好的 SSH key：
 
 ```bash
-git clone git@github.com:Pacoakm/paco-video-production-skill.git "$HOME/.local/share/paco-video-production-skill"
-cd "$HOME/.local/share/paco-video-production-skill"
+git clone git@github.com:Pacoakm/pacos-agent-skills.git "$HOME/.local/share/pacos-agent-skills"
+cd "$HOME/.local/share/pacos-agent-skills"
 ```
 
 ## 安裝
 
-預設把兩個 Skill 安裝到指定 agent：
+預設把六個可獨立安裝的 Skill 安裝到指定 agent：
 
 ```bash
 ./install.sh codex
@@ -63,6 +75,10 @@ cd "$HOME/.local/share/paco-video-production-skill"
 ```bash
 ./install.sh codex paco-interactive-educator
 ./install.sh codex paco-video-production
+./install.sh codex edge-tts
+./install.sh codex seedance
+./install.sh codex video-use
+./install.sh codex manim-video
 ```
 
 預覽安裝動作而不改動檔案：
@@ -76,7 +92,7 @@ cd "$HOME/.local/share/paco-video-production-skill"
 
 | Agent | 個人 Skill 位置 | 使用方式 |
 |---|---|---|
-| Codex | `${CODEX_HOME:-$HOME/.codex}/skills/<skill-name>` | `$paco-video-production` 或 `$paco-interactive-educator` |
+| Codex | `${CODEX_HOME:-$HOME/.codex}/skills/<skill-name>` | `$paco-video-production`、`$manim-video`、`$edge-tts` 等 |
 | Claude Code | `$HOME/.claude/skills/<skill-name>` | 輸入 Skill 名稱或直接描述任務 |
 | Hermes Agent | `$HOME/.hermes/skills/<skill-name>` | 由 Hermes 自動發現，或從 skills 指令列選用 |
 
@@ -93,11 +109,12 @@ cd "$HOME/.local/share/paco-video-production-skill"
 
 | 工具 | 適合用途 | 必須安裝？ |
 |---|---|---|
-| Remotion | 精準逐格、品牌模板、字幕、比例及語言變體 | 否；第二階段需要時才安裝 |
-| HyperFrames | HTML/CSS/GSAP 動效、動態字體、UI 及 shader 轉場 | 否 |
-| video-use | 訪談、talking head、教學、多 take 原始片剪輯 | 否 |
-| Seedance prompt skill | 生成式影片鏡頭的中文 prompt packet | 否 |
-| `manim-video` + Manim | 3Blue1Brown 風格的數學、物理、科學與技術概念動畫 | 否；概念需要公式、幾何、圖像或漸進式視覺推理時使用 |
+| Remotion plugin | 精準逐格、品牌模板、字幕、比例及語言變體 | Bundle 已保存在 `plugins/remotion/`；Remotion runtime 另行安裝 |
+| HyperFrames plugin | HTML/CSS/GSAP 動效、動態字體、UI 及 shader 轉場 | Bundle 已保存在 `plugins/hyperframes/`；CLI 另行安裝 |
+| `video-use` | 訪談、talking head、教學、多 take 原始片剪輯 | 已包含，可由 `install.sh` 安裝 |
+| `seedance` | 生成式影片鏡頭的中文 prompt packet | 已包含；只寫 prompt，不會代替用戶提交生成 |
+| `manim-video` + Manim | 3Blue1Brown 風格的數學、物理、科學與技術概念動畫 | Skill 已包含；Manim、LaTeX、FFmpeg runtime 另行安裝 |
+| `edge-tts` | 粵語／多語旁白試音、音訊及字幕 | Skill 已包含；`uvx edge-tts` 使用網上服務 |
 
 數學或物理題材不會因科目名稱而一律使用 Manim。以 slides、知識重溫、talking head、實驗錄影或軟件操作為主的影片仍會選用 Remotion 或 video-use；只有當程式化動畫能明顯改善概念理解時，才載入 `manim-video`。Manim 可製作完整的圖像主片，亦可輸出精確片段交由 Remotion／FFmpeg 加字幕、品牌、音樂及比例變體。這類可確定生成的教學畫面不使用 Seedance。
 
@@ -118,8 +135,8 @@ cd "$HOME/.local/share/paco-video-production-skill"
 私人 repository 需要先提供有權讀取的 `GITHUB_TOKEN`，或先 clone 再執行 `./install.sh hermes`。若日後設為公開，可直接指定其中一個 Skill：
 
 ```bash
-hermes skills install Pacoakm/paco-video-production-skill/skills/paco-video-production
-hermes skills install Pacoakm/paco-video-production-skill/skills/paco-interactive-educator
+hermes skills install Pacoakm/pacos-agent-skills/skills/paco-video-production
+hermes skills install Pacoakm/pacos-agent-skills/skills/paco-interactive-educator
 ```
 
 不要把 token 寫入 repository。
@@ -129,7 +146,7 @@ hermes skills install Pacoakm/paco-video-production-skill/skills/paco-interactiv
 因安裝器使用 symbolic link，只需更新這個 repository：
 
 ```bash
-cd "$HOME/.local/share/paco-video-production-skill"
+cd "$HOME/.local/share/pacos-agent-skills"
 git pull --ff-only
 ```
 
@@ -140,4 +157,5 @@ git pull --ff-only
 - 不要 commit API key、GitHub token、語音服務憑證、客戶素材或未獲授權的字體／音樂。
 - 從第三方來源安裝任何 Skill 前，先閱讀 `SKILL.md` 和 scripts。
 - 此 repository 目前未附開源授權；除非另行加入 LICENSE，版權與再發佈權保留。
+- Vendored companion skills／plugins 各自沿用其上游授權；詳見 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 及各自目錄內的 LICENSE／plugin metadata。
 - `paco-interactive-educator` 改編自 [Wamikmk/interactive-educator](https://github.com/Wamikmk/interactive-educator) 的互動教學方法；原作採用 CC BY 4.0，Paco 版本保留來源致謝並改寫為 Codex 原生工作流。
