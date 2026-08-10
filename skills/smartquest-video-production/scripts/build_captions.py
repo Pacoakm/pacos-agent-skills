@@ -128,7 +128,7 @@ class CaptionTrack(Scene):
             if start > t:
                 self.wait(start - t)
             cap = body(text, color=CAPTION_INK, size=SIZE_CAPTION, terms=terms,
-                       term_color=CAPTION_TERM)
+                       term_color=CAPTION_TERM, scale=False)
             max_w = st.w - 2 * st.margin
             if cap.width > max_w:
                 cap.scale_to_fit_width(max_w)

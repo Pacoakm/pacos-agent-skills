@@ -126,6 +126,17 @@ the 16:9 lesson and the 9:16 short**.
 A side column is unreadable at 1080 px wide, which is why portrait stacks instead. Ask
 `Stage.figure_box()` and `Stage.panel_box()` for regions; never hard-code a coordinate.
 
+### Type is scaled to the frame
+
+Manim font sizes are absolute scene units, and `frame_height` stays 8 in both aspects while
+`frame_width` changes. Measured: `font_size=38` covers **15%** of the frame width at 16:9 and
+**47.5%** at 9:16 — portrait type comes out about three times too big.
+
+`TYPE_SCALE` corrects this, with a ×2 readability boost for portrait because a short is watched
+on a small screen. It is applied inside `title()`, `body()`, `label()`, `mtex()` and `step()`,
+so scene code just names a size. Captions pass `scale=False` — they are fitted to the frame
+width instead, and taking the scale as well would make them tiny.
+
 ### The frame trap
 
 `manim -r 1080,1920` changes the **pixel** canvas only. `config.frame_width` stays at 14.222

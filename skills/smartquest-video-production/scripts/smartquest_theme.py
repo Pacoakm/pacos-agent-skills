@@ -79,7 +79,10 @@ def _sans_tex_template():
 
 
 TEX_SANS = _sans_tex_template()
-config.tex_template = TEX_SANS   # every MathTex/Tex picks this up automatically
+config.tex_template = TEX_SANS   # a default, but NOT something to rely on:
+# Manim re-initialises config between scenes when several are rendered in one
+# command, so some scenes silently fall back to Computer Modern. Always build
+# mathematics with mtex()/step(), which pass the template explicitly.
 
 
 SIZE_TITLE = 52
@@ -212,14 +215,29 @@ def brand_field():
     return r
 
 
+# ------------------------------------------------------------- type scale ----
+# Manim font sizes are absolute scene units, and `frame_height` stays 8 in both
+# aspects while `frame_width` changes. The same font_size therefore covers 15%
+# of the frame width in 16:9 but 47.5% in 9:16 — portrait text comes out roughly
+# three times too big. Scale type to the frame, with a readability boost for
+# portrait because a short is watched on a small screen.
+_PORTRAIT_BOOST = 2.0
+TYPE_SCALE = (config.frame_width / 14.2222) * (
+    _PORTRAIT_BOOST if config.pixel_height > config.pixel_width else 1.0)
+
+
+def _pt(size):
+    return max(size, SIZE_MIN) * TYPE_SCALE
+
+
 # --------------------------------------------------------------- elements ----
 def title(text, color=INK, size=SIZE_TITLE):
     """Display type. DM Sans, brand, never below DISPLAY_MIN."""
     return Text(text, font=FONT_DISPLAY, weight=BOLD,
-                font_size=max(size, DISPLAY_MIN), color=color)
+                font_size=max(size, DISPLAY_MIN) * TYPE_SCALE, color=color)
 
 
-def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX):
+def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True):
     """繁中書面語 body text. `terms` colours inline English subject terms.
 
         body("同一弧上的 inscribed angle 相等。", terms=["inscribed angle"])
@@ -227,13 +245,20 @@ def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX):
     Pass `term_color=CAPTION_TERM` when the text sits on the dark caption band.
     """
     t2c = {k: term_color for k in (terms or [])}
-    return Text(text, font=FONT_TEXT, weight=WEIGHT_TEXT,
-                font_size=max(size, SIZE_MIN), color=color, t2c=t2c)
+    return Text(text, font=FONT_TEXT, weight=WEIGHT_TEXT, color=color, t2c=t2c,
+                font_size=_pt(size) if scale else max(size, SIZE_MIN))
 
 
 def label(text, color=MUTED, size=SIZE_LABEL):
     return Text(text, font=FONT_TEXT, weight=WEIGHT_TEXT,
-                font_size=max(size, SIZE_MIN), color=color)
+                font_size=_pt(size), color=color)
+
+
+def mtex(expression, color=INK, size=SIZE_BODY, **kw):
+    """Mathematics. Use this instead of MathTex — it pins the sans template and
+    applies the aspect-aware type scale."""
+    return MathTex(expression, color=color, font_size=_pt(size),
+                   tex_template=TEX_SANS, **kw)
 
 
 def brand_rule(width=3.0, thickness=0.07):
@@ -249,10 +274,10 @@ def step(statement, reason=None, color=INK, size=SIZE_HEADING):
 
         step(r"\\angle AOQ = 2\\alpha", r"\\text{(ext. }\\angle\\text{ of }\\triangle\\text{)}")
     """
-    m = MathTex(statement, color=color, font_size=size)
+    m = mtex(statement, color=color, size=size)
     if reason is None:
         return VGroup(m)
-    r = MathTex(reason, color=MUTED, font_size=int(size * 0.62))
+    r = mtex(reason, color=MUTED, size=int(size * 0.62))
     return VGroup(m, r).arrange(DOWN, buff=0.10, aligned_edge=LEFT)
 
 
