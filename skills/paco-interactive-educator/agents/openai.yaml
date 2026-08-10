@@ -1,0 +1,4 @@
+interface:
+  display_name: "Paco 互動教學設計"
+  short_description: "Paco 的探索式四階段互動教材設計與 Codex 原生視覺化流程"
+  default_prompt: "使用 $paco-interactive-educator 為零基礎學生建立水波干涉的四階段互動教材。"
