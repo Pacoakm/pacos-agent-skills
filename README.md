@@ -82,10 +82,12 @@ cd "$HOME/.local/share/paco-video-production-skill"
 
 ## Paco Video Production
 
-影片 Skill 以兩個審批階段管理製作：
+影片 Skill 以四個關卡管理製作：
 
-1. 鎖定創意方向，完成逐秒 shot plan、素材清單和高清 3×3 review storyboard。
-2. 故事板獲批後，根據裝置實際可用能力，選用 Remotion、HyperFrames、video-use、Seedance、Manim 或受控混合流程，最後驗證成片。
+1. 鎖定創意、敘事、聲音及連貫系統。
+2. 建立適應式素材網格及高清 3×3 review storyboard。
+3. 以實際旁白和主時間線驗證 timed animatic。
+4. 根據題材選用 Remotion、Manim、HyperFrames、video-use、Seedance 或受控混合流程，最後驗證成片。
 
 核心 Skill 不綁定單一引擎。即使另一部裝置缺少影片工具，仍可完成前期規劃和故事板，並在最後一個已驗證成果停止。
 
@@ -95,7 +97,9 @@ cd "$HOME/.local/share/paco-video-production-skill"
 | HyperFrames | HTML/CSS/GSAP 動效、動態字體、UI 及 shader 轉場 | 否 |
 | video-use | 訪談、talking head、教學、多 take 原始片剪輯 | 否 |
 | Seedance prompt skill | 生成式影片鏡頭的中文 prompt packet | 否 |
-| Manim | 數學、物理與技術動畫 | 否 |
+| `manim-video` + Manim | 3Blue1Brown 風格的數學、物理、科學與技術概念動畫 | 否；概念需要公式、幾何、圖像或漸進式視覺推理時使用 |
+
+數學或物理題材不會因科目名稱而一律使用 Manim。以 slides、知識重溫、talking head、實驗錄影或軟件操作為主的影片仍會選用 Remotion 或 video-use；只有當程式化動畫能明顯改善概念理解時，才載入 `manim-video`。Manim 可製作完整的圖像主片，亦可輸出精確片段交由 Remotion／FFmpeg 加字幕、品牌、音樂及比例變體。這類可確定生成的教學畫面不使用 Seedance。
 
 ## Paco Interactive Educator
 
