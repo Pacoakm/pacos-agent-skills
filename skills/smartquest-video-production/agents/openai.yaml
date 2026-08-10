@@ -1,0 +1,4 @@
+interface:
+  display_name: "SmartQuest 教學影片製作"
+  short_description: "用 Manim 製作 DSE 教學影片，繁中書面語字幕保留英文學科名詞，動畫先行、真人後錄"
+  default_prompt: "使用 $smartquest-video-production 規劃並製作一支 SmartQuest DSE 教學影片。"

@@ -3,12 +3,12 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-SKILL_SLUGS=("paco-video-production" "paco-interactive-educator" "edge-tts" "seedance" "video-use" "manim-video")
+SKILL_SLUGS=("paco-video-production" "smartquest-video-production" "paco-interactive-educator" "edge-tts" "seedance" "video-use" "manim-video")
 DRY_RUN=0
 SKILL_SELECTION="all"
 
 usage() {
-  printf '%s\n' "Usage: ./install.sh <codex|claude|hermes|all> [paco-video-production|paco-interactive-educator|edge-tts|seedance|video-use|manim-video|all] [--dry-run]"
+  printf '%s\n' "Usage: ./install.sh <codex|claude|hermes|all> [paco-video-production|smartquest-video-production|paco-interactive-educator|edge-tts|seedance|video-use|manim-video|all] [--dry-run]"
 }
 
 fail() {
@@ -35,7 +35,7 @@ esac
 for argument in "$@"; do
   case "$argument" in
     --dry-run) DRY_RUN=1 ;;
-    paco-video-production|paco-interactive-educator|edge-tts|seedance|video-use|manim-video|all)
+    paco-video-production|smartquest-video-production|paco-interactive-educator|edge-tts|seedance|video-use|manim-video|all)
       [[ "$SKILL_SELECTION" == "all" ]] || fail "Skill selection supplied more than once"
       SKILL_SELECTION="$argument"
       ;;

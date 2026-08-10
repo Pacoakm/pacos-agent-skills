@@ -5,6 +5,7 @@
 | Skill | 用途 |
 |---|---|
 | `paco-video-production` | 從創意方向、逐秒腳本和故事板，到 Animatic、多引擎製作及成片驗證 |
+| `smartquest-video-production` | SmartQuest DSE 教學影片：Manim 動畫、繁中書面語字幕（保留英文學科名詞）、動畫先行真人後錄 |
 | `paco-interactive-educator` | 以 Puzzle → Explore → Name → Challenge 建立 Codex 原生探索式互動教材 |
 | `edge-tts` | 旁白試音、語音輸出及字幕時間 |
 | `seedance` | Seedance／即夢中文影片 prompt packet；由用戶手動生成影片 |
@@ -29,6 +30,11 @@ pacos-agent-skills/
     ├── video-use/
     ├── manim-video/
     ├── paco-video-production/
+    │   ├── SKILL.md
+    │   ├── agents/openai.yaml
+    │   ├── references/
+    │   └── scripts/
+    ├── smartquest-video-production/
     │   ├── SKILL.md
     │   ├── agents/openai.yaml
     │   ├── references/
@@ -75,6 +81,7 @@ cd "$HOME/.local/share/pacos-agent-skills"
 ```bash
 ./install.sh codex paco-interactive-educator
 ./install.sh codex paco-video-production
+./install.sh codex smartquest-video-production
 ./install.sh codex edge-tts
 ./install.sh codex seedance
 ./install.sh codex video-use
