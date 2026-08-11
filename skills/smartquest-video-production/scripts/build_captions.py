@@ -115,7 +115,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import numpy as np
 from manim import *
-from smartquest_theme import sync_frame, Stage, caption_text, wrap_caption
+from smartquest_theme import sync_frame, Stage, fit_caption
 
 sync_frame()
 
@@ -131,13 +131,10 @@ class CaptionTrack(Scene):
         for start, end, text, terms in CUES:
             if start > t:
                 self.wait(start - t)
-            # Size is fixed for every cue. If a line does not fit we WRAP, never
-            # shrink — a caption that changes size cue to cue reads as sloppy.
-            cap = caption_text(text, terms)
-            if cap.width > max_w:
-                cap = caption_text(wrap_caption(text, terms), terms)
-            if cap.width > max_w:
-                cap.scale_to_fit_width(max_w)   # last resort, should be rare
+            # Fixed size for every cue; wraps to two balanced lines when needed
+            # and NEVER scales. If something still overflows, the pacing gate in
+            # build_captions.py should have rejected the cue.
+            cap = fit_caption(text, terms, max_w)
             cap.move_to(np.array([0.0, st.caption_bottom + cap.height / 2, 0.0]))
             self.add(cap)
             self.wait(end - start)
