@@ -19,6 +19,8 @@ videos/<subject>/<nn>-<topic>/
 ├── audio/
 │   └── narration.wav        # returned by the teacher
 └── out/
+    ├── concat-draft.txt
+    ├── draft.mp4            # 480p15 draft, shown to the user at the Gate 3 approval stop
     ├── concat.txt
     ├── picture.mp4          # animation, no subtitles, no audio
     ├── subtitles.srt        # sidecar
@@ -112,6 +114,7 @@ rm -rf media/Tex media/texts    # after ANY font or TeX-template change — the 
 
 # draft — review pacing here, not resolution
 manim -ql src/script.py S01Hook S02Setup ...
+ffmpeg -y -f concat -safe 0 -i out/concat-draft.txt -c copy out/draft.mp4   # then SHOW the user
 
 # picture master
 manim -r 1920,1080 --fps 60 src/script.py S01Hook S02Setup ...   # long
@@ -155,7 +158,28 @@ Same shape as the bundled `build_storyboard.py` expects, plus the pacing verdict
 
 Use these exact strings in `video-plan.json` so a resumed session knows where it is:
 
-`planning` → `storyboard-awaiting-approval` → `draft-awaiting-approval` →
+`planning` → **`plan-awaiting-approval`** → `plan-approved` →
+**`storyboard-awaiting-approval`** → `storyboard-approved` →
+**`draft-awaiting-approval`** → `draft-approved` →
 `picture-locked` → `awaiting-teacher-recording` → `audio-received` → `verified` → `delivered`
 
-Never advance the status past what actually exists on disk.
+The three bold states are the mandatory approval stops. Each means: the artifact has been shown
+to the user and the session is stopped. Only the user's explicit approval moves it to the
+matching `*-approved` state — never your own review, never silence, never "it looks right".
+
+Never advance the status past what actually exists on disk, and never past what the user has
+actually approved.
+
+## Approval-stop artifacts
+
+Each stop has one artifact that must reach the user's eyes, not a prose summary of it.
+
+| Status | Artifact shown | How |
+|---|---|---|
+| `plan-awaiting-approval` | The full per-shot script table with 字數 and pacing verdicts, plus the lesson design | In the reply text; `brief.md` and `video-plan.json` on disk for detail |
+| `storyboard-awaiting-approval` | `storyboard/sheets/*.png` | `SendUserFile`, or exact paths if unavailable |
+| `draft-awaiting-approval` | `out/draft.mp4` | `SendUserFile`, or exact paths if unavailable |
+
+A revision at any stop regenerates the artifact and shows it again — a re-rendered draft for a
+pacing note, rebuilt sheets for a composition note, an updated plan and script table for a
+wording note. Then stop again.
