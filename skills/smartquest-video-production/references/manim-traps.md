@@ -284,6 +284,28 @@ Measured at 1080p against `frame_width` 14.222:
 exposes it as `STROKE_PER_UNIT`. Remember the stroke is centred on the outline, so only half of
 it sits outside the shape — a halo of visible thickness `t` needs `2 * 100 * t`.
 
+## 24. `Angle()` draws the reflex angle half the time
+
+`Angle(line1, line2)` sweeps **counterclockwise from line1 to line2**, so whether you get the
+angle or its reflex depends on the order you happened to pass the vertices. It renders without an
+error either way, and a reflex arc looks like a big circle round the vertex rather than anything
+obviously broken.
+
+Measured on one triangle, drawn arc against the true interior angle:
+
+| call | true | drawn |
+|---|---|---|
+| `Angle(Line(A,B), Line(A,D))` | 52.08° | **313.74°** |
+| `Angle(Line(A,B), Line(A,D), other_angle=True)` | 52.08° | 52.11° |
+| `Angle(Line(A,D), Line(A,B))` | 52.08° | 52.11° |
+
+So `other_angle=True` and swapping the operands do the same thing, and neither is "the safe one"
+— the correct choice flips with the vertex ordering.
+
+**Fix:** `angle_at(vertex, p, q)` in the theme. It takes the orientation from
+`cross(p−v, q−v).z`, then **asserts the drawn arc length really is the computed angle**, so a
+wrong arc raises instead of rendering. Never call `Angle()` directly in a lesson scene.
+
 ---
 
 ## The pattern

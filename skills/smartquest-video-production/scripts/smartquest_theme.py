@@ -352,6 +352,54 @@ def halo_text(mobject, color=None, ratio=None):
     return mobject
 
 
+# ---- referent pens ---------------------------------------------------------
+# Three more inks at the same tonal step, for figures with more angles and sides
+# than the five semantic colours can name. They carry NO role meaning — they are
+# simply further pens.
+#
+# Chosen by hue gap, not by eye. The five semantic hues sit at 17.5° (orange),
+# 162.9° (emerald), 224.3° (blue), 263.4° (violet), 345.3° (rose), and these
+# three land in the middle of the three widest gaps. Contrast measured against
+# BG: lime 4.86:1, fuchsia 6.16:1, cyan 5.22:1 — all above 4.5.
+REF_LIME = "#4D7C0F"    # hue  85.9°  fills the 145° orange→emerald gap
+REF_FUCHSIA = "#A21CAF" # hue 294.7°  fills the  82° violet→rose gap
+REF_CYAN = "#0E7490"    # hue 192.9°  fills the  61° emerald→blue gap
+
+# Hand out referent colours in this order. The minimum hue separation across all
+# eight is 30°, so they stay tellable apart. Rejected for being too close to a
+# colour already in the series: amber-700 (8° from orange), pink-700 (10° from
+# rose), teal-700 (12° from emerald), sky-700 (23° from blue).
+#
+# Past about eight the figure, not the palette, is the problem — but if a
+# question genuinely names more parts, reuse a pen on the part that is furthest
+# away on the figure and give the two different arc radii or tick counts as
+# well, so shape backs colour up.
+REF_SERIES = (GIVEN, UNKNOWN, AUX, RESULT, WARN,
+              REF_LIME, REF_FUCHSIA, REF_CYAN)
+
+
+def mtex_ref(expression, refs=None, color=INK, size=SIZE_BODY, **kw):
+    """Mathematics whose named parts carry their referent's colour.
+
+    A symbol naming something in the figure must wear that thing's colour at
+    EVERY occurrence, so the student can find it without hunting:
+
+        ANG = {"\\\\angle BAD": UNKNOWN, "BD": GIVEN, "AD": GIVEN}
+        mtex_ref(r"\\\\sin \\\\angle BAD = \\\\frac{12 \\\\sin 72^\\\\circ}{13}", ANG)
+
+    Then colour the same angle UNKNOWN on the figure and pulse the two together
+    with bind_term(). Colour here is reference, never decoration — see
+    references/on-screen-language.md.
+    """
+    refs = refs or {}
+    m = MathTex(expression, color=color, font_size=_pt(size),
+                tex_template=TEX_SANS,
+                substrings_to_isolate=list(refs.keys()), **kw)
+    for tex, c in refs.items():
+        m.set_color_by_tex(tex, c)
+    return m
+
+
 def mtex(expression, color=INK, size=SIZE_BODY, **kw):
     """Mathematics. Use this instead of MathTex — it pins the sans template and
     applies the aspect-aware type scale."""
@@ -521,6 +569,34 @@ def bind_term(figure, card, times=2, run_time=0.5):
                   Indicate(card, scale_factor=1.06, color=card.get_color(),
                            run_time=run_time)]
     return anims
+
+
+def angle_at(vertex, p, q, radius=0.7, color=None, **kw):
+    """The INTERIOR angle at `vertex` between rays to `p` and `q`.
+
+    Manim's Angle() sweeps counterclockwise from line1 to line2, so whether you
+    get the angle or its reflex depends on the order you happen to pass the
+    vertices — and it renders without an error either way. Measured on one
+    triangle: Angle(Line(A,B), Line(A,D)) drew 313.74° where the angle is
+    52.08°. See manim-traps.md #24.
+
+    This picks the orientation from the geometry and then asserts the drawn arc
+    really is the computed angle, so the failure cannot reach a render.
+    """
+    v, p, q = (np.array(x, dtype=float) for x in (vertex, p, q))
+    a, b = p - v, q - v
+    true_deg = np.degrees(np.arccos(
+        np.clip(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)), -1, 1)))
+    ang = Angle(Line(v, p), Line(v, q), radius=radius,
+                other_angle=bool(np.cross(a, b)[2] < 0),
+                color=color or LINE, stroke_width=kw.pop("stroke_width", SW_MARK),
+                **kw)
+    pts = ang.points
+    drawn = np.degrees(sum(np.linalg.norm(pts[i + 1] - pts[i])
+                           for i in range(len(pts) - 1)) / radius)
+    assert abs(drawn - true_deg) < 3.0, (
+        f"angle_at drew {drawn:.2f}° for a {true_deg:.2f}° angle")
+    return ang
 
 
 def ticks(start, end, count=1, color=None, size=0.14, gap=0.075):

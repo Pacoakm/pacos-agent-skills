@@ -392,7 +392,16 @@ Report what you verified and how. If something was not checked, say so.
 16. **Never mock up a storyboard panel by hand.** Every panel is a Manim still rendered from the
     real scene. A hand-authored SVG is laid out by a different engine, so it looks right exactly
     where the render does not, and the Gate 2 approval it earns binds nothing.
-17. **Never import a picture of text, and never `self.add()` it.** Every string on the picture —
+17. **Never leave a symbol un-findable.** Every symbol naming something in the figure wears that
+    thing's colour at every occurrence — figure, formula, and every later line — and moves with
+    it when it first appears (`mtex_ref()`, `bind_term()`). Never a multi-part expression in one
+    ink, even with no figure. Never a colour spent on emphasis: colour names a thing, and
+    marking the answer green burns a hue that could have named an angle. For geometry, label
+    every quantity the derivation uses **onto** the figure — lengths on their sides, angles as
+    coloured arcs — so the student never reads left-and-right.
+    **The test:** frozen and printed in black and white, is this frame just a marking scheme? If
+    yes, it has no reason to be a video. See `references/on-screen-language.md`.
+18. **Never import a picture of text, and never `self.add()` it.** Every string on the picture —
     中文, English, `MathTex` alike — is a Manim mobject from a theme helper, and it **enters with
     an animation** at `T_REVEAL`. No `SVGMobject`/`ImageMobject` of a label or formula; `add()` is
     only for state carried over from the previous scene. **The caption track is exempt** on both

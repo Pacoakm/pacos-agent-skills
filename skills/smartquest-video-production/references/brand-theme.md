@@ -47,9 +47,42 @@ Measure before adopting a colour. A previous `RESULT` at `#059669` looked fine a
 This is the mechanism that makes a series feel like a series. A student who has watched three
 SmartQuest videos already knows purple is the unknown before you say so.
 
-When a quantity is split into parts that must be compared (two halves of an angle, two forces,
-two half-equations), give each part its own colour and **keep that colour at every place the
-part appears**. That is what lets the viewer *see* a relationship instead of being told it.
+### Colour names a thing, and is spent on nothing else
+
+The five inks above are **roles**. On any frame that has a figure, they are handed out as
+**referents**: the given side takes `GIVEN`, the angle being solved for takes `UNKNOWN`, the
+construction takes `AUX`. One assignment carries both meanings, so role and referent never
+compete.
+
+Once assigned, that colour appears at **every** occurrence of the thing — on the figure, in every
+formula, and in every later line of the derivation. This is what lets a student *locate* a symbol
+instead of hunting for it, and it is the whole difference between a frame and a marking scheme.
+
+Two consequences:
+
+- **Never spend a colour on emphasis.** Writing the final answer in `RESULT` green says "this
+  line is the result", which its position already said — and it burns one of the five hues that
+  could have been naming an angle. If a colour does not help the viewer locate or distinguish
+  something, it is noise.
+- **Never leave a multi-part expression in one ink**, even with no figure on screen. Use
+  `mtex_ref()`, which colours named sub-expressions by referent.
+
+`REF_SERIES` is the hand-out order and runs to **eight** — the five above, then `REF_LIME`
+`#4D7C0F`, `REF_FUCHSIA` `#A21CAF`, `REF_CYAN` `#0E7490`. Those three carry no role meaning; they
+are further pens, for figures with more angles and sides than five colours can name. Take as many
+as the figure has parts rather than making parts share.
+
+They were picked by hue gap, not by eye — the semantic five sit at 17.5°, 162.9°, 224.3°, 263.4°
+and 345.3°, and these fill the three widest gaps, holding a 30° minimum separation across all
+eight. Measured contrast 4.86:1, 6.16:1, 5.22:1. Rejected for crowding a colour already in the
+series: amber-700 (8° from orange), pink-700 (10°), teal-700 (12°), sky-700 (23°). That margin
+matters — an earlier version put brand indigo beside brand purple and they were genuinely hard to
+tell apart.
+
+This is the mechanism generalised from the older rule below: when a quantity is split into parts
+that must be compared (two halves of an angle, two forces, two half-equations), give each part its
+own colour and keep it everywhere the part appears. That is what lets the viewer *see* a
+relationship instead of being told it.
 
 ## Brand signature
 

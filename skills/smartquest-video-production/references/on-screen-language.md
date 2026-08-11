@@ -106,7 +106,7 @@ it is two shots, and the figure carries across.
 | Inline symbols | encouraged — `⊥`, `∠`, `AD`, `2 : 1`. A symbol inside a sentence is not a displayed formula |
 | Displayed mathematics | **none** — if the shot needs an equation, split the shot |
 | Figure | **yes**, and it should react — see below |
-| Entrance | items appear **one at a time**, each on the narration beat that explains it (rule 17) |
+| Entrance | items appear **one at a time**, each on the narration beat that explains it (rule 18) |
 | After | cut to the figure alone and *carry out* the steps. The list is the map; the figure is the territory |
 
 ### Animate the list against the figure
@@ -157,6 +157,116 @@ This is the actual work. Each of these replaces a sentence with something the fr
 Note the fifth row. **A property that holds under variation is stated by varying it**, not by
 asserting it in words. That is what animation is for, and it is the one thing a static textbook
 cannot do.
+
+## The marking-scheme test
+
+Before a shot is approved, ask:
+
+> **If I froze this frame and printed it in black and white, would it be a marking scheme?**
+
+If yes, the shot has no reason to be a video. A marking scheme is static, monochrome and
+symbol-only; a student already has one. Everything a video can add — time, colour, motion — is
+exactly what turns a chain of symbols into an explanation.
+
+The failure looks like this: the frame shows `sin ∠BAD / BD = sin ∠ABD / AD`, all in one ink, and
+the figure sits alongside with only its vertices labelled. To follow it the student must hold
+`∠BAD` in memory, scan the figure, find which of several angles it is, come back, and repeat for
+every symbol in the line. That is not reading mathematics — that is doing a lookup exercise,
+and it is the reason a correct, complete, well-typeset frame can still teach nothing.
+
+## Colour is reference, not decoration
+
+**A colour names a thing.** Every occurrence of that thing — on the figure, in every formula, in
+every later line of the derivation — wears the same colour, so the student locates it instead of
+searching for it.
+
+| | |
+|---|---|
+| `∠BAD` orange in the formula **and** the arc at `B` drawn orange in the figure | ✅ the symbol is findable |
+| `∠BAD ≈ 61.4°` in green because it is the answer | ❌ green says "this line is the result", which the student already knows from its position. It does nothing to help them find `∠BAD` |
+| The whole derivation in one ink | ❌ every symbol costs a lookup |
+
+That second row is the trap worth naming: **colour spent on emphasis is colour that can no longer
+carry reference.** If a colour does not help the viewer locate or distinguish a thing, it is
+noise, and it also burns one of the few hues the frame has.
+
+### How referent colour and the semantic palette fit together
+
+The five inks in `brand-theme.md` are roles — `GIVEN`, `UNKNOWN`, `RESULT`, `WARN`, `AUX`. Roles
+and referents mostly coincide: assign the referent the ink of its role and one assignment carries
+both meanings.
+
+They stop coinciding as soon as two referents share a role, which is the common case — a question
+usually gives you three things, not one. The rule then is:
+
+1. **The unknown always takes `UNKNOWN` orange.** That convention is worth more than any other,
+   because it holds across the whole library: a student who has watched three SmartQuest videos
+   knows before you say so which thing is being solved for.
+2. **Everything else takes the remaining inks in `REF_SERIES` order, one per referent** — they are
+   simply distinct pens at that point, not role claims.
+3. **Role beyond "unknown" is shown by position**, not colour: the givens are the things already
+   written on the figure when the shot opens; the result is the last line.
+
+So in a sine-rule shot with `BD = 12`, `AD = 13`, `∠ABD = 72°` and `∠BAD` to find: `∠BAD` is
+orange, and `BD`, `AD`, `∠ABD` take blue, violet and green — three givens, three pens, all four
+findable.
+
+`REF_SERIES` is the hand-out order, and it runs to **eight**: the five semantic inks, then
+`REF_LIME`, `REF_FUCHSIA`, `REF_CYAN`. A figure with many angles and sides needs many pens, so
+take as many as the figure has parts — do not force parts to share a colour to stay inside five.
+
+The three extras were chosen by hue gap rather than by eye: the semantic five sit at 17.5°,
+162.9°, 224.3°, 263.4° and 345.3°, and these land in the middle of the three widest gaps, keeping
+a minimum separation of 30° across all eight. Contrast measured against the page: 4.86:1, 6.16:1,
+5.22:1. Colours rejected for sitting too close to one already in the series: amber-700 (8° from
+orange), pink-700 (10° from rose), teal-700 (12° from emerald), sky-700 (23° from blue).
+
+Past about eight it is the figure that is overloaded rather than the palette. If a question
+genuinely names more parts than that, reuse a pen on the part that is **furthest away on the
+figure**, and give the two different arc radii or tick counts as well so shape backs colour up.
+
+### Colour applies with no figure at all
+
+A formula-only frame still needs it. In a determinant expansion, every `x₁ y₂ z₃` term carries the
+colour of the vector each factor came from, so the student sees the pattern of the expansion
+rather than a row of subscripts. Use `mtex_ref()`:
+
+```python
+REFS = {r"\angle BAD": UNKNOWN, r"\angle ABD": AUX, "BD": GIVEN, "AD": RESULT}
+mtex_ref(r"\frac{\sin \angle BAD}{BD} = \frac{\sin \angle ABD}{AD}", REFS)
+```
+
+Never leave a multi-part expression in a single ink.
+
+## Every symbol must be findable in the figure
+
+Colour makes the link visible; **animation makes it unmissable.** When a symbol first appears,
+the thing it names moves at the same instant:
+
+```python
+self.play(Write(line), *bind_term(angle_arc_at_B, line[idx_of_BAD]))
+```
+
+`bind_term()` is not only for term cards — it binds any two mobjects that are the same thing.
+Use it whenever a symbol enters, and again whenever the derivation returns to it after a gap.
+
+### Geometry: label onto the figure, not beside it
+
+For a geometry lesson the student should **never have to look left and right**. Before the
+derivation begins, put on the figure every quantity the derivation will use:
+
+- every angle it names, drawn as an arc in that angle's colour
+- every length it names, written **on** its side in that side's colour — `12`, `13`, not only `BD`
+- every constructed point, with its own label
+- equal parts marked with `ticks()`, right angles with a right-angle mark
+
+Then a line like `sin ∠BAD = 12 sin 72° / 13` can be read straight off the picture, because `12`,
+`72°` and `13` are all visible on the figure in the same colours. The formula stops being a
+separate document to cross-reference and becomes a caption to what the student is already looking
+at.
+
+If the figure is too crowded to hold all of it, that is the density budget talking (`pacing.md`,
+≤ 6 blocks): show the sub-triangle the step actually uses, or split the step.
 
 ## Binding a colour to a term
 

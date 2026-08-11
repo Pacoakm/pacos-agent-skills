@@ -89,7 +89,7 @@ Both variants come from the same cue data, so they can never disagree.
 
 ### Captions are exempt from the Manim rules
 
-Everything on a lesson frame must be a Manim mobject that enters with an animation (hard rule 17).
+Everything on a lesson frame must be a Manim mobject that enters with an animation (hard rule 18).
 Captions are **not** on the frame — they are a separate track composited afterwards — so neither
 rule applies to them:
 
