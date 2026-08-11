@@ -26,6 +26,7 @@ will be marked on. A student who has watched it carried by a Chinese sentence ha
 | **Figure labels** | point names, short object names | `A`, `B`, `C`, `O`, `M` |
 | **Term cards** | the English DSE term alone, bound to a colour | `median`, `inscribed angle` |
 | **DSE reasons** | the marker's exact wording, with the step it justifies | `ext. ∠ of △` |
+| **A step list** | **only on its own slide** — see below | `① 先找出兩個平面的交線。` |
 | **Explanatory prose** | **never** | ~~較長一段連着頂點~~, ~~永遠在 triangle 內~~, ~~三條 median 的交點~~ |
 
 A term card is the term and nothing else. `median` is a term card; 「三條 median 的交點」 is a
@@ -44,6 +45,57 @@ If a shot needs a sentence to make sense, the sentence goes in the subtitle and 
 a better picture**, not smaller type. That is the whole rule.
 
 Count it in the storyboard, before anything is animated.
+
+## The one exception: a step list, on its own slide
+
+An **enumerated procedure** is the one thing narration and subtitles genuinely cannot carry. A
+subtitle is linear and transient: by the time the student hears step ③ the words of step ① are
+gone, so they never see the *shape* of the procedure — how many steps there are, which one they
+are in, what is still coming. A list persists and shows all of that at once.
+
+So a numbered or bulleted list of steps, conditions or criteria **may** be on screen, under one
+condition:
+
+> **When the list is on screen, the frame is a slide.** No figure, no graph, no displayed
+> equation. Nothing else competes with it.
+
+This is the same principle as the rest of this document, not an exception to it. Prose is banned
+beside a figure because it steals the eyes from the figure. A slide has no figure to steal from —
+the words *are* the content of the shot. What is forbidden is the hybrid: a list of sentences
+parked next to a diagram, so the student can do neither properly.
+
+### Rules for a list slide
+
+| | |
+|---|---|
+| Items | ≤ 5. Beyond that it is a reference card, not a teaching beat |
+| Each item | ≤ 20 字, one line, no sub-clauses |
+| Inline symbols | fine and encouraged — `⊥`, `∠`, `AD`, `2 : 1`. A symbol inside a sentence is not a displayed formula |
+| Displayed mathematics | **none** — if the shot needs an equation, it is not a list slide |
+| Figure | **none** — not even dimmed in the background |
+| Entrance | items appear **one at a time**, each on the narration beat that explains it (rule 17) |
+| After | cut to the figure and *carry out* the steps. The list is the map; the figure is the territory |
+
+Revealing the items one by one is what makes the list teaching rather than a wall of text: the
+student is never reading ahead of the teacher, and the item currently arriving is the item being
+spoken. Keep the completed list on screen to the end of the shot.
+
+The ≤ 12 字 budget above does **not** apply to a list slide — it is the budget for text sharing a
+frame with a picture, and a slide has no picture. Every other rule still applies: Manim text from
+the theme helpers, 書面語, English subject terms, and the reading budget, so the shot must be long
+enough to read the whole list *and* hear the narration.
+
+### When it is not a list
+
+Do not reach for a list to escape the prose ban. Three conditions to check:
+
+1. **Is it genuinely ordered or enumerated?** ①②③ that must happen in sequence, or a fixed set of
+   criteria — not three loose remarks with numbers stuck on them.
+2. **Would losing the order lose the meaning?** If the items could be spoken in any order, they
+   are prose, and they belong in the narration.
+3. **Does the figure need to be gone?** If the student must see the diagram while reading, the
+   design is wrong — either the point belongs on the figure as mathematics, or it is a separate
+   slide beat.
 
 ## Translating prose into mathematics
 

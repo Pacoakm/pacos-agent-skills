@@ -70,7 +70,16 @@ Per shot, on the picture: **explanatory prose = 0 字**, and title + labels + te
 
 When a frame seems to need a sentence, the frame needs a better picture, not smaller type. A
 property that holds under variation is shown **by varying it**, which is the one thing a textbook
-cannot do. Full rules, the translation table and a worked before/after in
+cannot do.
+
+**One exception — the step list.** An enumerated procedure is the thing narration genuinely cannot
+carry: a subtitle is linear and transient, so by step ③ the student has lost step ① and never sees
+the shape of the procedure. A numbered list may be on screen, but **only as its own slide** — no
+figure, no graph, no displayed equation, ≤ 5 items, revealed one at a time on the narration beat
+that explains each. Then cut to the figure and carry the steps out. What is banned is the hybrid:
+sentences parked beside a diagram, where the student can do neither properly.
+
+Full rules, the translation table and a worked before/after in
 `references/on-screen-language.md`.
 
 ## Ask only what is missing
@@ -177,11 +186,16 @@ A still proves composition, never motion (`manim -s` skips animations entirely �
 Check across adjacent panels: does the figure persist, does screen direction hold, does the
 colour meaning stay constant, does each shot's end state match the next shot's start state.
 
-**This is where on-screen prose gets caught.** Per panel, count the non-mathematical characters
-on the picture. Over 12 字, or any complete sentence, means redesign the panel — not shrink the
-type. For every sentence that is not there, name where it went (subtitle, narration, or an
-animated beat), and for every term card, name the shot that bound it to its colour. Then ask of
-each remaining word: *would this panel still teach without it?* If yes, delete it.
+**This is where on-screen prose gets caught.** Check each panel against its `kind`:
+
+- **`figure` panels** — count the non-mathematical characters. Over 12 字, or any complete
+  sentence, means redesign the panel, not shrink the type.
+- **`slide` panels** — a step list and nothing else. If a figure, graph or displayed equation
+  shares the frame with the list, split it into two shots.
+
+For every sentence that is not there, name where it went (subtitle, narration, or an animated
+beat), and for every term card, name the shot that bound it to its colour. Then ask of each
+remaining word: *would this panel still teach without it?* If yes, delete it.
 See `references/on-screen-language.md`.
 
 ### Show the user and stop for approval
@@ -360,10 +374,12 @@ Report what you verified and how. If something was not checked, say so.
 14. **Never leave a label sitting on a line.** Move it into clear space first — with a hairline
     leader to its point if it must reach one — and halo it only where overlap is genuinely
     unavoidable. `label()` haloes by default. See `references/brand-theme.md`.
-15. **Never put an explanatory sentence on the picture.** The frame gets mathematics, figures,
+15. **Never put an explanatory sentence beside a picture.** The frame gets mathematics, figures,
     labels, term cards and DSE reasons; explanation goes to the subtitle and the narration. If a
-    frame seems to need a sentence, it needs a better picture. See
-    `references/on-screen-language.md`.
+    frame seems to need a sentence, it needs a better picture. The one exception is an
+    **enumerated step list**, which narration cannot carry — and it gets its **own slide**, with
+    no figure and no displayed equation. Never the hybrid of a list parked next to a diagram.
+    See `references/on-screen-language.md`.
 16. **Never mock up a storyboard panel by hand.** Every panel is a Manim still rendered from the
     real scene. A hand-authored SVG is laid out by a different engine, so it looks right exactly
     where the render does not, and the Gate 2 approval it earns binds nothing.

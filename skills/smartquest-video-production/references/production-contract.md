@@ -77,6 +77,7 @@ the implementation.
       "transitionIn": "Cold open",
       "transitionOut": "...",
       "knowledgePoint": "...",
+      "kind": "figure",
       "onScreenText": ["1 · centroid", "median", "AO : OM = 2 : 1", "A", "B", "C", "O", "M"],
       "movedToNarration": ["較長一段連着頂點 → AO : OM = 2 : 1 on the frame",
                            "永遠在 triangle 內 → S06, vertex is dragged"],
@@ -102,11 +103,16 @@ Check these; do not assume them.
 5. For each shot: `字數 ≤ (end − start) × 4.0`, counting a Latin word as 2 字.
 6. For each shot: `stillSeconds ≥ (end − start) × 0.25`.
 7. Shot IDs are stable after storyboard approval.
-8. `onScreenText` lists every string the picture shows. Its **non-mathematical** entries — title,
-   labels, term cards — total ≤ 12 字 (Latin word = 2 字), and none of them is a sentence.
-   Mathematics and DSE reasons are exempt and uncounted. Every sentence that is not on the frame
-   has an entry in `movedToNarration` saying where it went.
-   See `references/on-screen-language.md`.
+8. `kind` is `"figure"` or `"slide"`, and it decides which text budget applies.
+   - `"figure"` — `onScreenText`'s **non-mathematical** entries (title, labels, term cards) total
+     ≤ 12 字 (Latin word = 2 字), and none of them is a sentence. Mathematics and DSE reasons are
+     exempt and uncounted.
+   - `"slide"` — an enumerated step list and nothing else: ≤ 5 items, each ≤ 20 字 and one line,
+     no figure and no displayed equation anywhere in the shot. Inline symbols inside an item
+     (`⊥`, `∠`, `AD`) are fine and do not make it a formula.
+
+   Either way, every sentence that is *not* on the frame has an entry in `movedToNarration`
+   saying where it went. See `references/on-screen-language.md`.
 9. A scene's end state equals the next scene's start state — figure **and** on-screen text.
    Build both from a shared helper so they cannot drift.
 10. `narration.status` is `awaiting-teacher-recording` until a real file exists at
