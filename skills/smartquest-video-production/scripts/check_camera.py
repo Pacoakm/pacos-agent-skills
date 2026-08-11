@@ -35,7 +35,20 @@ from pathlib import Path
 
 def project(p, phi_deg, theta_deg):
     """Manim ThreeDCamera projection: phi from +z, theta azimuth. Returns (x, y)
-    on screen. Orthographic, which is what ThreeDScene uses by default."""
+    on screen.
+
+    ORTHOGRAPHIC APPROXIMATION. ThreeDScene's camera is actually PERSPECTIVE
+    (focal_distance=20) — see manim-traps.md #18. That is fine here, because this
+    scan compares relative separations to find a non-degenerate angle, and the
+    perspective factor is a near-uniform scale over a compact solid.
+
+    It is NOT fine for two things:
+      - predicting exact on-screen position or frame fill -> scripts/check_framing.py,
+        which projects through a real ThreeDCamera;
+      - concluding that a line parallel to the view axis collapses to a point. Under
+        the real perspective camera it does not, which is why an edge-on 'look along
+        the line of intersection' shot needs focal_distance ~90.
+    """
     phi, theta = math.radians(phi_deg), math.radians(theta_deg)
     right = (-math.sin(theta), math.cos(theta), 0.0)
     up = (-math.cos(phi) * math.cos(theta), -math.cos(phi) * math.sin(theta),

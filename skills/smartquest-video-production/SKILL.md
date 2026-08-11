@@ -13,11 +13,34 @@ handoff, recording returned, audio mux, verified delivery.
 
 `video-plan.json` is the single timing authority from Gate 1 to delivery.
 
+## Three mandatory approval stops
+
+Gates 1, 2 and 3 each end by **showing the user the actual work and stopping**. These are not
+optional checkpoints and not "unless the user asked for an uninterrupted run" — a request to
+"just build it" still stops at all three. Rendering the master before the user has seen and
+approved the script, the storyboard and the draft wastes the expensive part of the pipeline on
+a lesson that may be wrong.
+
+| Stop | What the user sees | What they are approving |
+|---|---|---|
+| End of Gate 1 | `brief.md` + the full narration/subtitle script + the shot timeline | The teaching, the wording, the timing |
+| End of Gate 2 | The rendered storyboard sheets, as files | Every frame's composition and continuity |
+| End of Gate 3 | The concatenated draft video, as a file | The real motion and pacing |
+
+At each stop: present the work, state what you want checked, set the matching status in
+`video-plan.json`, and **stop the turn**. Do not proceed to the next gate on your own judgement,
+and never treat silence, a partial comment, or your own confidence as approval.
+
+When the user comes back with changes instead of approval, apply them, **regenerate and show the
+artifact again**, and stop again. Loop until they approve. A changed script means a changed
+`video-plan.json` first; a changed storyboard means re-rendered panels; a changed draft means an
+actual re-render, not a description of what would change.
+
 ## What is already decided — do not re-ask
 
 | | Locked |
 |---|---|
-| Animation engine | **Manim Community Edition.** No Remotion, HyperFrames, HTML/CSS/JS, After Effects. ManimGL only with permission — see rule 8 |
+| Animation engine | **Manim Community Edition.** No Remotion, HyperFrames, HTML/CSS/JS, After Effects. ManimGL only with permission — see rule 9 |
 | Narration | **A human teacher records it.** Never TTS. This skill writes the script, never the audio |
 | Order of work | **Picture first, voice second.** Animation and subtitles are finished, then the teacher records to picture |
 | Subtitle language | 繁體中文**書面語**, with subject terms kept in **English** (see `references/narration-and-subtitles.md`) |
@@ -79,6 +102,28 @@ Save `video-plan.json` per `references/production-contract.md`. Timeline invaria
 `start`, first shot starts at `0`, last shot ends exactly at `durationSeconds`, no gaps, no
 overlaps, every duration a whole number of frames at 60 fps (a multiple of 0.05 s is always safe).
 
+### 4. Show the user and stop for approval
+
+Nothing gets animated until the user has read the lesson. Present, in the reply itself so it can
+be read without opening files:
+
+- **The lesson** — learning objective, prerequisites, the misconception, where the aha lands, the
+  DSE reasons, and the stated limitations. Say which formulas and numbers you verified and how.
+- **The full script** — every shot in order, as a table: shot ID, timecode, allotted seconds, the
+  exact 書面語 subtitle text, 字數, and the pacing verdict against both the reading budget
+  (`字數 ≤ 秒數 × 4.0`) and the breathing budget (`stillSeconds ≥ 秒數 × 0.25`).
+- **The timeline** — section structure, total duration, and the knowledge-point count.
+- **Open questions** — anything you decided by assumption rather than instruction.
+
+Also point at `brief.md` and `video-plan.json` on disk for the full detail.
+
+Ask the user to check the teaching and the wording specifically — a wrong DSE reason or an
+awkward 書面語 line is far cheaper to fix here than after a storyboard exists. Set
+`"status": "plan-awaiting-approval"` and **stop**.
+
+On revisions: edit `video-plan.json` and the script, re-run the pacing check, show the changed
+shots again, and stop again.
+
 ## Gate 2 — Storyboard
 
 One frame per shot, authored as exact SVG or rendered as a Manim still, then assembled into
@@ -89,7 +134,22 @@ the pacing verdict**.
 Check across adjacent panels: does the figure persist, does screen direction hold, does the
 colour meaning stay constant, does each shot's end state match the next shot's start state.
 
-**Stop for approval here** unless the user asked for an uninterrupted run.
+### Show the user and stop for approval
+
+Deliver the rendered sheets as **files the user can actually look at** — send
+`storyboard/sheets/*.png` with `SendUserFile`, or if that is unavailable give the exact paths.
+Do not describe the panels in prose and call that a review; the point of a storyboard is that it
+is seen.
+
+Alongside the sheets, state: the shot count, the total duration, which panel is the aha, and any
+composition you are unsure about. Ask the user to check framing, label placement, and whether
+each panel reads at a glance.
+
+Set `"status": "storyboard-awaiting-approval"` and **stop**. This applies even when the user
+asked for an uninterrupted run.
+
+On revisions: re-author the affected frames, rebuild the sheets with `build_storyboard.py`, send
+them again, and stop again.
 
 ## Gate 3 — Silent draft render
 
@@ -97,13 +157,36 @@ colour meaning stay constant, does each shot's end state match the next shot's s
 manim -ql src/script.py <every scene>
 ```
 
-Draft quality is 854×480 @15 fps and costs seconds per scene. Concatenate it and review the
-real motion: sweep speeds, dwell after each reveal, whether a student can read every line in
-time, whether any beat rushes past a knowledge point.
+Draft quality is 854×480 @15 fps and costs seconds per scene. Concatenate the scenes into a
+single reviewable file:
 
-Fix timing in `video-plan.json` first, then in the scenes. Never let the two disagree.
+```bash
+ffmpeg -y -f concat -safe 0 -i out/concat-draft.txt -c copy out/draft.mp4
+```
 
-**Stop for approval here.**
+Watch it yourself first, against the Gate 3 questions in `references/pacing.md`: sweep speeds,
+dwell after each reveal, whether a student can read every line in time, whether any beat rushes
+past a knowledge point, whether the teacher could speak the script over this without rushing.
+Fix what you already know is wrong before showing it — the user's review is not your first pass.
+
+### Show the user and stop for approval
+
+**Send `out/draft.mp4` to the user as a file** with `SendUserFile`, so they watch the motion
+rather than read your account of it. If file delivery is unavailable, give the exact path and say
+it must be watched before Gate 4 begins. A written summary is never a substitute for the video.
+
+With it, state: what you already fixed, which beats you are unsure about, the timecode of the
+aha, and that draft resolution is 854×480 @15 fps so only pacing and motion are under review
+here — not sharpness, not final type rendering.
+
+Invite either an approval or a list of problems with timecodes. Set
+`"status": "draft-awaiting-approval"` and **stop**.
+
+On revisions: fix timing in `video-plan.json` first, then the scenes — never let the two
+disagree — then **re-render the affected scenes, rebuild `out/draft.mp4`, and send the new video
+again**. Stop again. Repeat until the user approves. Never answer a pacing note with a
+description of the change instead of a re-render; the whole point of this gate is that motion
+problems are only visible in motion.
 
 Draft resolution hides real defects. Do not conclude the picture is correct from a draft; the
 full-resolution checks in Gate 4 exist because low-resolution review misses them.
@@ -195,20 +278,31 @@ Report what you verified and how. If something was not checked, say so.
 
 ## Hard rules
 
-1. **Never claim audio exists.** No TTS, no placeholder voice, no "narration added".
-2. **Never invent a DSE reason or a formula.** Verify against the syllabus wording.
-3. **Never let the plan and the render disagree.** `video-plan.json` wins; update it first.
-4. **Never bake subtitles into lesson scenes.** They live on the caption track.
-5. **Never change a colour's meaning** once assigned inside a video, or across a series.
-6. **Never hard-code 16:9 coordinates.** Use the layout tokens so shorts work from the same code.
-7. **Stop at the last verified artifact** when a dependency, asset, or decision is missing, and
+1. **Never skip an approval stop.** Gates 1, 2 and 3 each end by showing the user the actual
+   artifact — the script, the storyboard sheets, the draft video — and stopping the turn. No
+   phrasing of the request removes these three stops, and no amount of confidence in the work
+   substitutes for the user's yes.
+2. **Never claim audio exists.** No TTS, no placeholder voice, no "narration added".
+3. **Never invent a DSE reason or a formula.** Verify against the syllabus wording.
+4. **Never let the plan and the render disagree.** `video-plan.json` wins; update it first.
+5. **Never bake subtitles into lesson scenes.** They live on the caption track.
+6. **Never change a colour's meaning** once assigned inside a video, or across a series.
+7. **Never hard-code 16:9 coordinates.** Use the layout tokens so shorts work from the same code.
+8. **Stop at the last verified artifact** when a dependency, asset, or decision is missing, and
    state exactly what is needed.
-8. **Never switch to ManimGL silently.** It is installed and it coexists with ManimCE, but it is
+9. **Never switch to ManimGL silently.** It is installed and it coexists with ManimCE, but it is
    a different, undocumented API. Name the shot, say why ManimCE cannot do it, and wait for a
    yes. See `references/engines-and-plugins.md`.
-9. **Never trust a plugin's output.** A plugin is third-party code rendering examinable content.
-   `manim-chemistry`'s `ChemicalFormula` renders `Ca(OH)2` as **CaO** — no error, no warning.
-   Render it, check it against the syllabus, or write it yourself with `mtex()`.
+10. **Never trust a plugin's output.** A plugin is third-party code rendering examinable content.
+    `manim-chemistry`'s `ChemicalFormula` renders `Ca(OH)2` as **CaO** — no error, no warning.
+    Render it, check it against the syllabus, or write it yourself with `mtex()`.
+11. **Never verify camera work on `manim -s`.** A still render skips animations and applies only
+    end states, so it looks correct while the movie is wrong. Check the rendered movie, and
+    confirm an extracted frame is really the frame you think — `ffmpeg -ss` before `-i`
+    silently returns a keyframe. See `references/manim-traps.md` #17 and #20.
+12. **Never animate `frame_center`.** `move_camera(frame_center=...)` does not redraw the figure;
+    everything stays drawn at the old centre while the camera reports the new one. Re-centre by
+    shifting the figure. See `references/manim-traps.md` #16.
 
 ## Bundled resources
 
@@ -222,5 +316,8 @@ Report what you verified and how. If something was not checked, say so.
 - `scripts/smartquest_theme.py` — importable Manim theme: colours, fonts, layout, helpers.
 - `scripts/build_captions.py` — plan → caption scene + `.srt` + pacing report.
 - `scripts/check_camera.py` — rejects degenerate 3D camera angles before rendering.
+- `scripts/check_framing.py` — projects 3D camera keyframes through a real `ThreeDCamera`:
+  frame fill, off-screen elements, caption-band intrusions, and the angle a shot will actually
+  render. Seconds to run, and the only honest way to size a 3D shot.
 - `scripts/build_storyboard.py` — review sheets from a storyboard manifest.
 - `scripts/verify_master.py` — the final quality gate, as a runnable check.

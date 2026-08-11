@@ -93,6 +93,22 @@ rm -rf media/Tex media/texts
 
 Never set DM Sans below `DISPLAY_MIN`. If a label is small, it is `body()` or `MathTex`.
 
+### Verify the fonts exist before you rely on them
+
+Both faces are installed on this machine — DM Sans via `brew install --cask font-dm-sans`
+(2026-08-11), PingFang HK ships with macOS. Neither is guaranteed elsewhere, and **Pango
+silently substitutes a missing face** rather than failing, so a title renders in the wrong font
+with no warning. Check first:
+
+```python
+import manimpango
+have = set(manimpango.list_fonts())
+assert {"DM Sans", "PingFang HK"} <= have, sorted(have)
+```
+
+If DM Sans is missing and cannot be installed, use no display type at all and say so — do not
+let `title()` fall back to an unknown face.
+
 `SIZE_MIN` is 22. Nothing smaller survives a phone screen. Captions are `SIZE_CAPTION` = 23 —
 small enough to stay out of the way, large enough to read on a phone.
 
