@@ -125,6 +125,116 @@ figure that is simply wrong to read. A cuboid at `phi=65, theta=35` collapses A 
 
 **Fix:** `scripts/check_camera.py` before rendering. See `references/3d-geometry.md`.
 
+## 16. `move_camera(frame_center=...)` does not redraw the figure
+
+The worst one found so far. After a `move_camera()` that animates `frame_center`, every mobject
+is drawn at the position implied by the **previous** `frame_center`, and stays wrong for the
+rest of the scene.
+
+What makes it vicious is that the camera is **not** wrong. Per-frame reads of
+`get_phi()/get_theta()/get_zoom()/frame_center` all give the expected values, and
+`camera.points_to_pixel_coords()` returns the **correct** pixel. Only the rasterised output is
+wrong — by exactly the stale `frame_center`, measured at 189 px in an 854-wide frame.
+
+Isolated by bisection on an identical scene, changing only how the camera arrived:
+
+| arrival | error |
+|---|---|
+| `set_camera_orientation(...)` directly | < 1.5 px |
+| same state via `move_camera(frame_center=…)` | **189 px** |
+
+**None of these help:** `--disable_caching`; keeping `camera._frame_center` in the scene; a
+no-op updater on `mobjects[0]`; an `always_redraw` first mobject; passing `frame_center` as a
+Mobject; driving `frame_center` from an updater. Setting it *outside* any `play()`/`wait()`
+works, but that is an instant jump, not an animation.
+
+**Fix: never animate `frame_center`.** Keep it at ORIGIN for every keyframe and re-centre by
+shifting the figure — geometrically identical, and because the mobjects are themselves animated
+Manim redraws them correctly.
+
+```python
+def shift_figure(self, target):
+    """Re-centre by moving the figure. Returns the animations to do it.
+
+    Mobjects already on screen are animated, so Manim redraws them. Ones not yet
+    revealed are shifted instantly — they are invisible and only need to end up
+    consistent with the rest.
+    """
+    target = np.array(target, dtype=float)
+    delta = target - self.fig_offset
+    self.fig_offset = target
+    if not np.any(delta):
+        return []
+    anims = []
+    for m in self.fig.all:           # Group holding EVERY mobject in the video
+        if m in self.mobjects:
+            anims.append(m.animate.shift(delta))
+        else:
+            m.shift(delta)
+    return anims
+
+self.move_camera(**CAM_EDGE, added_anims=self.shift_figure(OFF_EDGE), run_time=1.1)
+```
+
+Two consequences: build every mobject up front inside one `Group` so late reveals carry the
+accumulated offset, and add the current offset to anything computed from raw world constants
+during the shot (`interpolate(PA, PF, t.get_value()) + self.fig_offset`).
+
+## 17. `manim -s` hides every animation bug
+
+`-s` skips animations and only applies end states, so a still render of a scene with trap 16
+looks **perfectly correct** while the movie is wrong. That is how trap 16 survived several
+rounds of "I checked the last frame and it's fine."
+
+**Fix:** verify camera work on the rendered **movie**. A still proves the end state, never the
+path taken to it.
+
+## 18. `ThreeDScene`'s camera is perspective, not orthographic
+
+`focal_distance` defaults to 20. A line parallel to the view axis but offset from it therefore
+converges on a vanishing point instead of collapsing to a point.
+
+So the "look along the line of intersection to reveal the angle between two planes" shot — the
+climax of most DSE solid-geometry questions, Gate D in `references/3d-geometry.md` — **does not
+work at default settings.** The points that should coincide stay visibly apart and the angle
+never reads.
+
+**Fix:** `focal_distance=90` for that shot, which is near-orthographic. Use `phi=89°` rather
+than exactly 90° to avoid the pole; the error is negligible (a rendered 21.351° against a true
+21.353°). Measured: the line of intersection went from visibly spread to 0.39 scene units.
+
+## 19. `project_points()` uses a cached rotation matrix
+
+If you project points yourself to measure a shot, call `reset_rotation_matrix()` after setting
+the angles. Otherwise every projection is computed against the camera's **initial** orientation
+and you get confident, precise, wrong numbers. Manim calls it internally from
+`capture_mobjects`, so rendering is unaffected — only your measurements are.
+
+The tell: two points sharing a world x,y but differing in z projecting to the *same* screen
+position. If you see that, you forgot the call.
+
+## 20. `ffmpeg -ss` before `-i` snaps to a keyframe
+
+On a `-c copy` concat the keyframes sit at scene starts, so "extract the frame at 14.9 s"
+silently returned a frame from ≈10.5 s — and invented a scene-continuity defect that did not
+exist, which then cost an hour of debugging.
+
+```bash
+ffmpeg -i in.mp4 -ss 14.9 -frames:v 1 out.png     # accurate (output seeking)
+ffmpeg -ss 14.9 -i in.mp4 -frames:v 1 out.png     # WRONG on concatenated files
+```
+
+When it matters, decode all frames (`ffmpeg -i in.mp4 /tmp/f%04d.png`) and index them. Before
+believing a defect you found in an extracted still, confirm the frame is the one you think it is.
+
+## 21. Draft frame-rate rounding looks like a timing bug
+
+At 15 fps (`-ql`) a 0.1 s beat is 1.5 frames, so a scene planned at 5.000 s renders at 5.066 s.
+That is a draft artefact, not a timing error — at 60 fps every multiple of 0.05 s is a whole
+number of frames and the scenes land exactly. Do not "fix" draft drift.
+
+Keep every `run_time` and `wait` a multiple of 0.05 s and check the timeline at 60 fps.
+
 ---
 
 ## The pattern

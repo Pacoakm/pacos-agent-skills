@@ -296,6 +296,13 @@ Report what you verified and how. If something was not checked, say so.
 10. **Never trust a plugin's output.** A plugin is third-party code rendering examinable content.
     `manim-chemistry`'s `ChemicalFormula` renders `Ca(OH)2` as **CaO** — no error, no warning.
     Render it, check it against the syllabus, or write it yourself with `mtex()`.
+11. **Never verify camera work on `manim -s`.** A still render skips animations and applies only
+    end states, so it looks correct while the movie is wrong. Check the rendered movie, and
+    confirm an extracted frame is really the frame you think — `ffmpeg -ss` before `-i`
+    silently returns a keyframe. See `references/manim-traps.md` #17 and #20.
+12. **Never animate `frame_center`.** `move_camera(frame_center=...)` does not redraw the figure;
+    everything stays drawn at the old centre while the camera reports the new one. Re-centre by
+    shifting the figure. See `references/manim-traps.md` #16.
 
 ## Bundled resources
 
@@ -309,5 +316,8 @@ Report what you verified and how. If something was not checked, say so.
 - `scripts/smartquest_theme.py` — importable Manim theme: colours, fonts, layout, helpers.
 - `scripts/build_captions.py` — plan → caption scene + `.srt` + pacing report.
 - `scripts/check_camera.py` — rejects degenerate 3D camera angles before rendering.
+- `scripts/check_framing.py` — projects 3D camera keyframes through a real `ThreeDCamera`:
+  frame fill, off-screen elements, caption-band intrusions, and the angle a shot will actually
+  render. Seconds to run, and the only honest way to size a 3D shot.
 - `scripts/build_storyboard.py` — review sheets from a storyboard manifest.
 - `scripts/verify_master.py` — the final quality gate, as a runnable check.

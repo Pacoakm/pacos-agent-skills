@@ -67,6 +67,31 @@ This is both the pedagogical climax and a test: **if the flat view is not the cl
 triangle the marking scheme expects, the 3D construction is wrong.** Do this before the
 production render.
 
+**Two things make this shot fail silently — both cost an hour each. Read them before writing it.**
+
+**1. Raise `focal_distance`.** ThreeDScene's camera is perspective (`focal_distance=20`), so a
+line parallel to the view axis but offset from it converges on a vanishing point instead of
+collapsing to a point. Looking along the line of intersection therefore does *not* square the
+plane to the lens at default settings — the points that should coincide stay visibly apart and
+the angle never reads. Use `focal_distance=90` (near-orthographic) for this shot, and `phi=89°`
+rather than exactly 90° to avoid the pole. Measured: a rendered 21.351° against a true 21.353°.
+
+**2. Get the azimuth from the geometry, not by eye.** To look along a line, `theta` must equal
+that line's azimuth. A uniform scale-and-translate from world to scene coordinates preserves
+directions, so the world azimuth *is* the scene azimuth — compute it:
+
+```python
+v = P_far - P_near
+BF_AZIM = np.degrees(np.arctan2(v[1], v[0]))       # then theta = BF_AZIM * DEGREES
+```
+
+Verify the shot before rendering with `check_framing.screen_angle()` (the angle as it will
+actually render) and `check_framing.collapse()` (how far apart two points that should coincide
+land — 0 is perfectly edge-on).
+
+**Do not re-centre the shot with `move_camera(frame_center=...)`.** It does not redraw the
+figure — see `manim-traps.md` #16. Shift the figure instead.
+
 ## Gate E — verify occlusion, never assume it
 
 ManimCE sorts by mobject, not per pixel.
