@@ -42,16 +42,14 @@ AUX = "#6D28D9"         # violet-700   construction, first-use terms    6.92:1
 BRAND_FROM = "#4B60D6"  # gradient start — brand primary
 BRAND_TO = "#9747FF"    # gradient end
 
-# Captions follow the Reels/Shorts/TikTok convention: heavy white type with a
-# dark outline and NO background bar. The outline is what keeps it readable over
-# any part of the frame, and it costs no screen area.
-CAPTION_INK = "#FFFFFF"
-CAPTION_OUTLINE = "#0B1220"
-CAPTION_OUTLINE_W = 5   # heavier than this and CJK strokes clog up
-# The band is a DARK surface sitting on a light page, so an English term inside
-# a caption cannot use AUX — that hue is chosen for contrast against the page
-# and goes muddy here. Measured 4.63:1 against the composited band.
-CAPTION_TERM = "#FDE047"
+# Captions: big, bold, dark, no bar and no glow. The caption band is reserved
+# empty page, so plain dark type on the light field already has full contrast —
+# a glow or an outline only adds noise. Readability comes from size and weight.
+CAPTION_INK = "#1B2440"
+# Accent for a first-use English term. NOT a teaching semantic — the five
+# semantic colours belong to the figure, this one belongs to the text.
+CAPTION_TERM = "#B45309"
+CAPTION_LINE_GAP = 0.16   # gap between wrapped caption lines
 
 PALETTE = dict(bg=BG, ink=INK, muted=MUTED, line=LINE, given=GIVEN,
                unknown=UNKNOWN, result=RESULT, warn=WARN, aux=AUX)
@@ -91,7 +89,9 @@ SIZE_TITLE = 52
 SIZE_HEADING = 38
 SIZE_BODY = 32
 SIZE_LABEL = 26
-SIZE_CAPTION = 28       # the subtitle track — fixed, never scaled per cue
+# Fixed for every cue in a film, but smaller in portrait: the same scene-unit
+# size is a much larger share of a 9:16 frame, and a phone needs less.
+SIZE_CAPTION = 24 if config.pixel_height > config.pixel_width else 28
 SIZE_MIN = 22
 
 
@@ -256,7 +256,6 @@ def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True
 
         body("同一弧上的 inscribed angle 相等。", terms=["inscribed angle"])
 
-    Pass `term_color=CAPTION_TERM` when the text sits on the dark caption band.
     """
     t2c = {k: term_color for k in (terms or [])}
     return Text(text, font=FONT_TEXT, weight=WEIGHT_TEXT, color=color, t2c=t2c,
@@ -277,66 +276,116 @@ def mtex(expression, color=INK, size=SIZE_BODY, **kw):
 
 # ------------------------------------------------------------- captions ----
 _LATIN_RUN = re.compile(r"[A-Za-z][A-Za-z'\-]*")
-_BREAK_AFTER = "，、；：,;"     # a comma-class break reads naturally
+_BREAK_AFTER = "，、；：,;"
 _NO_BREAK_BEFORE = "。，、；：？！)）」』"
+# A maths prefix binds to the token after it: never leave 「∠」 stranded at the
+# end of a line with 「APB」 on the next one.
+_NO_BREAK_AFTER = "∠△∥⊥≅≈∵∴(（「『"
+_CAL = {}
 
 
-def _weight(t):
-    """Reading weight in 全形字; a Latin word costs 2."""
-    return len([c for c in _LATIN_RUN.sub("", t) if not c.isspace()]) \
-        + 2 * len(_LATIN_RUN.findall(t))
+def _char_w():
+    """Calibrate this face's CJK and Latin advance once, so a line's width can be
+    estimated without building a Text per candidate break."""
+    if not _CAL:
+        mk = lambda t: Text(t, font=FONT_TEXT, weight=BOLD, font_size=SIZE_CAPTION).width
+        _CAL["cjk"] = mk("測測測測測") / 5
+        _CAL["lat"] = mk("semicircle") / 10      # a realistic word, not "mmmm"
+        _CAL["sp"] = _CAL["lat"] * 0.55
+    return _CAL
 
 
-def wrap_caption(text, terms=None):
-    """Insert one newline near the weight midpoint, at a natural boundary.
+def _est_width(t):
+    c = _char_w()
+    lat = sum(len(m) for m in _LATIN_RUN.findall(t))
+    other = len([ch for ch in _LATIN_RUN.sub("", t) if not ch.isspace()])
+    return other * c["cjk"] + lat * c["lat"] + t.count(" ") * c["sp"]
 
-    A break is refused inside a Latin word AND inside any declared term, so a
-    two-word term like "inscribed angle" is never split across lines. Prefers a
-    comma-class punctuation, then a space, then any CJK boundary.
 
-    Call this only when the single line genuinely does not fit — the caller
-    measures, because it is the frame width that decides, not the character
-    count.
-    """
+def _legal_breaks(text, terms):
+    """Indices where a break is allowed: not inside a Latin word, not inside a
+    declared term, not before closing punctuation, not after a maths prefix."""
+    spans = [m.span() for m in _LATIN_RUN.finditer(text)]
+    for t in (terms or []):
+        i = text.find(t)
+        while i != -1:
+            spans.append((i, i + len(t)))
+            i = text.find(t, i + 1)
+    for i in range(1, len(text)):
+        if any(a < i < b for a, b in spans):
+            continue
+        if text[i] in _NO_BREAK_BEFORE or text[i - 1] in _NO_BREAK_AFTER:
+            continue
+        yield i
+
+
+def _greedy_lines(text, terms, target):
+    """Standard greedy line breaker over the legal break points."""
+    stops = list(_legal_breaks(text, terms)) + [len(text)]
+    lines, start = [], 0
+    while start < len(text):
+        chosen = None
+        for b in stops:
+            if b <= start:
+                continue
+            if _est_width(text[start:b].strip()) <= target:
+                chosen = b
+            elif chosen is not None:
+                break
+        if chosen is None:                        # a single unbreakable run
+            chosen = next((b for b in stops if b > start), len(text))
+        lines.append(text[start:chosen].strip())
+        start = chosen
+    return [l for l in lines if l]
+
+
+def wrap_caption(text, terms=None, target=None):
+    """Break into lines that each fit `target`. Kept for callers that want the
+    string; `fit_caption` is what the caption track uses."""
     if "\n" in text:
         return text
-    spans = [m.span() for m in _LATIN_RUN.finditer(text)]
-    for t in (terms or []):                      # keep declared terms intact
-        start = 0
-        while (i := text.find(t, start)) != -1:
-            spans.append((i, i + len(t)))
-            start = i + 1
-    inside = lambda i: any(a < i < b for a, b in spans)
-    mid = len(text) / 2
-    best, best_key = None, None
-    for i in range(1, len(text)):
-        if inside(i) or text[i] in _NO_BREAK_BEFORE:
-            continue
-        if text[i - 1] in _BREAK_AFTER:
-            rank = 0
-        elif text[i - 1] == " " or text[i] == " ":
-            rank = 1
-        else:
-            rank = 2
-        key = (rank, abs(i - mid))
-        if best_key is None or key < best_key:
-            best, best_key = i, key
-    if best is None:
-        return text
-    return text[:best].rstrip() + "\n" + text[best:].lstrip()
+    if target is None:
+        target = config.frame_width * 0.91
+    return "\n".join(_greedy_lines(text, terms, target))
 
 
 def caption_text(text, terms=None):
-    """Shorts-style caption: bold white, dark outline, no background bar.
+    """Shorts-style caption: bold dark type, no bar, no outline, no glow.
 
-    The size is fixed (`SIZE_CAPTION`) and identical for every cue — a caption
-    that shrinks to fit reads as inconsistent. Long lines wrap instead.
+    Each line is its own mobject and the lines are arranged CENTRED — Manim's
+    Text left-aligns the lines of a multi-line string, which reads as ragged in
+    a caption. Size is FIXED at SIZE_CAPTION for every cue; nothing here scales.
     """
     t2c = {k: CAPTION_TERM for k in (terms or [])}
-    m = Text(text, font=FONT_TEXT, weight=BOLD, font_size=SIZE_CAPTION,
-             color=CAPTION_INK, t2c=t2c, line_spacing=0.9)
-    m.set_stroke(CAPTION_OUTLINE, width=CAPTION_OUTLINE_W, background=True)
-    return m
+
+    def one_line(line):
+        return Text(line, font=FONT_TEXT, weight=BOLD,
+                    font_size=SIZE_CAPTION, color=CAPTION_INK, t2c=t2c)
+
+    lines = [one_line(l) for l in text.split("\n") if l.strip()]
+    if len(lines) == 1:
+        return lines[0]
+    return VGroup(*lines).arrange(DOWN, buff=CAPTION_LINE_GAP)   # centred
+
+
+def fit_caption(text, terms, max_width, max_lines=3):
+    """Wrap to as many lines as the text needs, never scaling the type.
+
+    The width estimate is calibrated, not exact, so the result is MEASURED and
+    the target tightened until it really fits. An earlier version trusted the
+    estimate and let a line run off both edges of a 9:16 frame.
+    """
+    cap = caption_text(text, terms)
+    if cap.width <= max_width:
+        return cap
+    target = max_width
+    for _ in range(5):
+        lines = _greedy_lines(text, terms, target)
+        cap = caption_text("\n".join(lines), terms)
+        if cap.width <= max_width:
+            return cap
+        target *= 0.88
+    return cap
 
 
 def brand_rule(width=3.0, thickness=0.07):
