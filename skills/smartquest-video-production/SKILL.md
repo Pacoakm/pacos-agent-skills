@@ -367,6 +367,12 @@ Report what you verified and how. If something was not checked, say so.
 16. **Never mock up a storyboard panel by hand.** Every panel is a Manim still rendered from the
     real scene. A hand-authored SVG is laid out by a different engine, so it looks right exactly
     where the render does not, and the Gate 2 approval it earns binds nothing.
+17. **Never import a picture of text, and never `self.add()` it.** Every string on the picture —
+    中文, English, `MathTex` alike — is a Manim mobject from a theme helper, and it **enters with
+    an animation** at `T_REVEAL`. No `SVGMobject`/`ImageMobject` of a label or formula; `add()` is
+    only for state carried over from the previous scene. **The caption track is exempt** on both
+    counts: it is a separate track, it may be produced outside Manim, and a cue cuts on rather
+    than animating in. See `references/brand-theme.md`.
 
 ## Bundled resources
 

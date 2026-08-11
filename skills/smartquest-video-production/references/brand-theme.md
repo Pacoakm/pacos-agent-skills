@@ -283,6 +283,42 @@ Five moves for the whole library. Adding a sixth makes the series look inconsist
 Timing constants live in the theme (`T_DRAW`, `T_REVEAL`, `T_TRANSFORM`, `T_CLEAR`,
 `REST_BEAT`, `REST_AHA`). Use them rather than inventing run times per scene.
 
+### Every mobject on the picture is built by Manim
+
+Nothing on a lesson frame is an imported picture of text or of a figure. No `SVGMobject` of a
+label, no `ImageMobject` of a formula, no pre-rendered panel. Text comes from `title()`, `body()`,
+`label()`, `step()` and `mtex()`; geometry comes from Manim primitives.
+
+The reason is that anything imported was laid out by a different engine, so it does not share the
+frame's units, type scale, stroke scale, safe areas or palette — it looks right until the aspect
+ratio changes or the theme moves, and it cannot be animated, transformed or bound to the figure.
+
+The **caption track is the one exception**, because it is not on the picture — it is a separate
+track composited afterwards, and it may be produced by any means (see below).
+
+### Text enters, never appears
+
+`self.add(text)` puts a line on screen between one frame and the next, which reads as a glitch
+next to animated geometry. Every piece of on-screen text gets an entrance, at `T_REVEAL`:
+
+| Text | Entrance |
+|---|---|
+| A derivation step, a formula, an equation | `Write` — it reads as being worked out |
+| A title, a term card, a short label | `FadeIn`, or `Write` if it is the beat's subject |
+| A label that belongs to a point | `FadeIn` with the point, so the two arrive together |
+
+`Write` was checked on all three kinds at 480p15: 繁中 appears character by character with each
+glyph solid (not stroke-scribbled), Latin runs left to right, and `MathTex` draws its outline then
+fills, which is why it reads as handwriting. It is safe for CJK.
+
+`self.add()` is for **state that was already established** — the figure carried over from the
+previous scene, so that a shot's first frame matches the previous shot's last frame (invariant 9).
+Establishing state and introducing information are different acts; do not use `add()` for the
+second.
+
+Captions are exempt again: a caption **cuts** on and off at its cue boundary. Fading a subtitle in
+spends reading time the pacing budget already allocated, and drifts it away from the voice.
+
 ## Title and end cards
 
 - **Title card** — topic in `title()`, `brand_rule()` beneath, subject and paper in `label()`.

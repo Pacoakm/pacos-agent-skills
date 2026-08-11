@@ -87,6 +87,24 @@ the sidecar `.srt` for free, which matters — YouTube indexes it, so a student 
 
 Both variants come from the same cue data, so they can never disagree.
 
+### Captions are exempt from the Manim rules
+
+Everything on a lesson frame must be a Manim mobject that enters with an animation (hard rule 17).
+Captions are **not** on the frame — they are a separate track composited afterwards — so neither
+rule applies to them:
+
+- **Any renderer is fine.** The `CaptionTrack.mov` route above is the default only because
+  `overlay` is always available, while `ass`/`subtitles` need a libass-enabled ffmpeg. If this
+  machine's ffmpeg has libass (`ffmpeg -h filter=ass`), burning the ASS/`.srt` directly is equally
+  correct and faster. What may **not** change is the source: cue data comes from
+  `video-plan.json`, so the burned-in and sidecar versions can never disagree.
+- **A cue cuts on and off.** Never fade, write or slide a subtitle in. The entrance would eat
+  reading time the pacing budget has already given to the words, and it drifts the cue away from
+  the voice it is transcribing.
+
+What is not negotiable is the text itself — the 書面語 rules, the English-term rule and the
+format table above apply whichever renderer draws it.
+
 ## Handing the script to the teacher
 
 The teacher records **to picture**, after the animation is locked. Produce `narration-sheet.md`:
