@@ -125,6 +125,43 @@ two-line cue share a baseline and the block grows upward.
 `Stage.caption_band` must reserve the platform-UI margin **plus a full two-line caption**. Size
 it for one line and the first wrapped cue lands on the diagram — that happened here.
 
+## Captions
+
+Shorts convention adapted to a light page: **bold dark type, no bar, no outline, no glow.** The
+caption band is reserved empty page, so dark type already has full contrast and anything behind
+it is noise. White-on-dark is the usual shorts treatment only because shorts usually sit on busy
+footage.
+
+| Token | Value |
+|---|---|
+| `CAPTION_INK` | `#1B2440` |
+| `CAPTION_TERM` | `#B45309` — first-use English term. **Not** a teaching semantic |
+| `SIZE_CAPTION` | 28 landscape, **24 portrait** |
+| `CAPTION_LINE_GAP` | 0.16 |
+
+Hard rules, each of which fixed a real defect:
+
+- **One size for the whole film.** Never scale a caption to make it fit. Wrap instead.
+- **Wrap by measured width**, not character count. Estimate the break, then measure and tighten.
+- **Centre the lines.** Build one `Text` per line and `arrange(DOWN)`; a multi-line `Text` is
+  left-aligned and reads as ragged.
+- **Never break inside a declared term**, and never strand a maths prefix — `∠ △ ∥ ⊥ ∵ ∴` and
+  opening brackets bind to the token after them.
+- Captions are a separate transparent track. They never live in a lesson scene.
+
+## Stroke weights
+
+`stroke_width` is a scene-unit quantity, so it scales with pixels-per-unit and a short comes out
+about 2.4× too heavy. `STROKE_SCALE` normalises against the 16:9 reference; name a weight rather
+than a number:
+
+| Token | For |
+|---|---|
+| `SW_HAIRLINE` | construction, ghosts, dimmed context |
+| `SW_FIGURE` | the circle, neutral geometry |
+| `SW_EMPHASIS` | coloured rays — the lines the lesson is about |
+| `SW_MARK` | right-angle markers, tick marks |
+
 ## Layout
 
 `Stage` reads the frame and gives aspect-aware anchors, so **the same scene code renders both

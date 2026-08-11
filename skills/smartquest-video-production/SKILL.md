@@ -146,6 +146,14 @@ data still comes from `video-plan.json`.
 
 Keeping captions on their own track means **a subtitle fix never re-renders the mathematics**.
 
+### If the lesson has a 3D figure
+
+Solid geometry gets four extra gates before the picture master, because a 3D frame can be
+geometrically wrong while rendering perfectly: the mathematics is solved and asserted outside
+the scene, the camera is scanned for degeneracy with `scripts/check_camera.py`, stills from
+three angles are inspected, and the camera collapses to the solving plane so the flat view can
+be checked against the marking scheme. Follow `references/3d-geometry.md`.
+
 ## Gate 5 — Narration handoff, recording, mux
 
 The picture is finished before anyone speaks. Give the teacher three things:
@@ -205,11 +213,14 @@ Report what you verified and how. If something was not checked, say so.
 ## Bundled resources
 
 - `references/brand-theme.md` — the SmartQuest palette, typography, layout and motion grammar.
+- `references/3d-geometry.md` — the extra gates a solid-geometry lesson needs.
+- `references/manim-traps.md` — the ways Manim renders without an error and is still wrong.
 - `references/engines-and-plugins.md` — when ManimGL is allowed, and the verified plugin state.
 - `references/narration-and-subtitles.md` — 書面語 rules, the English-term rule, subtitle format.
 - `references/pacing.md` — teaching rhythm, dwell times, narration room, checkable limits.
 - `references/production-contract.md` — `video-plan.json` schema, folder layout, invariants.
 - `scripts/smartquest_theme.py` — importable Manim theme: colours, fonts, layout, helpers.
 - `scripts/build_captions.py` — plan → caption scene + `.srt` + pacing report.
+- `scripts/check_camera.py` — rejects degenerate 3D camera angles before rendering.
 - `scripts/build_storyboard.py` — review sheets from a storyboard manifest.
 - `scripts/verify_master.py` — the final quality gate, as a runnable check.
