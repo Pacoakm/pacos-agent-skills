@@ -17,7 +17,7 @@ handoff, recording returned, audio mux, verified delivery.
 
 | | Locked |
 |---|---|
-| Animation engine | **Manim Community Edition only.** No Remotion, HyperFrames, HTML/CSS/JS, After Effects |
+| Animation engine | **Manim Community Edition.** No Remotion, HyperFrames, HTML/CSS/JS, After Effects. ManimGL only with permission — see rule 8 |
 | Narration | **A human teacher records it.** Never TTS. This skill writes the script, never the audio |
 | Order of work | **Picture first, voice second.** Animation and subtitles are finished, then the teacher records to picture |
 | Subtitle language | 繁體中文**書面語**, with subject terms kept in **English** (see `references/narration-and-subtitles.md`) |
@@ -195,10 +195,17 @@ Report what you verified and how. If something was not checked, say so.
 6. **Never hard-code 16:9 coordinates.** Use the layout tokens so shorts work from the same code.
 7. **Stop at the last verified artifact** when a dependency, asset, or decision is missing, and
    state exactly what is needed.
+8. **Never switch to ManimGL silently.** It is installed and it coexists with ManimCE, but it is
+   a different, undocumented API. Name the shot, say why ManimCE cannot do it, and wait for a
+   yes. See `references/engines-and-plugins.md`.
+9. **Never trust a plugin's output.** A plugin is third-party code rendering examinable content.
+   `manim-chemistry`'s `ChemicalFormula` renders `Ca(OH)2` as **CaO** — no error, no warning.
+   Render it, check it against the syllabus, or write it yourself with `mtex()`.
 
 ## Bundled resources
 
 - `references/brand-theme.md` — the SmartQuest palette, typography, layout and motion grammar.
+- `references/engines-and-plugins.md` — when ManimGL is allowed, and the verified plugin state.
 - `references/narration-and-subtitles.md` — 書面語 rules, the English-term rule, subtitle format.
 - `references/pacing.md` — teaching rhythm, dwell times, narration room, checkable limits.
 - `references/production-contract.md` — `video-plan.json` schema, folder layout, invariants.
