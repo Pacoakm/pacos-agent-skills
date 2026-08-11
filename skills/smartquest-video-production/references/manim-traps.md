@@ -235,6 +235,55 @@ number of frames and the scenes land exactly. Do not "fix" draft drift.
 
 Keep every `run_time` and `wait` a multiple of 0.05 s and check the timeline at 60 fps.
 
+## 22. `font_size` changes letter spacing, not just size
+
+Pango grid-fits glyph positions to the pixel grid of whatever `font_size` it is handed, and
+Manim then scales that layout into scene units. So **the same word gets different letter
+spacing at different `font_size` values.** It is not a scaled copy.
+
+Measured on `"centroid"` in PingFang HK across `font_size` 20–60, gaps normalised by text height
+(×1000):
+
+| pair | min | max | drift |
+|---|---|---|---|
+| `ce` | 23 | 158 | 135 |
+| `oi` | 86 | 225 | 139 |
+| `id` | 45 | 206 | 162 |
+| `ro` | **−24** | 111 | 134 |
+
+A single pair moves by up to 0.162 of the text height, and `ro` goes **negative** at some sizes —
+the glyphs touch. Latin shows it worst because its kerning carries meaning; CJK sits on a uniform
+advance grid and hides it. On screen it reads as "英文字距不一樣，非常奇怪", and it is not fixable
+by choosing a different face: DM Sans, Helvetica Neue, Avenir Next and SF Pro Text all drift the
+same way.
+
+**Fix:** lay every string out at one size and scale. `smartquest_theme` builds all `Text` at
+`TYPE_BASE = 120` and scales to the target, which measures **0 drift** at every size, and gives
+the well-kerned layout because grid-fitting error shrinks as size grows. Heights are preserved to
+three decimals so existing layouts do not move; widths change by up to ~4%, which is the kerning
+correction itself.
+
+**Never call `Text()` directly** for anything containing Latin — use `title()`, `body()`,
+`label()`, `caption_text()`, or `_text()`.
+
+## 23. `set_stroke(width=...)` is not in scene units
+
+A stroke width computed from a mobject's `.height` — which *is* in scene units — comes out about
+100× too thin, and the stroke silently does not appear. This is how a label halo can be present
+in the code, render without error, and be invisible.
+
+Measured at 1080p against `frame_width` 14.222:
+
+| `stroke_width` | rendered |
+|---|---|
+| 10 | 14 px = 0.104 units |
+| 20 | 27 px = 0.200 units |
+| 40 | 54 px = 0.400 units |
+
+**`stroke_width` 100 = 1.0 scene unit**, and the ratio is resolution independent. The theme
+exposes it as `STROKE_PER_UNIT`. Remember the stroke is centred on the outline, so only half of
+it sits outside the shape — a halo of visible thickness `t` needs `2 * 100 * t`.
+
 ---
 
 ## The pattern

@@ -88,7 +88,19 @@ config.tex_template = TEX_SANS   # a default, but NOT something to rely on:
 SIZE_TITLE = 52
 SIZE_HEADING = 38
 SIZE_BODY = 32
-SIZE_LABEL = 26
+# A figure label is read at a glance while the student is looking at the
+# diagram, not the text — it needs to be nearly body size, not caption size.
+SIZE_LABEL = 30
+# set_stroke() width is not in scene units. Measured at 1080p: stroke_width 100
+# renders exactly 1.0 scene unit, and the ratio holds at any resolution.
+STROKE_PER_UNIT = 100.0
+# Visible halo thickness OUTSIDE the glyph, as a fraction of text height.
+# Chosen by rendering 0.06/0.09/0.12/0.16 at SIZE_LABEL over crossing strokes:
+# 0.06 still lets a line graze the glyphs, 0.09 clears them, 0.12 clears them
+# with margin on a busy figure, and past ~0.16 the halo takes visible bites out
+# of the drawing. Judge this on a 1080p frame at real label size — an
+# exaggerated diagnostic render makes any halo look far too heavy.
+HALO_RATIO = 0.12
 # Fixed for every cue in a film, but smaller in portrait: the same scene-unit
 # size is a much larger share of a 9:16 frame, and a phone needs less.
 SIZE_CAPTION = 24 if config.pixel_height > config.pixel_width else 28
@@ -244,11 +256,35 @@ def _pt(size):
     return max(size, SIZE_MIN) * TYPE_SCALE
 
 
+# ---- always lay text out at ONE size, then scale ---------------------------
+# Pango grid-fits glyph positions to the pixel grid of whatever font_size it is
+# handed, and Manim then scales that layout into scene units. So the SAME word
+# gets DIFFERENT letter spacing at different font_size values — measured on
+# "centroid" in PingFang HK across sizes 20-60, a single pair drifts by up to
+# 0.162 of the text height, and the "ro" pair goes negative (glyphs touching) at
+# some sizes. That is the "英文字距不一樣" defect: Latin suffers most because its
+# kerning matters, while CJK sits on a uniform grid and hides it.
+#
+# Laying every string out at TYPE_BASE and scaling to the target gives identical
+# spacing at every size (measured drift: 0), and it is the well-kerned layout
+# because grid-fitting error shrinks as size grows. Heights are preserved to
+# three decimals, so existing vertical layouts do not move; widths change by up
+# to ~4%, which IS the kerning correction.
+TYPE_BASE = 120
+
+
+def _text(string, size, **kw):
+    """Build Text at TYPE_BASE and scale to `size`. Never call Text() directly
+    for anything containing Latin — see TYPE_BASE above."""
+    t = Text(string, font_size=TYPE_BASE, **kw)
+    return t.scale(size / TYPE_BASE)
+
+
 # --------------------------------------------------------------- elements ----
 def title(text, color=INK, size=SIZE_TITLE):
     """Display type. DM Sans, brand, never below DISPLAY_MIN."""
-    return Text(text, font=FONT_DISPLAY, weight=BOLD,
-                font_size=max(size, DISPLAY_MIN) * TYPE_SCALE, color=color)
+    return _text(text, max(size, DISPLAY_MIN) * TYPE_SCALE,
+                 font=FONT_DISPLAY, weight=BOLD, color=color)
 
 
 def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True):
@@ -258,13 +294,44 @@ def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True
 
     """
     t2c = {k: term_color for k in (terms or [])}
-    return Text(text, font=FONT_TEXT, weight=WEIGHT_TEXT, color=color, t2c=t2c,
-                font_size=_pt(size) if scale else max(size, SIZE_MIN))
+    return _text(text, _pt(size) if scale else max(size, SIZE_MIN),
+                 font=FONT_TEXT, weight=WEIGHT_TEXT, color=color, t2c=t2c)
 
 
-def label(text, color=MUTED, size=SIZE_LABEL):
-    return Text(text, font=FONT_TEXT, weight=WEIGHT_TEXT,
-                font_size=_pt(size), color=color)
+def label(text, color=INK, size=SIZE_LABEL, halo=True, halo_color=None):
+    """A label on the figure. Haloed by default — see halo().
+
+    Haloing is on because a figure label is exactly the thing that ends up over
+    a line. On clear background the halo is invisible (it is the background
+    colour), so leaving it on costs nothing.
+    """
+    t = _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT, color=color)
+    return halo_text(t, color=halo_color) if halo else t
+
+
+def halo_text(mobject, color=None, ratio=None):
+    """Draw a background-coloured outline BEHIND the glyphs so text stays
+    readable where it crosses a figure.
+
+    `background=True` puts the stroke under the fill, so the letterform keeps
+    its true weight — a foreground stroke would fatten it into mush. Round joins
+    matter: the default mitre throws visible spikes off every glyph corner,
+    which reads as dirt at 1080p.
+
+    Width is derived from the text height so it survives any later scale.
+    NOTE the unit conversion: set_stroke() does NOT take scene units. Measured
+    at 1080p, stroke_width 100 renders exactly 1.0 scene unit (10→14px, 20→27px,
+    40→54px against frame_width 14.222), and the ratio is resolution
+    independent. The stroke is centred on the outline, so only half of it sits
+    outside the glyph — hence the factor of 2.
+    """
+    r = ratio if ratio is not None else HALO_RATIO
+    w = 2 * STROKE_PER_UNIT * r * mobject.height
+    mobject.set_stroke(color=color or BG, width=w, opacity=1.0, background=True)
+    mobject.joint_type = LineJointType.ROUND
+    for sub in mobject.family_members_with_points():
+        sub.joint_type = LineJointType.ROUND
+    return mobject
 
 
 def mtex(expression, color=INK, size=SIZE_BODY, **kw):
@@ -288,7 +355,7 @@ def _char_w():
     """Calibrate this face's CJK and Latin advance once, so a line's width can be
     estimated without building a Text per candidate break."""
     if not _CAL:
-        mk = lambda t: Text(t, font=FONT_TEXT, weight=BOLD, font_size=SIZE_CAPTION).width
+        mk = lambda t: _text(t, SIZE_CAPTION, font=FONT_TEXT, weight=BOLD).width
         _CAL["cjk"] = mk("測測測測測") / 5
         _CAL["lat"] = mk("semicircle") / 10      # a realistic word, not "mmmm"
         _CAL["sp"] = _CAL["lat"] * 0.55
@@ -359,8 +426,8 @@ def caption_text(text, terms=None):
     t2c = {k: CAPTION_TERM for k in (terms or [])}
 
     def one_line(line):
-        return Text(line, font=FONT_TEXT, weight=BOLD,
-                    font_size=SIZE_CAPTION, color=CAPTION_INK, t2c=t2c)
+        return _text(line, SIZE_CAPTION, font=FONT_TEXT, weight=BOLD,
+                     color=CAPTION_INK, t2c=t2c)
 
     lines = [one_line(l) for l in text.split("\n") if l.strip()]
     if len(lines) == 1:

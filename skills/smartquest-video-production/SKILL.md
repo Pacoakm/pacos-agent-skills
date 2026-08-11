@@ -303,6 +303,13 @@ Report what you verified and how. If something was not checked, say so.
 12. **Never animate `frame_center`.** `move_camera(frame_center=...)` does not redraw the figure;
     everything stays drawn at the old centre while the camera reports the new one. Re-centre by
     shifting the figure. See `references/manim-traps.md` #16.
+13. **Never call `Text()` directly.** Use `title()` / `body()` / `label()` / `caption_text()`.
+    Pango grid-fits glyph positions to the `font_size` it is handed, so a bare `Text()` gets
+    letter spacing that differs from every other string in the video — visible on screen as
+    英文字距不一樣. See `references/manim-traps.md` #22.
+14. **Never leave a label sitting on a line.** Move it into clear space first — with a hairline
+    leader to its point if it must reach one — and halo it only where overlap is genuinely
+    unavoidable. `label()` haloes by default. See `references/brand-theme.md`.
 
 ## Bundled resources
 
