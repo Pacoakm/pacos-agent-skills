@@ -256,6 +256,24 @@ def _pt(size):
     return max(size, SIZE_MIN) * TYPE_SCALE
 
 
+# ---- stroke weights --------------------------------------------------------
+# stroke_width is constant in SCENE units (100 = 1.0 unit, see STROKE_PER_UNIT),
+# which means it is NOT constant as a fraction of the frame: frame_height stays
+# 8 while frame_width shrinks to 4.5 in portrait, so the same weight covers far
+# more of a 9:16 frame. Measured in manim-traps.md #3: stroke_width 4 renders
+# 5 px at 1920×1080 and 10 px at 1080×1920, against a figure that is itself
+# smaller (299 px radius vs 352 px) — lines read about 2.4× too heavy in a short.
+_PORTRAIT_STROKE = 1 / 2.4
+STROKE_SCALE = (_PORTRAIT_STROKE
+                if config.pixel_height > config.pixel_width else 1.0)
+
+# Name a weight, never a number.
+SW_HAIRLINE = 2 * STROKE_SCALE     # construction, ghosts, dimmed context
+SW_FIGURE = 3 * STROKE_SCALE       # the circle, neutral geometry
+SW_EMPHASIS = 6 * STROKE_SCALE     # coloured rays — the lines the lesson is about
+SW_MARK = 4 * STROKE_SCALE         # right-angle markers, tick marks
+
+
 # ---- always lay text out at ONE size, then scale ---------------------------
 # Pango grid-fits glyph positions to the pixel grid of whatever font_size it is
 # handed, and Manim then scales that layout into scene units. So the SAME word
@@ -478,6 +496,55 @@ def step(statement, reason=None, color=INK, size=SIZE_HEADING):
 def emphasise(mobject, color=RESULT):
     """The one approved way to say 'look here'. Keep the vocabulary small."""
     return Indicate(mobject, scale_factor=1.06, color=color)
+
+
+def bind_term(figure, card, times=2, run_time=0.5):
+    """Teach that a coloured thing IS a named thing, without writing a sentence.
+
+    Flashes the figure element and its term card TOGETHER, twice. The
+    simultaneity is what carries the meaning — this replaces 「這條線是 median」
+    on the frame. After the binding, the colour carries the definition and no
+    later frame has to name it again. See references/on-screen-language.md.
+
+        meds = VGroup(*medians).set_color(AUX)
+        card = label("median", color=AUX).next_to(stage.figure_box(), RIGHT)
+        self.play(*bind_term(meds, card))
+
+    Returns a list of animations, so it composes with whatever else the beat
+    needs. Both pulses must run in the SAME play() call — flashing them one
+    after another says "these two things exist", not "these two are the same".
+    """
+    anims = []
+    for _ in range(times):
+        anims += [Indicate(figure, scale_factor=1.0, color=figure.get_color(),
+                           run_time=run_time),
+                  Indicate(card, scale_factor=1.06, color=card.get_color(),
+                           run_time=run_time)]
+    return anims
+
+
+def ticks(start, end, count=1, color=None, size=0.14, gap=0.075):
+    """Equal-length marks at a segment's midpoint — the symbol that says 「這兩段
+    相等」 so the frame does not have to.
+
+    `count` is how many strokes: use 1 for one pair of equal segments in the
+    figure, 2 for the second pair, 3 for the third. Same count = same length is
+    the convention a DSE student already reads.
+    """
+    start, end = np.array(start, dtype=float), np.array(end, dtype=float)
+    d = end - start
+    n = np.linalg.norm(d)
+    if n == 0:
+        return VGroup()
+    u = d / n
+    perp = np.array([-u[1], u[0], 0.0])
+    mid = (start + end) / 2
+    offsets = [(i - (count - 1) / 2) * gap for i in range(count)]
+    return VGroup(*[
+        Line(mid + u * o - perp * size / 2, mid + u * o + perp * size / 2,
+             color=color or LINE, stroke_width=SW_MARK)
+        for o in offsets
+    ])
 
 
 # ------------------------------------------------------------- motion ------

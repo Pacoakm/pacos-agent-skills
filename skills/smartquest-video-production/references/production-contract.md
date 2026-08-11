@@ -76,6 +76,9 @@ the implementation.
       "transitionIn": "Cold open",
       "transitionOut": "...",
       "knowledgePoint": "...",
+      "onScreenText": ["1 · centroid", "median", "AO : OM = 2 : 1", "A", "B", "C", "O", "M"],
+      "movedToNarration": ["較長一段連着頂點 → AO : OM = 2 : 1 on the frame",
+                           "永遠在 triangle 內 → S06, vertex is dragged"],
       "subtitles": [
         {"start": 1.0, "end": 5.2, "text": "同一弧上的 inscribed angle 相等。",
          "terms": ["inscribed angle"]}
@@ -98,11 +101,17 @@ Check these; do not assume them.
 5. For each shot: `字數 ≤ (end − start) × 4.0`, counting a Latin word as 2 字.
 6. For each shot: `stillSeconds ≥ (end − start) × 0.25`.
 7. Shot IDs are stable after storyboard approval.
-8. A scene's end state equals the next scene's start state — figure **and** on-screen text.
+8. `onScreenText` lists every string the picture shows. Its **non-mathematical** entries — title,
+   labels, term cards — total ≤ 12 字 (Latin word = 2 字), and none of them is a sentence.
+   Mathematics and DSE reasons are exempt and uncounted. Every sentence that is not on the frame
+   has an entry in `movedToNarration` saying where it went.
+   See `references/on-screen-language.md`.
+9. A scene's end state equals the next scene's start state — figure **and** on-screen text.
    Build both from a shared helper so they cannot drift.
-9. `narration.status` is `awaiting-teacher-recording` until a real file exists at `narration.media`.
+10. `narration.status` is `awaiting-teacher-recording` until a real file exists at
+    `narration.media`.
 
-Invariant 8 is the one that bites. Scenes render independently, so a mismatch produces a jump
+Invariant 9 is the one that bites. Scenes render independently, so a mismatch produces a jump
 cut that is invisible at draft resolution and obvious in the master.
 
 ## Render commands

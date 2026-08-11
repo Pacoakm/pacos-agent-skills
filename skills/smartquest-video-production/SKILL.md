@@ -52,6 +52,27 @@ actual re-render, not a description of what would change.
 Only reach outside Manim when Manim genuinely cannot produce the shot — a screen recording, a
 photograph, a past-paper scan. Say so explicitly and keep it to named shots.
 
+## The frame speaks mathematics, not prose
+
+**Explanatory sentences do not belong on the picture.** They belong in the subtitle and in the
+teacher's mouth. The frame carries the figure, the symbols, the equation, the ratio and the
+marks — the things a student is actually being taught to read.
+
+| On the frame | In the subtitle and narration |
+|---|---|
+| `AO : OM = 2 : 1` | 「較長一段連着頂點」 |
+| tick marks on two segments | 「這兩段相等」 |
+| a `median` term card, flashed with the purple lines | 「這條紫色線是 median」 |
+| a vertex being dragged while the point stays inside | 「centroid 永遠在 triangle 內」 |
+
+Per shot, on the picture: **explanatory prose = 0 字**, and title + labels + term cards
+**≤ 12 字** in total (a Latin word counts as 2 字). Mathematics is unlimited — it is the point.
+
+When a frame seems to need a sentence, the frame needs a better picture, not smaller type. A
+property that holds under variation is shown **by varying it**, which is the one thing a textbook
+cannot do. Full rules, the translation table and a worked before/after in
+`references/on-screen-language.md`.
+
 ## Ask only what is missing
 
 1. Subject and topic, and the **single thing** a student should be able to do afterwards.
@@ -112,6 +133,9 @@ be read without opening files:
 - **The full script** — every shot in order, as a table: shot ID, timecode, allotted seconds, the
   exact 書面語 subtitle text, 字數, and the pacing verdict against both the reading budget
   (`字數 ≤ 秒數 × 4.0`) and the breathing budget (`stillSeconds ≥ 秒數 × 0.25`).
+- **What is on the picture** — per shot, the `onScreenText` list and its 字數 against the ≤ 12 字
+  limit, so the split between picture and narration is visible before anything is drawn. Any
+  sentence you moved off the frame: say where it went, and what mathematics replaced it.
 - **The timeline** — section structure, total duration, and the knowledge-point count.
 - **Open questions** — anything you decided by assumption rather than instruction.
 
@@ -133,6 +157,13 @@ the pacing verdict**.
 
 Check across adjacent panels: does the figure persist, does screen direction hold, does the
 colour meaning stay constant, does each shot's end state match the next shot's start state.
+
+**This is where on-screen prose gets caught.** Per panel, count the non-mathematical characters
+on the picture. Over 12 字, or any complete sentence, means redesign the panel — not shrink the
+type. For every sentence that is not there, name where it went (subtitle, narration, or an
+animated beat), and for every term card, name the shot that bound it to its colour. Then ask of
+each remaining word: *would this panel still teach without it?* If yes, delete it.
+See `references/on-screen-language.md`.
 
 ### Show the user and stop for approval
 
@@ -310,6 +341,10 @@ Report what you verified and how. If something was not checked, say so.
 14. **Never leave a label sitting on a line.** Move it into clear space first — with a hairline
     leader to its point if it must reach one — and halo it only where overlap is genuinely
     unavoidable. `label()` haloes by default. See `references/brand-theme.md`.
+15. **Never put an explanatory sentence on the picture.** The frame gets mathematics, figures,
+    labels, term cards and DSE reasons; explanation goes to the subtitle and the narration. If a
+    frame seems to need a sentence, it needs a better picture. See
+    `references/on-screen-language.md`.
 
 ## Bundled resources
 
@@ -317,6 +352,8 @@ Report what you verified and how. If something was not checked, say so.
 - `references/3d-geometry.md` — the extra gates a solid-geometry lesson needs.
 - `references/manim-traps.md` — the ways Manim renders without an error and is still wrong.
 - `references/engines-and-plugins.md` — when ManimGL is allowed, and the verified plugin state.
+- `references/on-screen-language.md` — what may appear on the picture, and how to say in
+  mathematics what you were about to write as a sentence.
 - `references/narration-and-subtitles.md` — 書面語 rules, the English-term rule, subtitle format.
 - `references/pacing.md` — teaching rhythm, dwell times, narration room, checkable limits.
 - `references/production-contract.md` — `video-plan.json` schema, folder layout, invariants.
