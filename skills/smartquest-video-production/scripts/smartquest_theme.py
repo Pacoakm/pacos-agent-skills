@@ -229,6 +229,27 @@ def brand_field():
     return r
 
 
+# ----------------------------------------------------------- stroke scale ----
+# stroke_width is a SCENE-unit quantity, not pixels, so it scales with
+# pixels-per-unit. Measured: stroke_width=4 renders 5 px at 1920x1080 but 10 px
+# at 1080x1920 — twice as heavy — while the portrait figure is actually smaller
+# (299 px radius against 352 px). Lines therefore read about 2.4x too thick in a
+# short unless they are normalised against the 16:9 reference.
+_REF_PX_PER_UNIT = 1920 / 14.2222
+STROKE_SCALE = _REF_PX_PER_UNIT / (config.pixel_width / config.frame_width)
+
+
+def sw(width):
+    """Stroke width in 16:9 reference units. Use for every stroke in a scene."""
+    return width * STROKE_SCALE
+
+
+SW_HAIRLINE = sw(2)     # construction, ghosts, dimmed context
+SW_FIGURE = sw(3)       # the circle, neutral geometry
+SW_EMPHASIS = sw(4)     # coloured rays, the lines the lesson is about
+SW_MARK = sw(5)         # right-angle markers, tick marks
+
+
 # ------------------------------------------------------------- type scale ----
 # Manim font sizes are absolute scene units, and `frame_height` stays 8 in both
 # aspects while `frame_width` changes. The same font_size therefore covers 15%
