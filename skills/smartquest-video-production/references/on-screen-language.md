@@ -1,101 +1,143 @@
 # On-screen language
 
-**The picture speaks mathematics. The subtitle and the teacher speak Chinese.**
+Two rules, in this order.
 
-Everything a student must *read as a sentence* belongs in the caption track and the narration.
-Everything on the frame itself should be the thing being taught: the figure, the symbols, the
-equation, the ratio, the marks.
+1. **Say it in mathematics and motion if it can be said that way.** Reach for words only for what
+   genuinely cannot be.
+2. **One register per frame.** A frame may speak mathematics, or it may speak words. Never both
+   at once. The figure belongs to neither — it accompanies whichever register is speaking.
 
 ## Why
 
-Prose on the frame competes with the diagram for the same pair of eyes. A student reading
-「較長一段連着頂點」 is not looking at the median while it is being drawn — and the sentence is
-already being said out loud, so the frame is spending its most valuable space repeating the
-narration.
+**On rule 1.** A concept that has a mathematical form and is written out in Chinese instead has
+been translated *away* from the thing the student is being examined on. The DSE paper is in
+English and in symbols: a student who has watched an explanation carried by `AO : OM = 2 : 1` has
+practised reading the notation they will be marked on; one who watched 「較長一段連着頂點」 has
+not. Motion is the second half of this — a property that holds under variation is *shown by
+varying it*, which no textbook can do and no sentence needs to claim.
 
-There is a second reason, specific to DSE. The paper is in English and in symbols. A student who
-has watched an explanation carried by `AO : OM = 2 : 1` has practised reading the notation they
-will be marked on. A student who has watched it carried by a Chinese sentence has not.
+**On rule 2.** Mathematics and prose are read differently — one is scanned as structure, the
+other as a line. Putting both on one frame makes the student switch modes mid-shot, and neither
+gets read properly. This is the defect that reads as 「混雜」: an equation and a Chinese sentence
+sharing a margin, each spoiling the other.
+
+Note what rule 2 does **not** say. It does not ban text beside a figure — a list of steps
+alongside the diagram those steps act on is good teaching, and better than either alone. What it
+bans is text beside *displayed mathematics*.
+
+## The two registers
+
+| | **Mathematical register** | **Verbal register** |
+|---|---|---|
+| Carries | equations, formulae, ratios, symbolic derivations | an enumerated list of steps, conditions or criteria |
+| Figure | yes — the figure the mathematics describes | yes — the figure the steps act on |
+| Also allowed | figure labels, term cards, DSE reasons | figure labels, term cards, inline symbols (`⊥`, `∠`, `AD`) |
+| Never | an explanatory sentence | a displayed equation |
+| Budget | non-mathematical text ≤ 12 字 | ≤ 5 items, each ≤ 20 字 and one line |
+
+Both registers are welcome in the same *lesson* — most lessons need both. They just take separate
+shots. When a beat needs the list and the equation, that is two shots, and the figure carries
+across between them.
 
 ## What may appear on the frame
 
 | Kind | Allowed | Example |
 |---|---|---|
 | **Title** | one per shot, short | `1 · centroid` |
-| **Mathematics** | unlimited — this is the point | `AO : OM = 2 : 1`, `\vec{v}_1`, `x_1y_2z_3 - x_1z_2y_3` |
-| **Figure labels** | point names, short object names | `A`, `B`, `C`, `O`, `M` |
+| **The figure** | in either register | △ABC with its medians |
+| **Mathematics** | unlimited — in the mathematical register | `AO : OM = 2 : 1`, `\vec{v}_1` |
+| **Figure labels** | point names, short object names — either register | `A`, `B`, `C`, `O`, `M`, `P` |
 | **Term cards** | the English DSE term alone, bound to a colour | `median`, `inscribed angle` |
 | **DSE reasons** | the marker's exact wording, with the step it justifies | `ext. ∠ of △` |
-| **A step list** | **only on its own slide** — see below | `① 先找出兩個平面的交線。` |
-| **Explanatory prose** | **never** | ~~較長一段連着頂點~~, ~~永遠在 triangle 內~~, ~~三條 median 的交點~~ |
+| **A step list** | in the verbal register, with or without a figure | `① 先找出兩個平面的交線。` |
+| **Loose explanatory prose** | **never, in either register** | ~~較長一段連着頂點~~, ~~永遠在 triangle 內~~ |
 
 A term card is the term and nothing else. `median` is a term card; 「三條 median 的交點」 is a
 sentence wearing a term as a hat, and it goes to the subtitle.
 
+"Loose prose" means a sentence that is not an item in an enumerated list. The list earns its place
+because its *structure* teaches — see below. A stray sentence has no structure to earn it.
+
 ## The budget
 
-Per shot, counting only text on the picture — not captions:
+Per shot, counting only text on the picture — not captions.
+
+**Mathematical register:**
 
 ```
 解釋性文字 = 0 字
 非數學文字（title + labels + term cards）≤ 12 字   # 拉丁詞當 2 字
+數學 = 無上限
 ```
 
-If a shot needs a sentence to make sense, the sentence goes in the subtitle and the **frame needs
-a better picture**, not smaller type. That is the whole rule.
+**Verbal register:**
+
+```
+列表項目 ≤ 5，每項 ≤ 20 字，一行
+顯示式方程 = 0
+行內符號（⊥ ∠ AD 2:1）不計，且鼓勵使用
+```
+
+If a shot in the mathematical register needs a sentence to make sense, the sentence goes to the
+subtitle and the **frame needs a better picture**, not smaller type.
 
 Count it in the storyboard, before anything is animated.
 
-## The one exception: a step list, on its own slide
+## The verbal register: a step list, with the figure beside it
 
 An **enumerated procedure** is the one thing narration and subtitles genuinely cannot carry. A
 subtitle is linear and transient: by the time the student hears step ③ the words of step ① are
 gone, so they never see the *shape* of the procedure — how many steps there are, which one they
 are in, what is still coming. A list persists and shows all of that at once.
 
-So a numbered or bulleted list of steps, conditions or criteria **may** be on screen, under one
-condition:
+**Keep the figure.** A list of steps next to the diagram those steps act on is better than either
+alone: the student reads 「先找出兩個平面的交線」 and the intersection line highlights on the
+figure at the same moment. That pairing is the point of the register, not a compromise.
 
-> **When the list is on screen, the frame is a slide.** No figure, no graph, no displayed
-> equation. Nothing else competes with it.
+What the list may **not** share the frame with is a displayed equation. If the beat needs both,
+it is two shots, and the figure carries across.
 
-This is the same principle as the rest of this document, not an exception to it. Prose is banned
-beside a figure because it steals the eyes from the figure. A slide has no figure to steal from —
-the words *are* the content of the shot. What is forbidden is the hybrid: a list of sentences
-parked next to a diagram, so the student can do neither properly.
-
-### Rules for a list slide
+### Rules for a list shot
 
 | | |
 |---|---|
 | Items | ≤ 5. Beyond that it is a reference card, not a teaching beat |
 | Each item | ≤ 20 字, one line, no sub-clauses |
-| Inline symbols | fine and encouraged — `⊥`, `∠`, `AD`, `2 : 1`. A symbol inside a sentence is not a displayed formula |
-| Displayed mathematics | **none** — if the shot needs an equation, it is not a list slide |
-| Figure | **none** — not even dimmed in the background |
+| Inline symbols | encouraged — `⊥`, `∠`, `AD`, `2 : 1`. A symbol inside a sentence is not a displayed formula |
+| Displayed mathematics | **none** — if the shot needs an equation, split the shot |
+| Figure | **yes**, and it should react — see below |
 | Entrance | items appear **one at a time**, each on the narration beat that explains it (rule 17) |
-| After | cut to the figure and *carry out* the steps. The list is the map; the figure is the territory |
+| After | cut to the figure alone and *carry out* the steps. The list is the map; the figure is the territory |
 
-Revealing the items one by one is what makes the list teaching rather than a wall of text: the
-student is never reading ahead of the teacher, and the item currently arriving is the item being
-spoken. Keep the completed list on screen to the end of the shot.
+### Animate the list against the figure
 
-The ≤ 12 字 budget above does **not** apply to a list slide — it is the budget for text sharing a
-frame with a picture, and a slide has no picture. Every other rule still applies: Manim text from
-the theme helpers, 書面語, English subject terms, and the reading budget, so the shot must be long
-enough to read the whole list *and* hear the narration.
+Revealing items one at a time is what makes a list teaching rather than a wall of text: the
+student never reads ahead of the teacher, and the item arriving is the item being spoken.
+
+Better still, **make each item do something to the figure as it lands** — that is what turns two
+static halves into one explanation:
+
+| As this item appears | The figure does |
+|---|---|
+| ① 先找出兩個平面的交線。 | the intersection line lights up in the item's colour |
+| ② 每個平面各取一條線，都要 ⊥ 交線。 | the two lines draw in, each with its right-angle mark |
+| ③ 兩條線要在交線上的同一點相交。 | the point `P` appears where they meet, and pulses |
+
+Colour is the join: give the item and the thing it names the same colour, exactly as `bind_term()`
+does for a single term. Keep the completed list on screen to the end of the shot, and dim earlier
+items to 30% so the current one reads.
 
 ### When it is not a list
 
-Do not reach for a list to escape the prose ban. Three conditions to check:
+Do not reach for a list to escape the prose ban. Two checks:
 
 1. **Is it genuinely ordered or enumerated?** ①②③ that must happen in sequence, or a fixed set of
    criteria — not three loose remarks with numbers stuck on them.
 2. **Would losing the order lose the meaning?** If the items could be spoken in any order, they
    are prose, and they belong in the narration.
-3. **Does the figure need to be gone?** If the student must see the diagram while reading, the
-   design is wrong — either the point belongs on the figure as mathematics, or it is a separate
-   slide beat.
+
+And before writing any of it, apply rule 1: *could this item be a mark on the figure instead of a
+sentence?* 「這兩段相等」 is tick marks, not a list item, even inside a list.
 
 ## Translating prose into mathematics
 

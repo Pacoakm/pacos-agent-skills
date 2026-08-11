@@ -52,32 +52,40 @@ actual re-render, not a description of what would change.
 Only reach outside Manim when Manim genuinely cannot produce the shot — a screen recording, a
 photograph, a past-paper scan. Say so explicitly and keep it to named shots.
 
-## The frame speaks mathematics, not prose
+## Mathematics and motion first, and one register per frame
 
-**Explanatory sentences do not belong on the picture.** They belong in the subtitle and in the
-teacher's mouth. The frame carries the figure, the symbols, the equation, the ratio and the
-marks — the things a student is actually being taught to read.
+Two rules govern everything the picture shows.
 
-| On the frame | In the subtitle and narration |
+**1. Say it in mathematics and motion if it can be said that way.** A concept that has a
+mathematical form and gets written out in Chinese has been translated away from the very thing
+the student is examined on.
+
+| On the frame | Not as a sentence |
 |---|---|
-| `AO : OM = 2 : 1` | 「較長一段連着頂點」 |
-| tick marks on two segments | 「這兩段相等」 |
-| a `median` term card, flashed with the purple lines | 「這條紫色線是 median」 |
-| a vertex being dragged while the point stays inside | 「centroid 永遠在 triangle 內」 |
+| `AO : OM = 2 : 1` | ~~較長一段連着頂點~~ |
+| tick marks on two segments | ~~這兩段相等~~ |
+| a `median` term card, flashed with the purple lines | ~~這條紫色線是 median~~ |
+| a vertex dragged while the point stays inside | ~~centroid 永遠在 triangle 內~~ |
 
-Per shot, on the picture: **explanatory prose = 0 字**, and title + labels + term cards
-**≤ 12 字** in total (a Latin word counts as 2 字). Mathematics is unlimited — it is the point.
+The last row is the general form: **a property that holds under variation is shown by varying
+it** — the one thing a textbook cannot do.
 
-When a frame seems to need a sentence, the frame needs a better picture, not smaller type. A
-property that holds under variation is shown **by varying it**, which is the one thing a textbook
-cannot do.
+**2. A frame speaks mathematics or it speaks words, never both.** The two are read differently,
+and mixing them makes the student switch modes mid-shot so neither gets read. That mixture is the
+defect; text beside a *figure* is not.
 
-**One exception — the step list.** An enumerated procedure is the thing narration genuinely cannot
-carry: a subtitle is linear and transient, so by step ③ the student has lost step ① and never sees
-the shape of the procedure. A numbered list may be on screen, but **only as its own slide** — no
-figure, no graph, no displayed equation, ≤ 5 items, revealed one at a time on the narration beat
-that explains each. Then cut to the figure and carry the steps out. What is banned is the hybrid:
-sentences parked beside a diagram, where the student can do neither properly.
+| | Mathematical register | Verbal register |
+|---|---|---|
+| Carries | equations, formulae, ratios, derivations | an enumerated list of steps or conditions |
+| Figure | yes | **yes** — and it should react as each item lands |
+| Never | an explanatory sentence | a displayed equation |
+| Budget | non-mathematical text ≤ 12 字 | ≤ 5 items, each ≤ 20 字 |
+
+Most lessons need both registers; they just take separate shots, with the figure carrying across.
+Words are for what genuinely cannot be said in mathematics — chiefly an **enumerated procedure**,
+which narration cannot carry because a subtitle is linear and transient, so by step ③ the student
+has lost step ① and never sees the shape of the procedure. Reveal such a list one item at a time,
+and let each item act on the figure as it lands.
 
 Full rules, the translation table and a worked before/after in
 `references/on-screen-language.md`.
@@ -186,12 +194,14 @@ A still proves composition, never motion (`manim -s` skips animations entirely �
 Check across adjacent panels: does the figure persist, does screen direction hold, does the
 colour meaning stay constant, does each shot's end state match the next shot's start state.
 
-**This is where on-screen prose gets caught.** Check each panel against its `kind`:
+**This is where on-screen prose gets caught.** Check each panel against its `register`:
 
-- **`figure` panels** — count the non-mathematical characters. Over 12 字, or any complete
+- **`math` panels** — count the non-mathematical characters. Over 12 字, or any complete
   sentence, means redesign the panel, not shrink the type.
-- **`slide` panels** — a step list and nothing else. If a figure, graph or displayed equation
-  shares the frame with the list, split it into two shots.
+- **`verbal` panels** — one enumerated list, ≤ 5 items. A figure alongside it is good; a
+  **displayed equation** alongside it means split the shot in two.
+- **Both** — no loose explanatory sentence anywhere, and nothing written in words that the
+  figure could have shown as a mark, a colour, or a movement.
 
 For every sentence that is not there, name where it went (subtitle, narration, or an animated
 beat), and for every term card, name the shot that bound it to its colour. Then ask of each
@@ -374,11 +384,10 @@ Report what you verified and how. If something was not checked, say so.
 14. **Never leave a label sitting on a line.** Move it into clear space first — with a hairline
     leader to its point if it must reach one — and halo it only where overlap is genuinely
     unavoidable. `label()` haloes by default. See `references/brand-theme.md`.
-15. **Never put an explanatory sentence beside a picture.** The frame gets mathematics, figures,
-    labels, term cards and DSE reasons; explanation goes to the subtitle and the narration. If a
-    frame seems to need a sentence, it needs a better picture. The one exception is an
-    **enumerated step list**, which narration cannot carry — and it gets its **own slide**, with
-    no figure and no displayed equation. Never the hybrid of a list parked next to a diagram.
+15. **Never mix displayed mathematics and words on one frame,** and never write in words what the
+    frame could say in mathematics or show by moving. A shot is in one register: equations with
+    the figure, or an enumerated list with the figure — the figure is welcome in both, loose
+    explanatory sentences in neither. If a beat needs the list and the equation, it is two shots.
     See `references/on-screen-language.md`.
 16. **Never mock up a storyboard panel by hand.** Every panel is a Manim still rendered from the
     real scene. A hand-authored SVG is laid out by a different engine, so it looks right exactly
