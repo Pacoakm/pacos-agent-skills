@@ -150,10 +150,29 @@ shots again, and stop again.
 
 ## Gate 2 — Storyboard
 
-One frame per shot, authored as exact SVG or rendered as a Manim still, then assembled into
-review sheets with `scripts/build_storyboard.py`. Each panel carries: shot ID, time range,
-the visual, the motion, the transition, and **the subtitle text with its character count and
-the pacing verdict**.
+One frame per shot, **rendered as a Manim still from the real scene**, then assembled into review
+sheets with `scripts/build_storyboard.py`. Each panel carries: shot ID, time range, the visual,
+the motion, the transition, and **the subtitle text with its character count and the pacing
+verdict**.
+
+```bash
+manim -ql -s --format=png -o S01.png src/script.py S01Hook     # → storyboard/frames/
+```
+
+**Never mock a panel up as hand-authored SVG.** The panel is what the user approves at Gate 2, so
+it has to be the frame, not a drawing of the intended frame. A hand-made SVG is laid out by a
+different engine with different fonts, so it renders *correctly* exactly where Manim does not —
+it would have shown clean letter spacing while the real render had trap #22, clean labels while
+the real render had them buried in the figure, and text fitting a margin the theme cannot
+actually fit. An approval given on that picture binds nothing.
+
+It is also not extra work. The still comes from a scene stub that **becomes** the lesson scene:
+build the figure and the on-screen text at Gate 2, add the animation at Gate 3. Only the
+`build_storyboard.py` sheet itself is SVG, and that is review-document furniture — header, panel
+chrome, notes — with each frame embedded as an image.
+
+A still proves composition, never motion (`manim -s` skips animations entirely — see
+`references/manim-traps.md` #17). Motion is Gate 3's job.
 
 Check across adjacent panels: does the figure persist, does screen direction hold, does the
 colour meaning stay constant, does each shot's end state match the next shot's start state.
@@ -345,6 +364,9 @@ Report what you verified and how. If something was not checked, say so.
     labels, term cards and DSE reasons; explanation goes to the subtitle and the narration. If a
     frame seems to need a sentence, it needs a better picture. See
     `references/on-screen-language.md`.
+16. **Never mock up a storyboard panel by hand.** Every panel is a Manim still rendered from the
+    real scene. A hand-authored SVG is laid out by a different engine, so it looks right exactly
+    where the render does not, and the Gate 2 approval it earns binds nothing.
 
 ## Bundled resources
 
