@@ -41,12 +41,14 @@ lost to this before it was found.
 
 ## 5. `config.tex_template` does not survive between scenes
 
-Manim re-initialises `config` between scenes when several are rendered in one command. Only
-**4 of 11** generated `.tex` files carried the sans preamble; the rest silently fell back to
-Computer Modern.
+Manim re-initialises `config` between scenes when several are rendered in one command. When the
+theme still shipped a custom preamble, only **4 of 11** generated `.tex` files carried it and the
+rest silently fell back to the stock template. The theme now *uses* the stock template, so this
+particular drift is currently harmless — but it will bite again the moment any preamble is added,
+so the discipline stands.
 
-**Fix:** `mtex()` and `step()` pass `tex_template=TEX_SANS` explicitly. Scene code must never
-call `MathTex` directly.
+**Fix:** `mtex()`, `mtex_ref()` and `step()` pass `tex_template=TEX_MAIN` explicitly. Scene code
+must never call `MathTex` directly.
 
 ## 6. `always_redraw` throws away outer positioning
 
@@ -89,13 +91,18 @@ Wrapping must be **measured**, not estimated from character counts — English w
 than the count implies, and a line ran off both edges of a 9:16 frame. Estimate to choose the
 break, then measure and tighten until it truly fits.
 
-## 11. DM Sans breaks below about 44pt under Pango
+## 11. DM Sans breaks below about 44pt under Pango — *historical*
+
+*No longer live: the theme dropped DM Sans when the titles moved to Computer Modern. Kept because
+the finding is about Pango, not about DM Sans, and it will apply to any proportional display face
+someone reintroduces.*
 
 Word spacing collapses: `angles in the same segment` renders with the space after `angles`
 eaten. Verified by rendering, not assumed.
 
-**Fix:** DM Sans is display-only, `DISPLAY_MIN = 44`. PingFang HK is the text face at every
-size, and it sets 繁體中文 and inline Latin cleanly.
+**Fix at the time:** DM Sans was display-only, `DISPLAY_MIN = 44`. The current theme avoids the
+question entirely — Latin on the frame goes through TeX, and the only Pango faces left are Songti
+TC for on-frame Chinese and PingFang HK for captions, both at sizes well clear of this.
 
 ## 12. ffmpeg often ships without libass
 
@@ -266,6 +273,14 @@ correction itself.
 **Never call `Text()` directly** for anything containing Latin — use `title()`, `body()`,
 `label()`, `caption_text()`, or `_text()`.
 
+**Independently corroborated.** Nous Research's bundled `creative-manim-video` skill reports the
+same defect in its own words — "Manim's Pango renderer produces broken kerning with proportional
+fonts at all sizes" — and works around it by mandating a **monospace** face throughout. That
+confirms the diagnosis is not local to this machine. It is a real fix, but it pays by giving up
+proportional type everywhere; laying out at `TYPE_BASE` and scaling costs nothing and keeps the
+face, so it is the better trade. Worth knowing a second party hit this hard enough to change their
+whole type system over it.
+
 ## 23. `set_stroke(width=...)` is not in scene units
 
 A stroke width computed from a mobject's `.height` — which *is* in scene units — comes out about
@@ -283,6 +298,28 @@ Measured at 1080p against `frame_width` 14.222:
 **`stroke_width` 100 = 1.0 scene unit**, and the ratio is resolution independent. The theme
 exposes it as `STROKE_PER_UNIT`. Remember the stroke is centred on the outline, so only half of
 it sits outside the shape — a halo of visible thickness `t` needs `2 * 100 * t`.
+
+## 24. `Angle()` draws the reflex angle half the time
+
+`Angle(line1, line2)` sweeps **counterclockwise from line1 to line2**, so whether you get the
+angle or its reflex depends on the order you happened to pass the vertices. It renders without an
+error either way, and a reflex arc looks like a big circle round the vertex rather than anything
+obviously broken.
+
+Measured on one triangle, drawn arc against the true interior angle:
+
+| call | true | drawn |
+|---|---|---|
+| `Angle(Line(A,B), Line(A,D))` | 52.08° | **313.74°** |
+| `Angle(Line(A,B), Line(A,D), other_angle=True)` | 52.08° | 52.11° |
+| `Angle(Line(A,D), Line(A,B))` | 52.08° | 52.11° |
+
+So `other_angle=True` and swapping the operands do the same thing, and neither is "the safe one"
+— the correct choice flips with the vertex ordering.
+
+**Fix:** `angle_at(vertex, p, q)` in the theme. It takes the orientation from
+`cross(p−v, q−v).z`, then **asserts the drawn arc length really is the computed angle**, so a
+wrong arc raises instead of rendering. Never call `Angle()` directly in a lesson scene.
 
 ---
 

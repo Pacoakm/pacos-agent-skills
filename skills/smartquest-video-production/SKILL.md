@@ -7,6 +7,40 @@ description: Produce SmartQuest DSE teaching videos — Manim-animated lessons f
 
 Teaching videos for HKDSE students, animated in Manim, narrated later by a real teacher.
 
+## What we are making
+
+**The 3Blue1Brown of the DSE syllabus — every subject, not only Maths.**
+
+Plenty of Hong Kong students already watch 3Blue1Brown. What stops it being enough is not the
+craft, it is the fit: he goes deeper than a syllabus needs, chooses topics for their beauty, and
+owes nothing to a marking scheme. So a student gets the intuition and still cannot answer Q11.
+
+SmartQuest takes his standard and binds it to the syllabus. That sets the bar in both directions:
+
+- **The reference point is 3Blue1Brown, not a typical tutorial video.** A talking head over a
+  worked past paper is not the thing being aimed at, even though it is what the market supplies.
+- **Every lesson is syllabus-bound and mark-aware.** DSE reasons on screen, the marker's exact
+  wording, no beautiful digression that earns nothing.
+
+### It has to work outside Maths
+
+The rules in this skill are written in the language of a geometry lesson — the figure, the angle,
+the derivation. They are not Maths-only, but they need translating, and the translation is part of
+designing a Physics, Chemistry or Biology lesson rather than an afterthought.
+
+| | The "figure" is | The referent a colour names | The mathematical register carries |
+|---|---|---|---|
+| **Maths** | the diagram | a point, side, angle | the derivation |
+| **Physics** | the free-body diagram, the ray path, the graph | a force, a component, a body | the equation of motion, the graph gradient |
+| **Chemistry** | the structure, the apparatus, the energy profile | a species, a bonding pair, an electron | the balanced equation, the mole calculation |
+| **Biology** | the structure, the cycle, the pathway | an organ, a molecule, a stage of a process | far less — see below |
+
+**Biology is the honest exception.** It carries much less symbolic content, so its lessons lean
+harder on the **verbal register** — the enumerated list of stages — and on the figure changing over
+time. That is a legitimate shift, not a failure to follow the rules. What does not shift: a colour
+still names one thing everywhere it appears, the figure is still built in step with the narration,
+and loose explanatory prose still belongs to the subtitle.
+
 Five gates: **(1)** lesson design + narration script + subtitle draft → **(2)** storyboard →
 **(3)** silent draft render → **(4)** picture master + caption track → **(5)** narration
 handoff, recording returned, audio mux, verified delivery.
@@ -46,11 +80,49 @@ actual re-render, not a description of what would change.
 | Subtitle language | 繁體中文**書面語**, with subject terms kept in **English** (see `references/narration-and-subtitles.md`) |
 | Long form | 1920×1080 · 16:9 · **60 fps** · 5 min or longer |
 | Shorts | 1080×1920 · 9:16 · 60 fps · about 60 s |
-| Theme | The SmartQuest theme in `references/brand-theme.md`. Not 3Blue1Brown's black field |
+| Theme | The SmartQuest theme in `references/brand-theme.md`: **dark field, Computer Modern throughout** in the 3Blue1Brown manner. SmartQuest identity is carried by the colour set, `brand_rule()` and the sans caption track |
 | Audience | Hong Kong secondary students sitting the **English-language** DSE papers, taught in Cantonese |
 
 Only reach outside Manim when Manim genuinely cannot produce the shot — a screen recording, a
 photograph, a past-paper scan. Say so explicitly and keep it to named shots.
+
+## Mathematics and motion first, and one register per frame
+
+Two rules govern everything the picture shows.
+
+**1. Say it in mathematics and motion if it can be said that way.** A concept that has a
+mathematical form and gets written out in Chinese has been translated away from the very thing
+the student is examined on.
+
+| On the frame | Not as a sentence |
+|---|---|
+| `AO : OM = 2 : 1` | ~~較長一段連着頂點~~ |
+| tick marks on two segments | ~~這兩段相等~~ |
+| a `median` term card, flashed with the purple lines | ~~這條紫色線是 median~~ |
+| a vertex dragged while the point stays inside | ~~centroid 永遠在 triangle 內~~ |
+
+The last row is the general form: **a property that holds under variation is shown by varying
+it** — the one thing a textbook cannot do.
+
+**2. A frame speaks mathematics or it speaks words, never both.** The two are read differently,
+and mixing them makes the student switch modes mid-shot so neither gets read. That mixture is the
+defect; text beside a *figure* is not.
+
+| | Mathematical register | Verbal register |
+|---|---|---|
+| Carries | equations, formulae, ratios, derivations | an enumerated list of steps or conditions |
+| Figure | yes | **yes** — and it should react as each item lands |
+| Never | an explanatory sentence | a displayed equation |
+| Budget | non-mathematical text ≤ 12 字 | ≤ 5 items, each ≤ 20 字 |
+
+Most lessons need both registers; they just take separate shots, with the figure carrying across.
+Words are for what genuinely cannot be said in mathematics — chiefly an **enumerated procedure**,
+which narration cannot carry because a subtitle is linear and transient, so by step ③ the student
+has lost step ① and never sees the shape of the procedure. Reveal such a list one item at a time,
+and let each item act on the figure as it lands.
+
+Full rules, the translation table and a worked before/after in
+`references/on-screen-language.md`.
 
 ## Ask only what is missing
 
@@ -76,6 +148,18 @@ Write `brief.md` covering, in this order:
   reason wrong is still a wrong lesson.
 - **Known limitations** — cases the video does not cover. Say so on the record; never let the
   video imply completeness it does not have.
+- **The five lesson patterns** — answer each explicitly, per `references/lesson-patterns.md`:
+  1. **The hook question** — what the student wants to know after the opening shot, in one
+     sentence. 「今日我們講 X」 is a table of contents, not a hook.
+  2. **Behaviour before name** — for each term, the beat where the student *sees* it before it is
+     named. Never open a section with a definition.
+  3. **The concrete case** — the real numbers worked before any general form. If the lesson only
+     shows the general form, name the specific case it came from and put that case in the video.
+  4. **The ponder beat** — where the student is handed the problem before the answer, and for how
+     long. A worked example with no ponder beat needs a reason.
+  5. **Argument or illustration** — for each beat, does the animation *establish* the result or
+     merely display it? Say which, and promote at least one. The aha must be an argument; an aha
+     the student is told rather than shown is an aha in name only.
 
 Verify every formula, constant, unit, and worked number independently before animating. Record
 the check in `brief.md`. A wrong number that reaches the render is the most expensive defect
@@ -112,6 +196,9 @@ be read without opening files:
 - **The full script** — every shot in order, as a table: shot ID, timecode, allotted seconds, the
   exact 書面語 subtitle text, 字數, and the pacing verdict against both the reading budget
   (`字數 ≤ 秒數 × 4.0`) and the breathing budget (`stillSeconds ≥ 秒數 × 0.25`).
+- **What is on the picture** — per shot, the `onScreenText` list and its 字數 against the ≤ 12 字
+  limit, so the split between picture and narration is visible before anything is drawn. Any
+  sentence you moved off the frame: say where it went, and what mathematics replaced it.
 - **The timeline** — section structure, total duration, and the knowledge-point count.
 - **Open questions** — anything you decided by assumption rather than instruction.
 
@@ -126,13 +213,46 @@ shots again, and stop again.
 
 ## Gate 2 — Storyboard
 
-One frame per shot, authored as exact SVG or rendered as a Manim still, then assembled into
-review sheets with `scripts/build_storyboard.py`. Each panel carries: shot ID, time range,
-the visual, the motion, the transition, and **the subtitle text with its character count and
-the pacing verdict**.
+One frame per shot, **rendered as a Manim still from the real scene**, then assembled into review
+sheets with `scripts/build_storyboard.py`. Each panel carries: shot ID, time range, the visual,
+the motion, the transition, and **the subtitle text with its character count and the pacing
+verdict**.
+
+```bash
+manim -ql -s --format=png -o S01.png src/script.py S01Hook     # → storyboard/frames/
+```
+
+**Never mock a panel up as hand-authored SVG.** The panel is what the user approves at Gate 2, so
+it has to be the frame, not a drawing of the intended frame. A hand-made SVG is laid out by a
+different engine with different fonts, so it renders *correctly* exactly where Manim does not —
+it would have shown clean letter spacing while the real render had trap #22, clean labels while
+the real render had them buried in the figure, and text fitting a margin the theme cannot
+actually fit. An approval given on that picture binds nothing.
+
+It is also not extra work. The still comes from a scene stub that **becomes** the lesson scene:
+build the figure and the on-screen text at Gate 2, add the animation at Gate 3. Only the
+`build_storyboard.py` sheet itself is SVG, and that is review-document furniture — header, panel
+chrome, notes — with each frame embedded as an image.
+
+A still proves composition, never motion (`manim -s` skips animations entirely — see
+`references/manim-traps.md` #17). Motion is Gate 3's job.
 
 Check across adjacent panels: does the figure persist, does screen direction hold, does the
 colour meaning stay constant, does each shot's end state match the next shot's start state.
+
+**This is where on-screen prose gets caught.** Check each panel against its `register`:
+
+- **`math` panels** — count the non-mathematical characters. Over 12 字, or any complete
+  sentence, means redesign the panel, not shrink the type.
+- **`verbal` panels** — one enumerated list, ≤ 5 items. A figure alongside it is good; a
+  **displayed equation** alongside it means split the shot in two.
+- **Both** — no loose explanatory sentence anywhere, and nothing written in words that the
+  figure could have shown as a mark, a colour, or a movement.
+
+For every sentence that is not there, name where it went (subtitle, narration, or an animated
+beat), and for every term card, name the shot that bound it to its colour. Then ask of each
+remaining word: *would this panel still teach without it?* If yes, delete it.
+See `references/on-screen-language.md`.
 
 ### Show the user and stop for approval
 
@@ -168,6 +288,11 @@ Watch it yourself first, against the Gate 3 questions in `references/pacing.md`:
 dwell after each reveal, whether a student can read every line in time, whether any beat rushes
 past a knowledge point, whether the teacher could speak the script over this without rushing.
 Fix what you already know is wrong before showing it — the user's review is not your first pass.
+
+**Check the beats here too, because synchrony is invisible in a still.** For every derived
+quantity: does its mark appear on the figure at the same instant as its line, or has the figure
+been carrying it since the shot opened? Does the subtitle for that step run across that instant?
+A storyboard panel cannot show any of this — it is the reason a draft exists.
 
 ### Show the user and stop for approval
 
@@ -286,7 +411,10 @@ Report what you verified and how. If something was not checked, say so.
 3. **Never invent a DSE reason or a formula.** Verify against the syllabus wording.
 4. **Never let the plan and the render disagree.** `video-plan.json` wins; update it first.
 5. **Never bake subtitles into lesson scenes.** They live on the caption track.
-6. **Never change a colour's meaning** once assigned inside a video, or across a series.
+6. **Never change a colour's meaning** once assigned inside a video, or across a series — and a
+   recurring object keeps its pen across the whole series, not just within one video. If the
+   median is violet in lesson 1 it is violet in lesson 7, so a student arrives already knowing
+   what the colour means. Record the assignment in `brief.md` and reuse it.
 7. **Never hard-code 16:9 coordinates.** Use the layout tokens so shorts work from the same code.
 8. **Stop at the last verified artifact** when a dependency, asset, or decision is missing, and
    state exactly what is needed.
@@ -310,6 +438,40 @@ Report what you verified and how. If something was not checked, say so.
 14. **Never leave a label sitting on a line.** Move it into clear space first — with a hairline
     leader to its point if it must reach one — and halo it only where overlap is genuinely
     unavoidable. `label()` haloes by default. See `references/brand-theme.md`.
+15. **Never mix displayed mathematics and words on one frame,** and never write in words what the
+    frame could say in mathematics or show by moving. A shot is in one register: equations with
+    the figure, or an enumerated list with the figure — the figure is welcome in both, loose
+    explanatory sentences in neither. If a beat needs the list and the equation, it is two shots.
+    See `references/on-screen-language.md`.
+16. **Never mock up a storyboard panel by hand.** Every panel is a Manim still rendered from the
+    real scene. A hand-authored SVG is laid out by a different engine, so it looks right exactly
+    where the render does not, and the Gate 2 approval it earns binds nothing.
+17. **Never leave a symbol un-findable.** Every symbol naming something in the figure wears that
+    thing's colour at every occurrence — figure, formula, and every later line — and moves with
+    it when it first appears (`mtex_ref()`, `bind_term()`). Never a multi-part expression in one
+    ink, even with no figure. Never a colour spent on emphasis: colour names a thing, and
+    marking the answer green burns a hue that could have named an angle. For geometry, label
+    every quantity the derivation uses **onto** the figure — lengths on their sides, angles as
+    coloured arcs — so the student never reads left-and-right.
+    **The test:** frozen and printed in black and white, is this frame just a marking scheme? If
+    yes, it has no reason to be a video. See `references/on-screen-language.md`.
+18. **Never draw a derived quantity before its step.** Only the question's givens are on the
+    figure at the start. When `∠CAD = 60°` lands on the right, the arc at `CAD` is drawn and
+    labelled `60°` on the left **in the same `play()` call**, on that step's narration beat — not
+    earlier, and not in a later play. A figure that already carries every angle before the
+    derivation begins is an answer key: nothing to watch, and no way to tell which mark the
+    current line just produced. See `references/on-screen-language.md`.
+19. **Never leave a corner or a line end square.** Call `soften()` on every figure — Manim's
+    default `joint_type=AUTO` is a flat bevel, not a round join, and `cap_style=AUTO` squares off
+    line ends. But **never `round_corners()`** on a lesson figure: that replaces each vertex with
+    a fillet, so the angle the question is about stops existing. `soften()` changes the finish,
+    `round_corners()` changes the mathematics. See `references/brand-theme.md`.
+20. **Never import a picture of text, and never `self.add()` it.** Every string on the picture —
+    中文, English, `MathTex` alike — is a Manim mobject from a theme helper, and it **enters with
+    an animation** at `T_REVEAL`. No `SVGMobject`/`ImageMobject` of a label or formula; `add()` is
+    only for state carried over from the previous scene. **The caption track is exempt** on both
+    counts: it is a separate track, it may be produced outside Manim, and a cue cuts on rather
+    than animating in. See `references/brand-theme.md`.
 
 ## Bundled resources
 
@@ -317,7 +479,11 @@ Report what you verified and how. If something was not checked, say so.
 - `references/3d-geometry.md` — the extra gates a solid-geometry lesson needs.
 - `references/manim-traps.md` — the ways Manim renders without an error and is still wrong.
 - `references/engines-and-plugins.md` — when ManimGL is allowed, and the verified plugin state.
+- `references/on-screen-language.md` — what may appear on the picture, and how to say in
+  mathematics what you were about to write as a sentence.
 - `references/narration-and-subtitles.md` — 書面語 rules, the English-term rule, subtitle format.
+- `references/lesson-patterns.md` — how a lesson is sequenced: the hook question, behaviour
+  before name, concrete before general, the ponder beat, argument versus illustration.
 - `references/pacing.md` — teaching rhythm, dwell times, narration room, checkable limits.
 - `references/production-contract.md` — `video-plan.json` schema, folder layout, invariants.
 - `scripts/smartquest_theme.py` — importable Manim theme: colours, fonts, layout, helpers.

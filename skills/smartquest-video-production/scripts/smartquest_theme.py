@@ -12,77 +12,86 @@ both the 16:9 lesson and the 9:16 short.
             fig = self.stage.figure_box()
             ...
 
-Everything here is derived from SmartQuestApp/DESIGN.md. The field is light —
-a dark video reads as 'advanced' to a secondary student, which is the opposite
-of what a first-encounter lesson wants.
+The field is dark and the mathematics is Computer Modern, in the 3Blue1Brown
+manner. What stays SmartQuest is the colour set, the DM Sans title, and the
+sans caption track. Every colour here was measured against the dark background —
+see the palette block; the previous light-theme inks all fail on it.
 """
 from manim import *
 import numpy as np
 import re
 
 # --------------------------------------------------------------- palette ----
-# Light theme. A dark field reads as "advanced" to a secondary student; a clean
-# near-white page reads as a well-set textbook, which is what we want.
-BG = "#FBFCFE"          # barely-tinted cool white
-BG_LIFT = "#FFFFFF"     # a gentle white wash, top to bottom
-INK = "#1B2440"         # deep indigo-slate — softer than black, still brand-cool
-MUTED = "#64748B"       # captions, secondary notes, DSE reasons        4.64:1
-LINE = "#7C8AA3"        # neutral geometry                              3.49:1
+# Dark field, in the 3Blue1Brown manner. A near-black rather than pure black:
+# the slight cool lift keeps the brand's indigo temperature and is gentler on a
+# phone at night, and it costs almost nothing in contrast.
+#
+# EVERY value below was re-measured against this background. The previous light
+# theme used 700-level inks, and all five of them FAIL on dark — blue-700 3.13:1,
+# violet-700 2.96:1, rose-700 3.34:1, emerald-700 3.83:1, orange-700 4.06:1.
+# The palette is therefore shifted to the 400 level, which keeps our hues (that
+# is the SmartQuest difference from 3b1b's blue/yellow) while clearing 4.5:1 with
+# a large margin.
+BG = "#0B0E14"          # cool near-black
+BG_LIFT = "#141926"     # a gentle lift, top to bottom
+INK = "#E9EDF7"         # main type — cool near-white            16.48:1
+MUTED = "#98A3BA"       # captions, secondary notes, DSE reasons  7.62:1
+LINE = "#6B7893"        # neutral geometry                        4.35:1
 
-# Teaching semantics — five inks at the same tonal step, chosen for hue
-# separation first and measured for contrast second. GIVEN and UNKNOWN appear
-# together in almost every frame, so they are complementary (blue vs burnt
-# orange) rather than two neighbouring blues.
-GIVEN = "#1D4ED8"       # blue-700     what the question gives you      6.53:1
-UNKNOWN = "#C2410C"     # orange-700   what you are solving for         5.04:1
-RESULT = "#047857"      # emerald-700  a confirmed result               5.34:1
-WARN = "#BE123C"        # rose-700     the misconception, the trap      6.12:1
-AUX = "#6D28D9"         # violet-700   construction, first-use terms    6.92:1
+# Teaching semantics — the same eight hues as the light theme, one tonal step
+# lighter so they read on the dark field. Hue separation checked: minimum 25.2°
+# across all eight pens.
+GIVEN = "#60A5FA"       # blue-400     what the question gives you    7.60:1
+UNKNOWN = "#FB923C"     # orange-400   what you are solving for       8.53:1
+RESULT = "#34D399"      # emerald-400  a confirmed result            10.05:1
+WARN = "#FB7185"        # rose-400     the misconception, the trap    7.18:1
+AUX = "#A78BFA"         # violet-400   construction, first-use terms  7.10:1
 
-BRAND_FROM = "#4B60D6"  # gradient start — brand primary
-BRAND_TO = "#9747FF"    # gradient end
+BRAND_FROM = "#7B8CF0"  # gradient start — brand primary, lifted for dark
+BRAND_TO = "#B06BFF"    # gradient end
 
-# Captions: big, bold, dark, no bar and no glow. The caption band is reserved
-# empty page, so plain dark type on the light field already has full contrast —
-# a glow or an outline only adds noise. Readability comes from size and weight.
-CAPTION_INK = "#1B2440"
-# Accent for a first-use English term. NOT a teaching semantic — the five
+# Captions are the one layer that stays sans and stays OUR type, so they read as
+# a separate track laid over the lesson rather than part of the mathematics.
+CAPTION_INK = "#F2F5FC"                                        # 17.70:1
+# Accent for a first-use English term. NOT a teaching semantic — the eight
 # semantic colours belong to the figure, this one belongs to the text.
-CAPTION_TERM = "#B45309"
+CAPTION_TERM = "#FBBF24"   # amber-400
 CAPTION_LINE_GAP = 0.16   # gap between wrapped caption lines
 
 PALETTE = dict(bg=BG, ink=INK, muted=MUTED, line=LINE, given=GIVEN,
                unknown=UNKNOWN, result=RESULT, warn=WARN, aux=AUX)
 
 # ------------------------------------------------------------ typography ----
-# PingFang HK renders 繁體中文 and inline Latin cleanly under Manim's Pango
-# renderer, so it is the single Text() face. DM Sans is brand, but its Latin
-# kerning breaks under Pango below ~44pt, so it is display-only.
-FONT_TEXT = "PingFang HK"
-WEIGHT_TEXT = MEDIUM    # 蘋方 Medium — steadier than Regular at video sizes
-FONT_DISPLAY = "DM Sans"
-DISPLAY_MIN = 44        # never set DM Sans smaller than this
-
-# ---- mathematics is set sans-serif, to sit with PingFang and DM Sans --------
-# Computer Modern's serif italic is the 3Blue1Brown look and clashes with a
-# sans interface. \mathsf{} alone is not enough: it leaves Greek letters and
-# anything inside \text{} serif, so the line ends up mixed. helvet + sfmath
-# converts equations, Greek and \text{} together.
+# Mathematics is Computer Modern — Manim's stock TeX template, which is the
+# 3Blue1Brown look. The earlier sans build (helvet + sfmath) is gone.
 #
-# Needs two TeX packages:  tlmgr install sfmath helvet
-def _sans_tex_template():
-    t = TexTemplate()
-    t.add_to_preamble(r"\usepackage{helvet}")
-    t.add_to_preamble(r"\renewcommand{\familydefault}{\sfdefault}")
-    t.add_to_preamble(r"\usepackage{sfmath}")
-    return t
+# Chinese has no Computer Modern, so it is set in a 繁中 serif to sit with it:
+# Songti TC, a 宋体/明體 whose stroke modulation matches CM's. PingFang was the
+# light theme's face and is now reserved for captions, which keeps the caption
+# track visibly a separate layer laid over the lesson.
+FONT_TEXT = "Songti TC"     # 繁中 serif for on-frame Chinese
+WEIGHT_TEXT = NORMAL        # Songti has no Medium; NORMAL is the design weight
+FONT_CAPTION = "PingFang HK"   # captions only — sans, so the track reads apart
+WEIGHT_CAPTION = BOLD
+# DM Sans is gone. Titles are Computer Modern like everything else on the frame,
+# so the whole lesson is set in one face and only the caption track differs.
+# SmartQuest identity is now carried by the colour set and brand_rule().
+FONT_DISPLAY = FONT_TEXT    # deprecated alias — DM Sans is no longer used
+DISPLAY_MIN = 22            # deprecated alias — kept so old scenes still import
 
-
-TEX_SANS = _sans_tex_template()
-config.tex_template = TEX_SANS   # a default, but NOT something to rely on:
+# Manim's stock template IS Computer Modern, so the theme simply stops
+# overriding it. TEX_SANS is kept as a name so existing scenes do not break, but
+# it now resolves to the same stock template.
+TEX_MAIN = TexTemplate()
+TEX_SANS = TEX_MAIN         # deprecated alias — the sans build was removed
+config.tex_template = TEX_MAIN   # a default, but NOT something to rely on:
 # Manim re-initialises config between scenes when several are rendered in one
-# command, so some scenes silently fall back to Computer Modern. Always build
-# mathematics with mtex()/step(), which pass the template explicitly.
+# command. Always build mathematics with mtex()/step(), which pass the template
+# explicitly.
+#
+# After this change, CLEAR THE TEX CACHE — media/Tex is keyed by the expression,
+# not the preamble, so old sans SVGs are silently reused (trap #4):
+#     rm -rf media/Tex media/texts
 
 
 SIZE_TITLE = 52
@@ -256,6 +265,24 @@ def _pt(size):
     return max(size, SIZE_MIN) * TYPE_SCALE
 
 
+# ---- stroke weights --------------------------------------------------------
+# stroke_width is constant in SCENE units (100 = 1.0 unit, see STROKE_PER_UNIT),
+# which means it is NOT constant as a fraction of the frame: frame_height stays
+# 8 while frame_width shrinks to 4.5 in portrait, so the same weight covers far
+# more of a 9:16 frame. Measured in manim-traps.md #3: stroke_width 4 renders
+# 5 px at 1920×1080 and 10 px at 1080×1920, against a figure that is itself
+# smaller (299 px radius vs 352 px) — lines read about 2.4× too heavy in a short.
+_PORTRAIT_STROKE = 1 / 2.4
+STROKE_SCALE = (_PORTRAIT_STROKE
+                if config.pixel_height > config.pixel_width else 1.0)
+
+# Name a weight, never a number.
+SW_HAIRLINE = 2 * STROKE_SCALE     # construction, ghosts, dimmed context
+SW_FIGURE = 3 * STROKE_SCALE       # the circle, neutral geometry
+SW_EMPHASIS = 6 * STROKE_SCALE     # coloured rays — the lines the lesson is about
+SW_MARK = 4 * STROKE_SCALE         # right-angle markers, tick marks
+
+
 # ---- always lay text out at ONE size, then scale ---------------------------
 # Pango grid-fits glyph positions to the pixel grid of whatever font_size it is
 # handed, and Manim then scales that layout into scene units. So the SAME word
@@ -281,10 +308,21 @@ def _text(string, size, **kw):
 
 
 # --------------------------------------------------------------- elements ----
+_HAS_CJK = re.compile(r"[\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uFF00-\uFFEF]")
+
+
 def title(text, color=INK, size=SIZE_TITLE):
-    """Display type. DM Sans, brand, never below DISPLAY_MIN."""
-    return _text(text, max(size, DISPLAY_MIN) * TYPE_SCALE,
-                 font=FONT_DISPLAY, weight=BOLD, color=color)
+    """Display type — Computer Modern, like the rest of the frame.
+
+    Routed by script, not by character set: anything with a CJK character goes
+    to Songti TC, everything else to Tex. A title such as "1 · centroid" is
+    mostly Latin and belongs in TeX, so the test is for CJK rather than for
+    non-ASCII.
+    """
+    if _HAS_CJK.search(text):
+        return _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT,
+                     color=color)
+    return Tex(text, color=color, font_size=_pt(size), tex_template=TEX_MAIN)
 
 
 def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True):
@@ -298,14 +336,34 @@ def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True
                  font=FONT_TEXT, weight=WEIGHT_TEXT, color=color, t2c=t2c)
 
 
+_LATIN_ONLY = re.compile(r"^[\x20-\x7E]+$")
+_SYMBOLIC = re.compile(r"^[A-Za-z](['\u2032]|_\d)?$")   # A, B, P, A', v_1
+
+
 def label(text, color=INK, size=SIZE_LABEL, halo=True, halo_color=None):
     """A label on the figure. Haloed by default — see halo().
 
+    Latin content is set in TeX, not Pango, so a point label is the SAME glyph
+    as that point in the formula beside it — which is the whole point of rule 17.
+    A single symbol goes through MathTex (italic, exactly as `\angle BAD` sets
+    its letters); a word goes through Tex (upright roman, so `median` is not
+    read as m·e·d·i·a·n multiplied together). Chinese has no Computer Modern and
+    falls back to the 繁中 serif.
+
     Haloing is on because a figure label is exactly the thing that ends up over
-    a line. On clear background the halo is invisible (it is the background
-    colour), so leaving it on costs nothing.
+    a line. On the dark field the halo is the background colour, so on clear
+    ground it is invisible and costs nothing.
     """
-    t = _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT, color=color)
+    if _LATIN_ONLY.match(text):
+        if _SYMBOLIC.match(text):
+            t = MathTex(text, color=color, font_size=_pt(size),
+                        tex_template=TEX_MAIN)
+        else:
+            t = Tex(text, color=color, font_size=_pt(size),
+                    tex_template=TEX_MAIN)
+    else:
+        t = _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT,
+                  color=color)
     return halo_text(t, color=halo_color) if halo else t
 
 
@@ -334,11 +392,59 @@ def halo_text(mobject, color=None, ratio=None):
     return mobject
 
 
+# ---- referent pens ---------------------------------------------------------
+# Three more inks at the same tonal step, for figures with more angles and sides
+# than the five semantic colours can name. They carry NO role meaning — they are
+# simply further pens.
+#
+# Chosen by hue gap, not by eye. The five semantic hues sit at 17.5° (orange),
+# 162.9° (emerald), 224.3° (blue), 263.4° (violet), 345.3° (rose), and these
+# three land in the middle of the three widest gaps. Contrast measured against
+# BG: lime 4.86:1, fuchsia 6.16:1, cyan 5.22:1 — all above 4.5.
+REF_LIME = "#4D7C0F"    # hue  85.9°  fills the 145° orange→emerald gap
+REF_FUCHSIA = "#A21CAF" # hue 294.7°  fills the  82° violet→rose gap
+REF_CYAN = "#0E7490"    # hue 192.9°  fills the  61° emerald→blue gap
+
+# Hand out referent colours in this order. The minimum hue separation across all
+# eight is 30°, so they stay tellable apart. Rejected for being too close to a
+# colour already in the series: amber-700 (8° from orange), pink-700 (10° from
+# rose), teal-700 (12° from emerald), sky-700 (23° from blue).
+#
+# Past about eight the figure, not the palette, is the problem — but if a
+# question genuinely names more parts, reuse a pen on the part that is furthest
+# away on the figure and give the two different arc radii or tick counts as
+# well, so shape backs colour up.
+REF_SERIES = (GIVEN, UNKNOWN, AUX, RESULT, WARN,
+              REF_LIME, REF_FUCHSIA, REF_CYAN)
+
+
+def mtex_ref(expression, refs=None, color=INK, size=SIZE_BODY, **kw):
+    """Mathematics whose named parts carry their referent's colour.
+
+    A symbol naming something in the figure must wear that thing's colour at
+    EVERY occurrence, so the student can find it without hunting:
+
+        ANG = {"\\\\angle BAD": UNKNOWN, "BD": GIVEN, "AD": GIVEN}
+        mtex_ref(r"\\\\sin \\\\angle BAD = \\\\frac{12 \\\\sin 72^\\\\circ}{13}", ANG)
+
+    Then colour the same angle UNKNOWN on the figure and pulse the two together
+    with bind_term(). Colour here is reference, never decoration — see
+    references/on-screen-language.md.
+    """
+    refs = refs or {}
+    m = MathTex(expression, color=color, font_size=_pt(size),
+                tex_template=TEX_MAIN,
+                substrings_to_isolate=list(refs.keys()), **kw)
+    for tex, c in refs.items():
+        m.set_color_by_tex(tex, c)
+    return m
+
+
 def mtex(expression, color=INK, size=SIZE_BODY, **kw):
     """Mathematics. Use this instead of MathTex — it pins the sans template and
     applies the aspect-aware type scale."""
     return MathTex(expression, color=color, font_size=_pt(size),
-                   tex_template=TEX_SANS, **kw)
+                   tex_template=TEX_MAIN, **kw)
 
 
 # ------------------------------------------------------------- captions ----
@@ -355,7 +461,7 @@ def _char_w():
     """Calibrate this face's CJK and Latin advance once, so a line's width can be
     estimated without building a Text per candidate break."""
     if not _CAL:
-        mk = lambda t: _text(t, SIZE_CAPTION, font=FONT_TEXT, weight=BOLD).width
+        mk = lambda t: _text(t, SIZE_CAPTION, font=FONT_CAPTION, weight=WEIGHT_CAPTION).width
         _CAL["cjk"] = mk("測測測測測") / 5
         _CAL["lat"] = mk("semicircle") / 10      # a realistic word, not "mmmm"
         _CAL["sp"] = _CAL["lat"] * 0.55
@@ -426,7 +532,7 @@ def caption_text(text, terms=None):
     t2c = {k: CAPTION_TERM for k in (terms or [])}
 
     def one_line(line):
-        return _text(line, SIZE_CAPTION, font=FONT_TEXT, weight=BOLD,
+        return _text(line, SIZE_CAPTION, font=FONT_CAPTION, weight=WEIGHT_CAPTION,
                      color=CAPTION_INK, t2c=t2c)
 
     lines = [one_line(l) for l in text.split("\n") if l.strip()]
@@ -480,6 +586,107 @@ def emphasise(mobject, color=RESULT):
     return Indicate(mobject, scale_factor=1.06, color=color)
 
 
+def bind_term(figure, card, times=2, run_time=0.5):
+    """Teach that a coloured thing IS a named thing, without writing a sentence.
+
+    Flashes the figure element and its term card TOGETHER, twice. The
+    simultaneity is what carries the meaning — this replaces 「這條線是 median」
+    on the frame. After the binding, the colour carries the definition and no
+    later frame has to name it again. See references/on-screen-language.md.
+
+        meds = VGroup(*medians).set_color(AUX)
+        card = label("median", color=AUX).next_to(stage.figure_box(), RIGHT)
+        self.play(*bind_term(meds, card))
+
+    Returns a list of animations, so it composes with whatever else the beat
+    needs. Both pulses must run in the SAME play() call — flashing them one
+    after another says "these two things exist", not "these two are the same".
+    """
+    anims = []
+    for _ in range(times):
+        anims += [Indicate(figure, scale_factor=1.0, color=figure.get_color(),
+                           run_time=run_time),
+                  Indicate(card, scale_factor=1.06, color=card.get_color(),
+                           run_time=run_time)]
+    return anims
+
+
+def soften(*mobjects):
+    """Round every stroke corner and every stroke end. Call it on the figure.
+
+    Manim's default `joint_type=AUTO` is a BEVEL — a flat cut across the corner,
+    not a round one — and `cap_style=AUTO` leaves line ends squared off.
+    Measured at 1080p on a triangle apex at stroke_width 16: AUTO and BEVEL are
+    identical flat cuts, MITER throws a long spike, and only ROUND domes.
+
+    This is a finish, not a shape change. It never moves a point, so it is safe
+    on examinable geometry — unlike `Polygon.round_corners()`, which replaces
+    each vertex with a fillet and would quietly destroy the very angle a DSE
+    question is about. Never use round_corners() on a lesson figure.
+
+        self.add(soften(VGroup(tri, medians, marks)))
+    """
+    for m in mobjects:
+        for sub in m.family_members_with_points():
+            sub.joint_type = LineJointType.ROUND
+            sub.cap_style = CapStyleType.ROUND
+        m.joint_type = LineJointType.ROUND
+        m.cap_style = CapStyleType.ROUND
+    return mobjects[0] if len(mobjects) == 1 else VGroup(*mobjects)
+
+
+def angle_at(vertex, p, q, radius=0.7, color=None, **kw):
+    """The INTERIOR angle at `vertex` between rays to `p` and `q`.
+
+    Manim's Angle() sweeps counterclockwise from line1 to line2, so whether you
+    get the angle or its reflex depends on the order you happen to pass the
+    vertices — and it renders without an error either way. Measured on one
+    triangle: Angle(Line(A,B), Line(A,D)) drew 313.74° where the angle is
+    52.08°. See manim-traps.md #24.
+
+    This picks the orientation from the geometry and then asserts the drawn arc
+    really is the computed angle, so the failure cannot reach a render.
+    """
+    v, p, q = (np.array(x, dtype=float) for x in (vertex, p, q))
+    a, b = p - v, q - v
+    true_deg = np.degrees(np.arccos(
+        np.clip(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)), -1, 1)))
+    ang = Angle(Line(v, p), Line(v, q), radius=radius,
+                other_angle=bool(np.cross(a, b)[2] < 0),
+                color=color or LINE, stroke_width=kw.pop("stroke_width", SW_MARK),
+                **kw)
+    pts = ang.points
+    drawn = np.degrees(sum(np.linalg.norm(pts[i + 1] - pts[i])
+                           for i in range(len(pts) - 1)) / radius)
+    assert abs(drawn - true_deg) < 3.0, (
+        f"angle_at drew {drawn:.2f}° for a {true_deg:.2f}° angle")
+    return soften(ang)
+
+
+def ticks(start, end, count=1, color=None, size=0.14, gap=0.075):
+    """Equal-length marks at a segment's midpoint — the symbol that says 「這兩段
+    相等」 so the frame does not have to.
+
+    `count` is how many strokes: use 1 for one pair of equal segments in the
+    figure, 2 for the second pair, 3 for the third. Same count = same length is
+    the convention a DSE student already reads.
+    """
+    start, end = np.array(start, dtype=float), np.array(end, dtype=float)
+    d = end - start
+    n = np.linalg.norm(d)
+    if n == 0:
+        return VGroup()
+    u = d / n
+    perp = np.array([-u[1], u[0], 0.0])
+    mid = (start + end) / 2
+    offsets = [(i - (count - 1) / 2) * gap for i in range(count)]
+    return soften(VGroup(*[
+        Line(mid + u * o - perp * size / 2, mid + u * o + perp * size / 2,
+             color=color or LINE, stroke_width=SW_MARK)
+        for o in offsets
+    ]))
+
+
 # ------------------------------------------------------------- motion ------
 # Approved run_times. A teaching video is not a showreel; keep the vocabulary
 # small and the pauses real. See references/pacing.md.
@@ -489,8 +696,30 @@ T_TRANSFORM = 1.5       # morph an existing object
 T_CLEAR = 0.6           # fade something away
 REST_BEAT = 1.0         # after a normal reveal
 REST_AHA = 1.8          # after the aha moment — never shorter
+REST_PONDER = 3.0       # a ponder beat: the student is handed the problem.
+                        # Not a rest — work being handed over. The question and
+                        # its data stay on screen; nothing else moves.
 
 
-def dim(mobject, opacity=0.3):
+# Three depths, not two. The missing tier was structure: axes, grids and the
+# frame of a graph are not "context that was recently important", they are
+# furniture, and at OP_CONTEXT they still compete with the curve drawn on them.
+OP_PRIMARY = 1.0        # what the current beat is about
+OP_CONTEXT = 0.3        # established, still relevant — the previous step
+OP_STRUCTURE = 0.15     # axes, gridlines, the box of a diagram
+
+
+def dim(mobject, opacity=OP_CONTEXT):
     """Dim context instead of deleting it. Students need what came before."""
     return mobject.animate.set_opacity(opacity)
+
+
+def structural(*mobjects):
+    """Push axes, grids and diagram furniture to OP_STRUCTURE, immediately.
+
+    Set at build time, not animated — furniture never had the student's
+    attention, so it has nothing to hand over.
+    """
+    for m in mobjects:
+        m.set_opacity(OP_STRUCTURE)
+    return mobjects[0] if len(mobjects) == 1 else VGroup(*mobjects)

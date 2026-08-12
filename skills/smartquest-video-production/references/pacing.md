@@ -47,9 +47,16 @@ blocks, dim something to 30% or clear it.
 | A new object was drawn | 1.0 s |
 | **The aha moment** | **1.8 s** |
 | The end of a section, before the next begins | 1.2 s |
+| **A ponder beat** — the student is handed the problem | **3.0 s** (`REST_PONDER`) |
 
 `REST_AHA` in the theme is 1.8 s. It is the longest still moment in the video, deliberately.
 Do not trim it to make a duration fit — trim elsewhere.
+
+A ponder beat is longer still, and it is not a rest — it is work being handed over. Nothing moves
+and no new information appears, but the question and its given data stay on screen because the
+student needs them to think with. The narration says so plainly (「暫停一下，自己做完再繼續。」)
+and the hold makes pausing feel invited rather than awkward. One or two per lesson; a video that
+keeps stopping is a worksheet. See `references/lesson-patterns.md`.
 
 ## Shape of a lesson
 
