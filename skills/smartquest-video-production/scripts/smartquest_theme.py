@@ -571,6 +571,30 @@ def bind_term(figure, card, times=2, run_time=0.5):
     return anims
 
 
+def soften(*mobjects):
+    """Round every stroke corner and every stroke end. Call it on the figure.
+
+    Manim's default `joint_type=AUTO` is a BEVEL — a flat cut across the corner,
+    not a round one — and `cap_style=AUTO` leaves line ends squared off.
+    Measured at 1080p on a triangle apex at stroke_width 16: AUTO and BEVEL are
+    identical flat cuts, MITER throws a long spike, and only ROUND domes.
+
+    This is a finish, not a shape change. It never moves a point, so it is safe
+    on examinable geometry — unlike `Polygon.round_corners()`, which replaces
+    each vertex with a fillet and would quietly destroy the very angle a DSE
+    question is about. Never use round_corners() on a lesson figure.
+
+        self.add(soften(VGroup(tri, medians, marks)))
+    """
+    for m in mobjects:
+        for sub in m.family_members_with_points():
+            sub.joint_type = LineJointType.ROUND
+            sub.cap_style = CapStyleType.ROUND
+        m.joint_type = LineJointType.ROUND
+        m.cap_style = CapStyleType.ROUND
+    return mobjects[0] if len(mobjects) == 1 else VGroup(*mobjects)
+
+
 def angle_at(vertex, p, q, radius=0.7, color=None, **kw):
     """The INTERIOR angle at `vertex` between rays to `p` and `q`.
 
@@ -596,7 +620,7 @@ def angle_at(vertex, p, q, radius=0.7, color=None, **kw):
                            for i in range(len(pts) - 1)) / radius)
     assert abs(drawn - true_deg) < 3.0, (
         f"angle_at drew {drawn:.2f}° for a {true_deg:.2f}° angle")
-    return ang
+    return soften(ang)
 
 
 def ticks(start, end, count=1, color=None, size=0.14, gap=0.075):
@@ -616,11 +640,11 @@ def ticks(start, end, count=1, color=None, size=0.14, gap=0.075):
     perp = np.array([-u[1], u[0], 0.0])
     mid = (start + end) / 2
     offsets = [(i - (count - 1) / 2) * gap for i in range(count)]
-    return VGroup(*[
+    return soften(VGroup(*[
         Line(mid + u * o - perp * size / 2, mid + u * o + perp * size / 2,
              color=color or LINE, stroke_width=SW_MARK)
         for o in offsets
-    ])
+    ]))
 
 
 # ------------------------------------------------------------- motion ------

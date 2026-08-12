@@ -267,6 +267,34 @@ normalises against the 16:9 reference; name a weight rather than a number:
 | `SW_EMPHASIS` | coloured rays — the lines the lesson is about |
 | `SW_MARK` | right-angle markers, tick marks |
 
+### Every corner and every line end is round
+
+Call `soften()` on the figure. It sets `joint_type = ROUND` and `cap_style = ROUND` over the
+whole family, and `ticks()` and `angle_at()` already return softened mobjects.
+
+It has to be explicit, because **Manim's default is not round.** Measured at 1080p on a triangle
+apex at `stroke_width` 16:
+
+| `joint_type` | apex |
+|---|---|
+| `AUTO` (default) | a **flat cut** — identical to `BEVEL` |
+| `MITER` | a long sharp spike |
+| `ROUND` | a dome — what we want |
+| `BEVEL` | flat cut |
+
+`cap_style=AUTO` likewise leaves line ends squared off. Round ends matter most on the coloured
+rays, where a squared-off end reads as if the line continues past where it stops.
+
+### Never `round_corners()` on a lesson figure
+
+Manim has a second, unrelated mechanism: `Polygon.round_corners(radius)` replaces each **vertex**
+with an arc fillet. That is a change to the geometry, not a finish — rendered on a triangle at
+`radius=0.35` the vertices simply cease to exist, and there is no longer a corner to put an angle
+arc on. It would quietly destroy the very angle a DSE question is about.
+
+`soften()` never moves a point, so it is safe on examinable geometry. `round_corners()` is for
+decorative frames, cards and panels only.
+
 ## Layout
 
 `Stage` reads the frame and gives aspect-aware anchors, so **the same scene code renders both

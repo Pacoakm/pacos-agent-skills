@@ -401,7 +401,12 @@ Report what you verified and how. If something was not checked, say so.
     coloured arcs — so the student never reads left-and-right.
     **The test:** frozen and printed in black and white, is this frame just a marking scheme? If
     yes, it has no reason to be a video. See `references/on-screen-language.md`.
-18. **Never import a picture of text, and never `self.add()` it.** Every string on the picture —
+18. **Never leave a corner or a line end square.** Call `soften()` on every figure — Manim's
+    default `joint_type=AUTO` is a flat bevel, not a round join, and `cap_style=AUTO` squares off
+    line ends. But **never `round_corners()`** on a lesson figure: that replaces each vertex with
+    a fillet, so the angle the question is about stops existing. `soften()` changes the finish,
+    `round_corners()` changes the mathematics. See `references/brand-theme.md`.
+19. **Never import a picture of text, and never `self.add()` it.** Every string on the picture —
     中文, English, `MathTex` alike — is a Manim mobject from a theme helper, and it **enters with
     an animation** at `T_REVEAL`. No `SVGMobject`/`ImageMobject` of a label or formula; `add()` is
     only for state carried over from the previous scene. **The caption track is exempt** on both
