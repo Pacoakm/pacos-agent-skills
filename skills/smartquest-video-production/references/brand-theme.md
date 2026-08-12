@@ -67,6 +67,19 @@ the title card. It is a signature, not a decoration; repeating it cheapens it.
 Use **PingFang HK, not PingFang SC** — SC sets 全形 punctuation centred, which reads as
 Mainland typesetting to a Hong Kong student.
 
+### Never call `Text()` directly
+
+Every helper builds text at `TYPE_BASE = 120` and scales to the target size, because Pango
+grid-fits glyph positions to the requested `font_size` — so the same word laid out at 26 and at
+52 gets **different letter spacing**, drifting by up to 0.16 of the text height per pair, enough
+to make two letters touch. That is the "英文字距不一樣" defect, and it is a property of the
+renderer, not of the face: every candidate Latin font drifts the same way. See
+`manim-traps.md` #22 for the measurements.
+
+So: `title()`, `body()`, `label()`, `caption_text()`, `step()`, or `_text()` — never a bare
+`Text(...)`. A single stray `Text()` in a scene is visible as one word spaced differently from
+the identical word elsewhere in the same video.
+
 ### Mathematics is set sans-serif
 
 Computer Modern's serif italic is the 3Blue1Brown look and clashes with a sans interface. The
@@ -165,11 +178,54 @@ Hard rules, each of which fixed a real defect:
   opening brackets bind to the token after them.
 - Captions are a separate transparent track. They never live in a lesson scene.
 
+## Labels on the figure
+
+A label that sits on top of a line is the most common defect in a finished lesson, and the one a
+student notices first. Handle it in this order:
+
+**1. Move it.** Place the label in clear space and, if it must reach its point, run a hairline
+leader line to it. Overlap avoided is always better than overlap mitigated.
+
+**2. If it must overlap, halo it.** `label()` does this by default: a background-coloured stroke
+drawn *behind* the glyphs, so the figure is cut away around the letterforms and the letterforms
+keep their true weight.
+
+```python
+label("centroid")                    # haloed
+label("centroid", halo=False)        # only when you know it sits on empty field
+halo_text(some_text, ratio=0.18)     # thicker, for a very busy area
+```
+
+Three things make a halo work, and all three are already in `halo_text()`:
+
+| | Why |
+|---|---|
+| `background=True` | puts the stroke **under** the fill. A foreground stroke fattens the glyphs into mush |
+| `LineJointType.ROUND` | the default mitre throws spikes off every glyph corner, which reads as dirt at 1080p |
+| width from `.height` | survives any later scale — and note `stroke_width` is **not** scene units, see `manim-traps.md` #23 |
+
+`HALO_RATIO` is **0.12** of text height, chosen by rendering 0.06 / 0.09 / 0.12 / 0.16 at
+`SIZE_LABEL` over crossing strokes: at 0.06 a line still grazes the glyphs, 0.09 clears them,
+0.12 clears them with margin on a busy figure, and past ~0.16 the halo takes visible bites out of
+the drawing (at 0.26 it erodes the letterforms themselves). Adjust locally via
+`halo_text(t, ratio=…)` rather than changing the default.
+
+Judge halo thickness on a **1080p frame at real label size**. A diagnostic render — exaggerated
+ratio, high-contrast colour — makes any halo look far too heavy and is not the thing to tune
+against.
+
+**3. Make it big enough.** `SIZE_LABEL` is 30 — close to body size, because a figure label is
+read at a glance while the student is looking at the diagram, not the text. A label is also `INK`
+by default, not `MUTED`: grey type over a coloured figure loses too much contrast.
+
 ## Stroke weights
 
-`stroke_width` is a scene-unit quantity, so it scales with pixels-per-unit and a short comes out
-about 2.4× too heavy. `STROKE_SCALE` normalises against the 16:9 reference; name a weight rather
-than a number:
+`stroke_width` is proportional to scene units but **not equal** to them — measured, `stroke_width`
+100 renders exactly 1.0 scene unit at any resolution (`STROKE_PER_UNIT`). Passing a scene-unit
+number straight into `set_stroke()` gives a stroke ~100× too thin that silently does not appear.
+
+It scales with pixels-per-unit, so a short comes out about 2.4× too heavy. `STROKE_SCALE`
+normalises against the 16:9 reference; name a weight rather than a number:
 
 | Token | For |
 |---|---|
