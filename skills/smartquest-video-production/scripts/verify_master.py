@@ -101,17 +101,26 @@ def main() -> int:
         print("  skip  boundary continuity     Pillow not installed")
     else:
         with tempfile.TemporaryDirectory() as td:
-            def luma(ts: float, name: str) -> float:
+            def luma(frame: int, name: str) -> float:
+                """Mean luma of an EXACT frame index.
+
+                Frame-exact on purpose. Seeking by timestamp cannot resolve a
+                cut: at 15 fps a frame lasts 0.0667 s, so sampling either side
+                of a boundary can return the SAME frame twice and score a
+                broken cut a perfect 0.00 — a false pass that carried a
+                dropped-content cut into a master. `-ss` before `-i` is also
+                keyframe-snapping (manim-traps.md #20), so it is not used here.
+                """
                 p = Path(td) / f"{name}.png"
-                subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", f"{ts:.6f}",
-                                "-i", str(master), "-frames:v", "1", str(p)], check=True)
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(master),
+                                "-vf", f"select=eq(n\\,{frame})", "-vsync", "0",
+                                "-frames:v", "1", str(p)], check=True)
                 return ImageStat.Stat(Image.open(p).convert("L")).mean[0]
 
             worst, where = 0.0, None
-            step = 1.0 / plan["fps"]
             for shot in plan["shots"][:-1]:
-                t = shot["end"]
-                d = abs(luma(t - step, "a") - luma(t, "b"))
+                n_first = round(shot["end"] * plan["fps"])
+                d = abs(luma(n_first - 1, "a") - luma(n_first, "b"))
                 if d > worst:
                     worst, where = d, shot["id"]
             check("boundary continuity", worst < 0.5,

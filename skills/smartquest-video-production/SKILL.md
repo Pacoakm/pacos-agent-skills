@@ -294,6 +294,23 @@ quantity: does its mark appear on the figure at the same instant as its line, or
 been carrying it since the shot opened? Does the subtitle for that step run across that instant?
 A storyboard panel cannot show any of this — it is the reason a draft exists.
 
+**Measure every cut at exact frame indices, not timestamps.** At the draft's 15 fps a frame lasts
+0.0667 s, so sampling ±0.05 s either side of a boundary can return the **same frame twice** and
+score a broken cut a perfect 0.00. Use `select=eq(n\,N)`. A false pass here sends a
+dropped-content cut all the way into the master, where `verify_master.py` finally catches it and
+the fix costs a full-resolution re-render:
+
+```bash
+ffmpeg -y -i out/draft.mp4 -vf "select=eq(n\,5999)" -vsync 0 -frames:v 1 a.png
+ffmpeg -y -i out/draft.mp4 -vf "select=eq(n\,6000)" -vsync 0 -frames:v 1 b.png
+```
+
+**When a render stops producing output, decide whether it is hung before waiting.** A working
+render burns CPU and writes partial movie files; a hung one does neither, and several Manim
+constructs hang rather than crash (`manim-traps.md` #16, #28, #30). `ps -p <pid> -o %cpu=` reading
+0.0 with no new partial movie files means kill it and bisect against a control scene — never wait
+it out, never re-run it unchanged.
+
 ### Show the user and stop for approval
 
 **Send `out/draft.mp4` to the user as a file** with `SendUserFile`, so they watch the motion
@@ -472,6 +489,24 @@ Report what you verified and how. If something was not checked, say so.
     only for state carried over from the previous scene. **The caption track is exempt** on both
     counts: it is a separate track, it may be produced outside Manim, and a cue cuts on rather
     than animating in. See `references/brand-theme.md`.
+21. **Never draw an angle arc unless both its arms are visible mobjects in that frame.** An arc
+    names the angle between two rays; if one ray is missing the arc floats and names nothing. It
+    bites whenever an arm is a **construction line rather than an edge** — `∠PRQ` needs the
+    diagonal, not just the sides. Draw the construction thin at the first arc that uses it and
+    thicken it at its own derivation beat. Check it per panel at Gate 2: name the two mobjects
+    that are each arc's arms. See `references/on-screen-language.md`.
+22. **Never diagnose a wrong-looking frame by eye — reverse-project it.** When something renders
+    in the wrong place, compute where its coordinates *would* project under each candidate
+    transform and compare against the measured pixel. Eyeballing a 480p frame produces confident,
+    wrong diagnoses: it produced "the arc is drawn on the wrong side" for what was really a fill
+    bug, and cost three failed fixes on a label that turned out to be projected rather than fixed
+    in frame. One projection calculation settled each. See `references/manim-traps.md`, The
+    pattern.
+23. **Never let a `str.replace()` edit go unasserted.** A non-matching replacement is a silent
+    no-op, and a batch script that raises before its `write_text()` discards **every** edit in that
+    batch — including the ones that matched. A "deleted" beat survived that way into a render the
+    user then reviewed, and the same bug was reported twice. Assert each replacement's match count,
+    and re-grep the file afterwards for what should be gone.
 
 ## Bundled resources
 

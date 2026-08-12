@@ -660,6 +660,7 @@ def angle_at(vertex, p, q, radius=0.7, color=None, **kw):
                            for i in range(len(pts) - 1)) / radius)
     assert abs(drawn - true_deg) < 3.0, (
         f"angle_at drew {drawn:.2f}° for a {true_deg:.2f}° angle")
+    ang.set_fill(opacity=0.0)      # see dim_arc(): set_opacity would fill it
     return soften(ang)
 
 
@@ -680,11 +681,13 @@ def ticks(start, end, count=1, color=None, size=0.14, gap=0.075):
     perp = np.array([-u[1], u[0], 0.0])
     mid = (start + end) / 2
     offsets = [(i - (count - 1) / 2) * gap for i in range(count)]
-    return soften(VGroup(*[
+    marks = VGroup(*[
         Line(mid + u * o - perp * size / 2, mid + u * o + perp * size / 2,
              color=color or LINE, stroke_width=SW_MARK)
         for o in offsets
-    ]))
+    ])
+    marks.set_fill(opacity=0.0)    # see dim_arc()
+    return soften(marks)
 
 
 # ------------------------------------------------------------- motion ------
@@ -710,8 +713,32 @@ OP_STRUCTURE = 0.15     # axes, gridlines, the box of a diagram
 
 
 def dim(mobject, opacity=OP_CONTEXT):
-    """Dim context instead of deleting it. Students need what came before."""
+    """Dim context instead of deleting it. Students need what came before.
+
+    For FILLED mobjects only. Anything stroke-only — an arc, a tick, a
+    right-angle mark — must use dim_arc() instead.
+    """
     return mobject.animate.set_opacity(opacity)
+
+
+def dim_arc(*mobjects, opacity=OP_CONTEXT, animate=False):
+    """Dim a STROKE-ONLY mobject without switching its fill on.
+
+    `Mobject.set_opacity()` sets fill AND stroke. An arc or a tick has
+    `fill_opacity` 0, so dimming it with set_opacity(0.3) gives it a 30% FILL
+    and it renders as a solid grey lens instead of a line — the geometry is
+    right, the colour is right, and the shape is unrecognisable. It was
+    reported three times as "the arc looks strange" before it was measured.
+    See references/manim-traps.md #25.
+
+        self.add(dim_arc(arc))                       # immediately
+        self.play(*dim_arc(arc, mark, animate=True)) # as animations
+    """
+    if animate:
+        return [m.animate.set_stroke(opacity=opacity) for m in mobjects]
+    for m in mobjects:
+        m.set_stroke(opacity=opacity)
+    return mobjects[0] if len(mobjects) == 1 else VGroup(*mobjects)
 
 
 def structural(*mobjects):
