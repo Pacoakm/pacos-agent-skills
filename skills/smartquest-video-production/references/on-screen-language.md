@@ -225,6 +225,26 @@ Past about eight it is the figure that is overloaded rather than the palette. If
 genuinely names more parts than that, reuse a pen on the part that is **furthest away on the
 figure**, and give the two different arc radii or tick counts as well so shape backs colour up.
 
+### Spend the pens on what the student has to find, and share where a numeral distinguishes
+
+The failure is not running out of pens — it is **leaving them idle while the frame stays grey**. A
+first pass at one lesson put all eight pens on sides and special quantities and left every *angle*
+MUTED grey and the hinge white. The result: correct, complete, and almost entirely achromatic, so
+nearly every symbol cost a lookup. The reviewer's words were 「太多白色，填色不夠，閱讀困難」.
+
+Two moves free pens without breaking rule 6:
+
+- **Two givens whose numerals differ can share one pen.** `60` and `40` are self-distinguishing —
+  the pen only has to link each to its side, and no formula can confuse them. That freed a pen for
+  the hinge, which is the line the whole lesson measures from and had been neutral.
+- **Derived angles take the pen of the construction that produced them.** The diagonal PR is
+  violet, and the angles PR carves out of the figure — 95°, 25°, 88.7° — are violet too. One
+  referent class, one pen, and the student sees at a glance which marks the construction created.
+
+The givens then take a single "the question states this" pen and stop competing for individual
+ones. Count the achromatic symbols on a finished panel: if the figure is mostly white and grey,
+the pens are in the wrong places.
+
 ### Colour applies with no figure at all
 
 A formula-only frame still needs it. In a determinant expansion, every `x₁ y₂ z₃` term carries the
@@ -267,6 +287,40 @@ at.
 
 If the figure is too crowded to hold all of it, that is the density budget talking (`pacing.md`,
 ≤ 6 blocks): show the sub-triangle the step actually uses, or split the step.
+
+### An angle arc is only readable if both its arms are drawn
+
+An arc names the angle between two rays. If one of those rays is not a visible mobject at that
+moment, the arc floats against the background and names nothing — the student cannot tell which
+angle it is, and neither can you when you review the frame.
+
+This bites whenever the angle's arm is a **construction line rather than an edge of the figure**:
+
+| The angle | Its arms | The trap |
+|---|---|---|
+| `∠PRQ = 55°` | RP and RQ | RP is the *diagonal*, not a side of the quadrilateral |
+| `∠QPR = 95°` | PQ and PR | same diagonal |
+| `∠PRS = 88.7°` | RP and RS | same again, and in a close-up where the card is dimmed |
+
+So the diagonal has to be on screen **before or with** the first arc that uses it, even if its own
+derivation beat comes later. Draw it thin in its own pen at the earlier beat and thicken it when
+the derivation reaches it — the line is then a given carrier first and a result second, which is
+also what the marking scheme does.
+
+**Check at the storyboard:** for every arc on the panel, name the two mobjects that are its arms
+and confirm both are visible in that same panel. It is a five-second check that caught three
+floating arcs in one lesson.
+
+### A quantity the derivation names must be on the figure at that moment
+
+`PN = 60 sin 30° = 30` cannot be read off a figure that shows neither `60` nor `30°`. When a shot
+moves to a new camera and drops the labels to reduce clutter, the labels the *current* line needs
+have to come back. Check each derivation line against its own frame: every number in the line
+should be findable in the picture beside it.
+
+Related: **name the segment the figure has, not a symbol you invented.** `h = 30 sin 32°` makes
+the student hunt for `h`; `PP' = 30 sin 32°` points at two labelled points on the diagram. The
+marking scheme writes the segment too.
 
 ### But mark it when the derivation reaches it, not before
 

@@ -116,6 +116,45 @@ Labels must face the camera and must not collide, **at every camera the shot use
 Placing them by pushing outward from the centroid is not reliable — in the first cuboid render
 that put D and F on top of the edges they belonged to. Check each camera and nudge per label.
 
+## Camera moves that break, and how to choose one
+
+Four findings from a tilted-plane lesson, all measured.
+
+**One focal length for the whole film.** `move_camera` interpolates `focal_distance`, so a move
+from 20 to 90 while the figure is translating tears the figure apart mid-move (trap #26). Set
+every camera to the near-orthographic 90 and the problem cannot arise. It is also the honest
+setting when the hero camera was fitted to a printed figure, because that fit is orthographic.
+
+**Reach a collapse camera from the near side.** A plane is edge-on from *either* side of its
+normal — `theta` and `theta ± 180°`. Both give the same on-screen angle (measured 18.262° against
+a true 18.264° from both sides), so pick the one nearer the current camera. Swinging 154° round
+the back of the figure is disorienting and reads as losing the object; the near side was 26° away.
+**Caveat:** the far side **mirrors the layout left-for-right**, so every screen-space label offset
+tuned at one side is on the wrong side at the other. Re-place them all, or the labels sit across
+the lines they name.
+
+**Orbit low, not overhead.** A 360° orbit at the hero elevation (phi 34°, looking down) shows a
+flat shape turning; the viewer learns nothing about the third dimension. Drop to a low elevation
+first (phi ≈ 72°) and the card is visibly standing off the ground all the way round. Choose the
+elevation by measuring, over the whole turn, the smallest separation between a raised point and
+its own ground shadow — that separation *is* the visible tilt.
+
+**An orbit needs the figure on the orbit axis, and scaled for the worst azimuth.** The camera
+revolves about the world z-axis through ORIGIN, so a figure composed for the hero camera (offset
+to leave room for a panel) **wanders around the frame** and off it. Glide the figure onto the axis
+before the orbit and back afterwards, and compute the scale that fits at *every* azimuth, not the
+one that fits at the start:
+
+```python
+k = 1.0
+for th in range(0, 360, 5):
+    r, u = proj_axes(dict(phi=ORBIT_PHI, theta=radians(th)))
+    for p in card_points_centred:
+        k = min(k, half_w / abs(p @ r), top / (p @ u) if p @ u > 0 else ...)
+```
+
+Constrain the **card** only; the ground rectangle is structure and may clip at the edges.
+
 ## Scene structure
 
 ```python

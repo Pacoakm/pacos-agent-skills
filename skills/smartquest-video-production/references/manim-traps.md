@@ -321,13 +321,116 @@ So `other_angle=True` and swapping the operands do the same thing, and neither i
 `cross(p−v, q−v).z`, then **asserts the drawn arc length really is the computed angle**, so a
 wrong arc raises instead of rendering. Never call `Angle()` directly in a lesson scene.
 
+## 25. `set_opacity()` switches a fill ON
+
+`Mobject.set_opacity()` sets **fill and stroke**. An arc or a right-angle mark is stroke-only
+with `fill_opacity` 0, so dimming it to context with `set_opacity(0.3)` gives it a **30% fill** —
+the arc renders as a solid grey lens sitting in the corner of the figure.
+
+It is the most confusing one in this file, because the geometry is right, the colour is right,
+and the shape is unrecognisable. It was reported three separate times as "the arc looks strange"
+before it was measured.
+
+**Fix:** `plane_arc()` and `right_mark()` set `set_fill(opacity=0)` at build time, and every
+dimming call goes through `dim_arc()`, which touches only the stroke:
+
+```python
+m.set_stroke(opacity=OP_CONTEXT)          # correct
+m.animate.set_stroke(opacity=OP_CONTEXT)  # correct, animated
+m.set_opacity(OP_CONTEXT)                 # WRONG — fills the arc
+```
+
+## 26. `move_camera` interpolates `focal_distance`
+
+A move from the default perspective (`focal_distance=20`) to the near-orthographic setting
+trap #18 requires (`90`) **animates the focal length**. If the figure is also translating during
+that move, points swing through extreme perspective on the way and the figure visibly **tears
+apart** mid-move — edges detach, the solid comes to pieces, and it reassembles at the end.
+
+**Fix:** give **every** camera in the film the same `focal_distance`, so there is nothing to
+interpolate. Near-orthographic (90) throughout is the right choice for a lesson, and if the hero
+camera was fitted to a printed textbook figure with an orthographic projection, 90 is the
+projection that fit was actually solved for.
+
+## 27. A parent's transform and a child's style in one `play()` — the transform is dropped
+
+```python
+self.play(card.animate.shift(d),                       # parent moves
+          card["PQ"].animate.set_opacity(0.15))        # child restyles
+```
+
+`card["PQ"]` **does not move.** Its animation is built from its own current (un-shifted) state
+and overwrites what the parent's shift did to it. The rest of the card moves, two edges stay
+behind, and the figure comes apart on screen with no error.
+
+**Fix:** never animate a parent transform and a child style in the same call. Style first, in
+its own `play()`, then move whole mobjects only:
+
+```python
+self.play(card["PQ"].animate.set_stroke(opacity=0.15), run_time=0.8)
+self.move_camera(..., added_anims=[m.animate.shift(d) for m in (ground, card)])
+```
+
+The same applies in reverse when restoring: move first, then restore styles.
+
+## 28. A changing `DecimalNumber` cannot be fixed in frame, and deadlocks on `FadeIn`
+
+Two distinct failures from one widget, both in a `ThreeDScene`:
+
+**It gets projected.** `set_value()` **rebuilds the number's glyph submobjects every frame**. The
+new children were never registered by `add_fixed_in_frame_mobjects`, so the camera projects them
+like ordinary 3D geometry. Measured: the value landed exactly where world coordinates
+`(5.05, 1.75, 0)` project — 42 px below its own `θ =`.
+
+**It hangs the render.** A `DecimalNumber` carrying a value-updater, registered fixed-in-frame and
+entered with `FadeIn`, **deadlocks**: 0% CPU, no error, no partial movie files, forever. Isolated
+by bisection against a control scene.
+
+**Fix:** do not use a live counter as fixed-in-frame UI in a 3D scene. A growing arc already
+carries the variation; the numbers only have to mark the ends of the range, so make them **static
+labels on their beats** (`θ = 0°` → `θ = 32°`) and transform one into the other.
+
+## 29. `add_fixed_in_frame_mobjects` → `remove` → `add` loses the fixed status
+
+The usual pattern is to register UI, remove it, then bring it back with an entrance animation.
+Bringing it back with a plain `Scene.add()` instead re-adds it as an **ordinary 3D mobject that
+the camera projects**, silently. Re-registering (`add_fixed_in_frame_mobjects(m)`, which also
+adds) is what puts it back correctly.
+
+## 30. A hung render looks exactly like a slow one
+
+Traps #28 and #16 both hang rather than crash. Waiting is the wrong response and costs 10–20
+minutes each time. **Two checks separate a hang from progress, and both take one second:**
+
+```bash
+ps -p <pid> -o %cpu=                                    # 0.0 = hung; >15 = working
+find media/videos/**/partial_movie_files -name '*.mp4' -newermt '-2 minutes' | wc -l
+```
+
+A working render burns CPU and writes partial movie files. A hung one does neither. If both are
+zero, kill it and bisect against a control scene — do not wait, and do not re-run it unchanged.
+
 ---
 
 ## The pattern
 
-Manim fails loudly on syntax and silently on everything else in this list. Two habits catch
+Manim fails loudly on syntax and silently on everything else in this list. Four habits catch
 almost all of it:
 
 1. **Measure rather than assume** — contrast ratios, glyph widths, pixel thickness, frame units,
    camera separations. Every number in these references came from a measurement on this machine.
 2. **Look at full-resolution frames.** Draft resolution hid defects 3, 9 and 10 completely.
+3. **Reverse-project anything that lands in the wrong place.** When an element renders somewhere
+   unexpected, compute where its coordinates *would* project under each candidate transform and
+   compare with the measured pixel. That single step identified trap #28 after three failed
+   guesses, and it disproved a confident "the arc is drawn on the wrong side" diagnosis that was
+   really trap #25. Eyeballing a 480p frame produces plausible, wrong diagnoses.
+4. **Compare cuts at exact frame indices, never at timestamps.** At 15 fps a frame lasts 0.0667 s,
+   so sampling ±0.05 s either side of a cut can return the **same frame twice** and report a
+   perfect 0.00 continuity score for a cut that is actually broken. That false negative passed a
+   dropped-content cut all the way to the master:
+
+```bash
+ffmpeg -y -i master.mp4 -vf "select=eq(n\,9719)" -vsync 0 -frames:v 1 a.png
+ffmpeg -y -i master.mp4 -vf "select=eq(n\,9720)" -vsync 0 -frames:v 1 b.png
+```
