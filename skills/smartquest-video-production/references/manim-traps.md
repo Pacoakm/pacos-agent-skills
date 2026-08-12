@@ -91,13 +91,18 @@ Wrapping must be **measured**, not estimated from character counts — English w
 than the count implies, and a line ran off both edges of a 9:16 frame. Estimate to choose the
 break, then measure and tighten until it truly fits.
 
-## 11. DM Sans breaks below about 44pt under Pango
+## 11. DM Sans breaks below about 44pt under Pango — *historical*
+
+*No longer live: the theme dropped DM Sans when the titles moved to Computer Modern. Kept because
+the finding is about Pango, not about DM Sans, and it will apply to any proportional display face
+someone reintroduces.*
 
 Word spacing collapses: `angles in the same segment` renders with the space after `angles`
 eaten. Verified by rendering, not assumed.
 
-**Fix:** DM Sans is display-only, `DISPLAY_MIN = 44`. Songti TC is the text face at every
-size, and it sets 繁體中文 and inline Latin cleanly.
+**Fix at the time:** DM Sans was display-only, `DISPLAY_MIN = 44`. The current theme avoids the
+question entirely — Latin on the frame goes through TeX, and the only Pango faces left are Songti
+TC for on-frame Chinese and PingFang HK for captions, both at sizes well clear of this.
 
 ## 12. ffmpeg often ships without libass
 

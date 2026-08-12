@@ -73,8 +73,11 @@ FONT_TEXT = "Songti TC"     # 繁中 serif for on-frame Chinese
 WEIGHT_TEXT = NORMAL        # Songti has no Medium; NORMAL is the design weight
 FONT_CAPTION = "PingFang HK"   # captions only — sans, so the track reads apart
 WEIGHT_CAPTION = BOLD
-FONT_DISPLAY = "DM Sans"    # titles only — the one surviving SmartQuest signature
-DISPLAY_MIN = 44            # never set DM Sans smaller than this
+# DM Sans is gone. Titles are Computer Modern like everything else on the frame,
+# so the whole lesson is set in one face and only the caption track differs.
+# SmartQuest identity is now carried by the colour set and brand_rule().
+FONT_DISPLAY = FONT_TEXT    # deprecated alias — DM Sans is no longer used
+DISPLAY_MIN = 22            # deprecated alias — kept so old scenes still import
 
 # Manim's stock template IS Computer Modern, so the theme simply stops
 # overriding it. TEX_SANS is kept as a name so existing scenes do not break, but
@@ -305,10 +308,21 @@ def _text(string, size, **kw):
 
 
 # --------------------------------------------------------------- elements ----
+_HAS_CJK = re.compile(r"[\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uFF00-\uFFEF]")
+
+
 def title(text, color=INK, size=SIZE_TITLE):
-    """Display type. DM Sans, brand, never below DISPLAY_MIN."""
-    return _text(text, max(size, DISPLAY_MIN) * TYPE_SCALE,
-                 font=FONT_DISPLAY, weight=BOLD, color=color)
+    """Display type — Computer Modern, like the rest of the frame.
+
+    Routed by script, not by character set: anything with a CJK character goes
+    to Songti TC, everything else to Tex. A title such as "1 · centroid" is
+    mostly Latin and belongs in TeX, so the test is for CJK rather than for
+    non-ASCII.
+    """
+    if _HAS_CJK.search(text):
+        return _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT,
+                     color=color)
+    return Tex(text, color=color, font_size=_pt(size), tex_template=TEX_MAIN)
 
 
 def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True):

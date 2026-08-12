@@ -3,8 +3,9 @@
 One theme for the whole library. A student should recognise a SmartQuest lesson before the
 title appears. Import `scripts/smartquest_theme.py`; do not redefine colours per video.
 
-The overall look follows 3Blue1Brown: a dark field and Computer Modern mathematics. What stays
-SmartQuest is the **colour set**, the DM Sans title, and the sans caption track.
+The overall look follows 3Blue1Brown: a dark field, and Computer Modern for everything on the
+frame including the titles. What stays SmartQuest is the **colour set**, `brand_rule()`, and the
+sans caption track.
 
 ## Field — dark
 
@@ -38,8 +39,9 @@ A colour means one thing for a whole video **and across the whole library**. Nev
 
 Five inks at the **same tonal step**, so they read as one set of pens rather than five unrelated
 colours. Hue separation was chosen first and contrast measured second. These hues are what keeps
-the theme SmartQuest rather than a 3Blue1Brown clone — the field and the type now follow his, the
-colour set does not.
+the theme SmartQuest rather than a 3Blue1Brown clone. The field and the type now follow his
+entirely, so the colour set is carrying the identity nearly on its own — which makes rule 6,
+never reassign a colour, the load-bearing rule of the whole theme.
 
 `GIVEN` and `UNKNOWN` share almost every frame, so they are **complementary** — blue against
 burnt orange — instead of two neighbouring blues. An earlier version used brand indigo and brand
@@ -101,8 +103,18 @@ the title card. It is a signature, not a decoration; repeating it cheapens it.
 |---|---|---|---|
 | Mathematics, point labels, DSE reasons | **Computer Modern** via `MathTex`/`Tex` | — | Manim's stock template, `TEX_MAIN` |
 | On-frame Chinese | **Songti TC** | 22–32 | 明體; its stroke modulation sits with Computer Modern |
-| Display titles | **DM Sans Bold** | **≥ 44 only** | the one surviving brand face; Latin kerning breaks under Pango below ~44 |
+| Display titles | **Computer Modern** via `Tex` | — | same face as everything else on the frame |
 | **Captions only** | **PingFang HK Bold** | fixed | sans on purpose — the caption track must read as a layer over the lesson, not part of it |
+
+**The frame carries exactly two faces: Computer Modern, and PingFang for the captions.** DM Sans
+is gone — a brand display face on the title made the top of the frame a different document from
+the mathematics under it. `FONT_DISPLAY` and `DISPLAY_MIN` survive only as deprecated aliases so
+older scenes still import.
+
+`title()` routes by **script, not character set**: anything containing a CJK character goes to
+Songti TC, everything else to `Tex`. A title like `1 · centroid` is mostly Latin and belongs in
+TeX, so testing for non-ASCII would send it the wrong way. The `·` compiles fine in Manim's stock
+template.
 
 **Latin on the figure goes through TeX, not Pango.** `label()` sends a single symbol to `MathTex`
 and a word to `Tex`, so the `A` labelling a vertex is the *same glyph* as the `A` inside
@@ -141,23 +153,21 @@ help; it only affects partial movie files. Delete the cache:
 rm -rf media/Tex media/texts
 ```
 
-Never set DM Sans below `DISPLAY_MIN`. If a label is small, it is `body()` or `MathTex`.
-
 ### Verify the fonts exist before you rely on them
 
-All three faces are installed on this machine — DM Sans via `brew install --cask font-dm-sans`
-(2026-08-11); Songti TC and PingFang HK ship with macOS. Neither is guaranteed elsewhere, and **Pango
-silently substitutes a missing face** rather than failing, so a title renders in the wrong font
-with no warning. Check first:
+Both Pango faces ship with macOS, but neither is guaranteed elsewhere, and **Pango silently
+substitutes a missing face** rather than failing — so on another machine the Chinese renders in
+the wrong font with no warning. Check first:
 
 ```python
 import manimpango
 have = set(manimpango.list_fonts())
-assert {"DM Sans", "Songti TC", "PingFang HK"} <= have, sorted(have)
+assert {"Songti TC", "PingFang HK"} <= have, sorted(have)
 ```
 
-If DM Sans is missing and cannot be installed, use no display type at all and say so — do not
-let `title()` fall back to an unknown face.
+If either is missing and cannot be installed, say so and stop rather than letting Pango pick
+something. Computer Modern is not in this list — it comes from TinyTeX, and a missing TeX install
+fails loudly on its own.
 
 `SIZE_MIN` is 22. Nothing smaller survives a phone screen. Captions are `SIZE_CAPTION` = 23 —
 small enough to stay out of the way, large enough to read on a phone.
