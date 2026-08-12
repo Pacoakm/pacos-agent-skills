@@ -243,6 +243,11 @@ dwell after each reveal, whether a student can read every line in time, whether 
 past a knowledge point, whether the teacher could speak the script over this without rushing.
 Fix what you already know is wrong before showing it — the user's review is not your first pass.
 
+**Check the beats here too, because synchrony is invisible in a still.** For every derived
+quantity: does its mark appear on the figure at the same instant as its line, or has the figure
+been carrying it since the shot opened? Does the subtitle for that step run across that instant?
+A storyboard panel cannot show any of this — it is the reason a draft exists.
+
 ### Show the user and stop for approval
 
 **Send `out/draft.mp4` to the user as a file** with `SendUserFile`, so they watch the motion
@@ -401,12 +406,18 @@ Report what you verified and how. If something was not checked, say so.
     coloured arcs — so the student never reads left-and-right.
     **The test:** frozen and printed in black and white, is this frame just a marking scheme? If
     yes, it has no reason to be a video. See `references/on-screen-language.md`.
-18. **Never leave a corner or a line end square.** Call `soften()` on every figure — Manim's
+18. **Never draw a derived quantity before its step.** Only the question's givens are on the
+    figure at the start. When `∠CAD = 60°` lands on the right, the arc at `CAD` is drawn and
+    labelled `60°` on the left **in the same `play()` call**, on that step's narration beat — not
+    earlier, and not in a later play. A figure that already carries every angle before the
+    derivation begins is an answer key: nothing to watch, and no way to tell which mark the
+    current line just produced. See `references/on-screen-language.md`.
+19. **Never leave a corner or a line end square.** Call `soften()` on every figure — Manim's
     default `joint_type=AUTO` is a flat bevel, not a round join, and `cap_style=AUTO` squares off
     line ends. But **never `round_corners()`** on a lesson figure: that replaces each vertex with
     a fillet, so the angle the question is about stops existing. `soften()` changes the finish,
     `round_corners()` changes the mathematics. See `references/brand-theme.md`.
-19. **Never import a picture of text, and never `self.add()` it.** Every string on the picture —
+20. **Never import a picture of text, and never `self.add()` it.** Every string on the picture —
     中文, English, `MathTex` alike — is a Manim mobject from a theme helper, and it **enters with
     an animation** at `T_REVEAL`. No `SVGMobject`/`ImageMobject` of a label or formula; `add()` is
     only for state carried over from the previous scene. **The caption track is exempt** on both

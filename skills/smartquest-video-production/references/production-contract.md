@@ -81,6 +81,12 @@ the implementation.
       "onScreenText": ["1 · centroid", "median", "AO : OM = 2 : 1", "A", "B", "C", "O", "M"],
       "movedToNarration": ["較長一段連着頂點 → AO : OM = 2 : 1 on the frame",
                            "永遠在 triangle 內 → S06, vertex is dragged"],
+      "givens": ["AB = 12", "∠ABD = 72°"],
+      "beats": [
+        {"at": 6.0, "line": "\\angle CAD = 60^\\circ",
+         "figure": "arc at CAD + label 60°, in UNKNOWN",
+         "cue": 1}
+      ],
       "subtitles": [
         {"start": 1.0, "end": 5.2, "text": "同一弧上的 inscribed angle 相等。",
          "terms": ["inscribed angle"]}
@@ -115,12 +121,18 @@ Check these; do not assume them.
    Loose explanatory sentences — anything that is not an item of an enumerated list — are banned
    in both. Every sentence that is *not* on the frame has an entry in `movedToNarration` saying
    where it went. See `references/on-screen-language.md`.
-9. A scene's end state equals the next scene's start state — figure **and** on-screen text.
-   Build both from a shared helper so they cannot drift.
-10. `narration.status` is `awaiting-teacher-recording` until a real file exists at
+9. `givens` lists what the question states; those are the only marks on the figure when the shot
+   opens. Every **derived** quantity has a `beats` entry, and each beat names all three strands
+   that land together in one `play()`: the derivation `line`, the `figure` event it produces, and
+   the subtitle `cue` index that explains it. A beat's `at` lies inside its shot and inside its
+   cue's span. No derived quantity appears on the figure before its beat.
+   See `references/on-screen-language.md`.
+10. A scene's end state equals the next scene's start state — figure **and** on-screen text.
+    Build both from a shared helper so they cannot drift.
+11. `narration.status` is `awaiting-teacher-recording` until a real file exists at
     `narration.media`.
 
-Invariant 9 is the one that bites. Scenes render independently, so a mismatch produces a jump
+Invariant 10 is the one that bites. Scenes render independently, so a mismatch produces a jump
 cut that is invisible at draft resolution and obvious in the master.
 
 ## Render commands

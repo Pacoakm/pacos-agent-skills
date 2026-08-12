@@ -252,8 +252,8 @@ Use it whenever a symbol enters, and again whenever the derivation returns to it
 
 ### Geometry: label onto the figure, not beside it
 
-For a geometry lesson the student should **never have to look left and right**. Before the
-derivation begins, put on the figure every quantity the derivation will use:
+For a geometry lesson the student should **never have to look left and right**. Everything the
+derivation names lives on the figure:
 
 - every angle it names, drawn as an arc in that angle's colour
 - every length it names, written **on** its side in that side's colour — `12`, `13`, not only `BD`
@@ -267,6 +267,49 @@ at.
 
 If the figure is too crowded to hold all of it, that is the density budget talking (`pacing.md`,
 ≤ 6 blocks): show the sub-triangle the step actually uses, or split the step.
+
+### But mark it when the derivation reaches it, not before
+
+**Only the givens are on the figure at the start.** Everything the derivation *produces* appears
+on the figure at the moment its line appears in the derivation — never earlier.
+
+If `∠CAD = 60°` is step ②, then the arc at `CAD` is drawn and labelled `60°` **as that line lands
+on the right**. Not at step ①, and not in the opening state of the scene.
+
+| | |
+|---|---|
+| **Given** — stated by the question | on the figure from the start: the sides it gives, the angles it gives, the right angles it states |
+| **Derived** — produced by a step | appears with that step, in that step's moment, and stays |
+
+A figure that already carries every angle and length before the derivation starts is a finished
+diagram, and it fails twice: there is nothing left for the student to watch, and when a line
+appears on the right they cannot tell which of the many marks on the left it just produced. It is
+the same defect as the marking-scheme test, one layer down — the picture has been reduced to a
+static answer key.
+
+### Three things land together
+
+Every derivation beat is **one** `play()` call carrying all three:
+
+```python
+self.play(
+    Write(step_line),                      # the mathematics, on the right
+    Create(arc_CAD), FadeIn(lbl_60),       # the figure event, on the left
+    run_time=T_REVEAL,                     # on the narration beat for this step
+)
+```
+
+Sequential plays do not do this. A figure event that arrives after its line has already been read
+says "here is another thing"; arriving *with* the line says "this line is that thing". The
+synchrony carries the meaning, exactly as it does in `bind_term()`.
+
+The narration is the third strand: the beat's subtitle cue is the sentence explaining that step,
+so at the instant the student hears about `∠CAD` the arc is being drawn under their eyes. Line up
+the shot's cue boundaries with its beats — that is what makes the narration point at the figure
+without ever saying 「請看左邊」.
+
+When the derivation returns to a quantity marked several beats ago, re-bind rather than assume it
+is remembered: `bind_term(arc_CAD, line_token)` for one pulse.
 
 ## Binding a colour to a term
 
