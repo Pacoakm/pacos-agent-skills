@@ -12,77 +12,83 @@ both the 16:9 lesson and the 9:16 short.
             fig = self.stage.figure_box()
             ...
 
-Everything here is derived from SmartQuestApp/DESIGN.md. The field is light —
-a dark video reads as 'advanced' to a secondary student, which is the opposite
-of what a first-encounter lesson wants.
+The field is dark and the mathematics is Computer Modern, in the 3Blue1Brown
+manner. What stays SmartQuest is the colour set, the DM Sans title, and the
+sans caption track. Every colour here was measured against the dark background —
+see the palette block; the previous light-theme inks all fail on it.
 """
 from manim import *
 import numpy as np
 import re
 
 # --------------------------------------------------------------- palette ----
-# Light theme. A dark field reads as "advanced" to a secondary student; a clean
-# near-white page reads as a well-set textbook, which is what we want.
-BG = "#FBFCFE"          # barely-tinted cool white
-BG_LIFT = "#FFFFFF"     # a gentle white wash, top to bottom
-INK = "#1B2440"         # deep indigo-slate — softer than black, still brand-cool
-MUTED = "#64748B"       # captions, secondary notes, DSE reasons        4.64:1
-LINE = "#7C8AA3"        # neutral geometry                              3.49:1
+# Dark field, in the 3Blue1Brown manner. A near-black rather than pure black:
+# the slight cool lift keeps the brand's indigo temperature and is gentler on a
+# phone at night, and it costs almost nothing in contrast.
+#
+# EVERY value below was re-measured against this background. The previous light
+# theme used 700-level inks, and all five of them FAIL on dark — blue-700 3.13:1,
+# violet-700 2.96:1, rose-700 3.34:1, emerald-700 3.83:1, orange-700 4.06:1.
+# The palette is therefore shifted to the 400 level, which keeps our hues (that
+# is the SmartQuest difference from 3b1b's blue/yellow) while clearing 4.5:1 with
+# a large margin.
+BG = "#0B0E14"          # cool near-black
+BG_LIFT = "#141926"     # a gentle lift, top to bottom
+INK = "#E9EDF7"         # main type — cool near-white            16.48:1
+MUTED = "#98A3BA"       # captions, secondary notes, DSE reasons  7.62:1
+LINE = "#6B7893"        # neutral geometry                        4.35:1
 
-# Teaching semantics — five inks at the same tonal step, chosen for hue
-# separation first and measured for contrast second. GIVEN and UNKNOWN appear
-# together in almost every frame, so they are complementary (blue vs burnt
-# orange) rather than two neighbouring blues.
-GIVEN = "#1D4ED8"       # blue-700     what the question gives you      6.53:1
-UNKNOWN = "#C2410C"     # orange-700   what you are solving for         5.04:1
-RESULT = "#047857"      # emerald-700  a confirmed result               5.34:1
-WARN = "#BE123C"        # rose-700     the misconception, the trap      6.12:1
-AUX = "#6D28D9"         # violet-700   construction, first-use terms    6.92:1
+# Teaching semantics — the same eight hues as the light theme, one tonal step
+# lighter so they read on the dark field. Hue separation checked: minimum 25.2°
+# across all eight pens.
+GIVEN = "#60A5FA"       # blue-400     what the question gives you    7.60:1
+UNKNOWN = "#FB923C"     # orange-400   what you are solving for       8.53:1
+RESULT = "#34D399"      # emerald-400  a confirmed result            10.05:1
+WARN = "#FB7185"        # rose-400     the misconception, the trap    7.18:1
+AUX = "#A78BFA"         # violet-400   construction, first-use terms  7.10:1
 
-BRAND_FROM = "#4B60D6"  # gradient start — brand primary
-BRAND_TO = "#9747FF"    # gradient end
+BRAND_FROM = "#7B8CF0"  # gradient start — brand primary, lifted for dark
+BRAND_TO = "#B06BFF"    # gradient end
 
-# Captions: big, bold, dark, no bar and no glow. The caption band is reserved
-# empty page, so plain dark type on the light field already has full contrast —
-# a glow or an outline only adds noise. Readability comes from size and weight.
-CAPTION_INK = "#1B2440"
-# Accent for a first-use English term. NOT a teaching semantic — the five
+# Captions are the one layer that stays sans and stays OUR type, so they read as
+# a separate track laid over the lesson rather than part of the mathematics.
+CAPTION_INK = "#F2F5FC"                                        # 17.70:1
+# Accent for a first-use English term. NOT a teaching semantic — the eight
 # semantic colours belong to the figure, this one belongs to the text.
-CAPTION_TERM = "#B45309"
+CAPTION_TERM = "#FBBF24"   # amber-400
 CAPTION_LINE_GAP = 0.16   # gap between wrapped caption lines
 
 PALETTE = dict(bg=BG, ink=INK, muted=MUTED, line=LINE, given=GIVEN,
                unknown=UNKNOWN, result=RESULT, warn=WARN, aux=AUX)
 
 # ------------------------------------------------------------ typography ----
-# PingFang HK renders 繁體中文 and inline Latin cleanly under Manim's Pango
-# renderer, so it is the single Text() face. DM Sans is brand, but its Latin
-# kerning breaks under Pango below ~44pt, so it is display-only.
-FONT_TEXT = "PingFang HK"
-WEIGHT_TEXT = MEDIUM    # 蘋方 Medium — steadier than Regular at video sizes
-FONT_DISPLAY = "DM Sans"
-DISPLAY_MIN = 44        # never set DM Sans smaller than this
-
-# ---- mathematics is set sans-serif, to sit with PingFang and DM Sans --------
-# Computer Modern's serif italic is the 3Blue1Brown look and clashes with a
-# sans interface. \mathsf{} alone is not enough: it leaves Greek letters and
-# anything inside \text{} serif, so the line ends up mixed. helvet + sfmath
-# converts equations, Greek and \text{} together.
+# Mathematics is Computer Modern — Manim's stock TeX template, which is the
+# 3Blue1Brown look. The earlier sans build (helvet + sfmath) is gone.
 #
-# Needs two TeX packages:  tlmgr install sfmath helvet
-def _sans_tex_template():
-    t = TexTemplate()
-    t.add_to_preamble(r"\usepackage{helvet}")
-    t.add_to_preamble(r"\renewcommand{\familydefault}{\sfdefault}")
-    t.add_to_preamble(r"\usepackage{sfmath}")
-    return t
+# Chinese has no Computer Modern, so it is set in a 繁中 serif to sit with it:
+# Songti TC, a 宋体/明體 whose stroke modulation matches CM's. PingFang was the
+# light theme's face and is now reserved for captions, which keeps the caption
+# track visibly a separate layer laid over the lesson.
+FONT_TEXT = "Songti TC"     # 繁中 serif for on-frame Chinese
+WEIGHT_TEXT = NORMAL        # Songti has no Medium; NORMAL is the design weight
+FONT_CAPTION = "PingFang HK"   # captions only — sans, so the track reads apart
+WEIGHT_CAPTION = BOLD
+FONT_DISPLAY = "DM Sans"    # titles only — the one surviving SmartQuest signature
+DISPLAY_MIN = 44            # never set DM Sans smaller than this
 
-
-TEX_SANS = _sans_tex_template()
-config.tex_template = TEX_SANS   # a default, but NOT something to rely on:
+# Manim's stock template IS Computer Modern, so the theme simply stops
+# overriding it. TEX_SANS is kept as a name so existing scenes do not break, but
+# it now resolves to the same stock template.
+TEX_MAIN = TexTemplate()
+TEX_SANS = TEX_MAIN         # deprecated alias — the sans build was removed
+config.tex_template = TEX_MAIN   # a default, but NOT something to rely on:
 # Manim re-initialises config between scenes when several are rendered in one
-# command, so some scenes silently fall back to Computer Modern. Always build
-# mathematics with mtex()/step(), which pass the template explicitly.
+# command. Always build mathematics with mtex()/step(), which pass the template
+# explicitly.
+#
+# After this change, CLEAR THE TEX CACHE — media/Tex is keyed by the expression,
+# not the preamble, so old sans SVGs are silently reused (trap #4):
+#     rm -rf media/Tex media/texts
 
 
 SIZE_TITLE = 52
@@ -316,14 +322,34 @@ def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True
                  font=FONT_TEXT, weight=WEIGHT_TEXT, color=color, t2c=t2c)
 
 
+_LATIN_ONLY = re.compile(r"^[\x20-\x7E]+$")
+_SYMBOLIC = re.compile(r"^[A-Za-z](['\u2032]|_\d)?$")   # A, B, P, A', v_1
+
+
 def label(text, color=INK, size=SIZE_LABEL, halo=True, halo_color=None):
     """A label on the figure. Haloed by default — see halo().
 
+    Latin content is set in TeX, not Pango, so a point label is the SAME glyph
+    as that point in the formula beside it — which is the whole point of rule 17.
+    A single symbol goes through MathTex (italic, exactly as `\angle BAD` sets
+    its letters); a word goes through Tex (upright roman, so `median` is not
+    read as m·e·d·i·a·n multiplied together). Chinese has no Computer Modern and
+    falls back to the 繁中 serif.
+
     Haloing is on because a figure label is exactly the thing that ends up over
-    a line. On clear background the halo is invisible (it is the background
-    colour), so leaving it on costs nothing.
+    a line. On the dark field the halo is the background colour, so on clear
+    ground it is invisible and costs nothing.
     """
-    t = _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT, color=color)
+    if _LATIN_ONLY.match(text):
+        if _SYMBOLIC.match(text):
+            t = MathTex(text, color=color, font_size=_pt(size),
+                        tex_template=TEX_MAIN)
+        else:
+            t = Tex(text, color=color, font_size=_pt(size),
+                    tex_template=TEX_MAIN)
+    else:
+        t = _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT,
+                  color=color)
     return halo_text(t, color=halo_color) if halo else t
 
 
@@ -393,7 +419,7 @@ def mtex_ref(expression, refs=None, color=INK, size=SIZE_BODY, **kw):
     """
     refs = refs or {}
     m = MathTex(expression, color=color, font_size=_pt(size),
-                tex_template=TEX_SANS,
+                tex_template=TEX_MAIN,
                 substrings_to_isolate=list(refs.keys()), **kw)
     for tex, c in refs.items():
         m.set_color_by_tex(tex, c)
@@ -404,7 +430,7 @@ def mtex(expression, color=INK, size=SIZE_BODY, **kw):
     """Mathematics. Use this instead of MathTex — it pins the sans template and
     applies the aspect-aware type scale."""
     return MathTex(expression, color=color, font_size=_pt(size),
-                   tex_template=TEX_SANS, **kw)
+                   tex_template=TEX_MAIN, **kw)
 
 
 # ------------------------------------------------------------- captions ----
@@ -421,7 +447,7 @@ def _char_w():
     """Calibrate this face's CJK and Latin advance once, so a line's width can be
     estimated without building a Text per candidate break."""
     if not _CAL:
-        mk = lambda t: _text(t, SIZE_CAPTION, font=FONT_TEXT, weight=BOLD).width
+        mk = lambda t: _text(t, SIZE_CAPTION, font=FONT_CAPTION, weight=WEIGHT_CAPTION).width
         _CAL["cjk"] = mk("測測測測測") / 5
         _CAL["lat"] = mk("semicircle") / 10      # a realistic word, not "mmmm"
         _CAL["sp"] = _CAL["lat"] * 0.55
@@ -492,7 +518,7 @@ def caption_text(text, terms=None):
     t2c = {k: CAPTION_TERM for k in (terms or [])}
 
     def one_line(line):
-        return _text(line, SIZE_CAPTION, font=FONT_TEXT, weight=BOLD,
+        return _text(line, SIZE_CAPTION, font=FONT_CAPTION, weight=WEIGHT_CAPTION,
                      color=CAPTION_INK, t2c=t2c)
 
     lines = [one_line(l) for l in text.split("\n") if l.strip()]

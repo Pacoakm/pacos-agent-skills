@@ -375,6 +375,7 @@ At the storyboard, per panel:
 
 ## What this is not
 
-This is not minimalism for its own sake, and it is not the 3Blue1Brown black field — the
-SmartQuest theme still applies. A DSE reason on screen next to the step it justifies is
+This is not minimalism for its own sake. The theme still applies — and now that the field and the
+type follow 3Blue1Brown, the colour set is what carries SmartQuest identity, so the rules about
+never reassigning a colour matter more, not less. A DSE reason on screen next to the step it justifies is
 **required**, not prose, because the student is being marked on writing it. Keep those.

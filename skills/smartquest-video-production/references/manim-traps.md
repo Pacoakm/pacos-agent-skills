@@ -41,12 +41,14 @@ lost to this before it was found.
 
 ## 5. `config.tex_template` does not survive between scenes
 
-Manim re-initialises `config` between scenes when several are rendered in one command. Only
-**4 of 11** generated `.tex` files carried the sans preamble; the rest silently fell back to
-Computer Modern.
+Manim re-initialises `config` between scenes when several are rendered in one command. When the
+theme still shipped a custom preamble, only **4 of 11** generated `.tex` files carried it and the
+rest silently fell back to the stock template. The theme now *uses* the stock template, so this
+particular drift is currently harmless — but it will bite again the moment any preamble is added,
+so the discipline stands.
 
-**Fix:** `mtex()` and `step()` pass `tex_template=TEX_SANS` explicitly. Scene code must never
-call `MathTex` directly.
+**Fix:** `mtex()`, `mtex_ref()` and `step()` pass `tex_template=TEX_MAIN` explicitly. Scene code
+must never call `MathTex` directly.
 
 ## 6. `always_redraw` throws away outer positioning
 
@@ -94,7 +96,7 @@ break, then measure and tighten until it truly fits.
 Word spacing collapses: `angles in the same segment` renders with the space after `angles`
 eaten. Verified by rendering, not assumed.
 
-**Fix:** DM Sans is display-only, `DISPLAY_MIN = 44`. PingFang HK is the text face at every
+**Fix:** DM Sans is display-only, `DISPLAY_MIN = 44`. Songti TC is the text face at every
 size, and it sets 繁體中文 and inline Latin cleanly.
 
 ## 12. ffmpeg often ships without libass

@@ -3,46 +3,51 @@
 One theme for the whole library. A student should recognise a SmartQuest lesson before the
 title appears. Import `scripts/smartquest_theme.py`; do not redefine colours per video.
 
-Derived from `SmartQuestApp/DESIGN.md`, and on the same light ground the web palette was
-tuned for, so the brand hues transfer directly.
+The overall look follows 3Blue1Brown: a dark field and Computer Modern mathematics. What stays
+SmartQuest is the **colour set**, the DM Sans title, and the sans caption track.
 
-## Field — light
+## Field — dark
 
 | Token | Value | |
 |---|---|---|
-| `BG` | `#FBFCFE` | barely-tinted cool white |
-| `BG_LIFT` | `#FFFFFF` | a gentle white wash, top to bottom |
-| `INK` | `#1B2440` | deep indigo-slate — softer than black, still brand-cool · 14.9:1 |
-| `MUTED` | `#64748B` | secondary notes, DSE reasons · 4.64:1 |
-| `LINE` | `#7C8AA3` | neutral geometry · 3.49:1 (WCAG non-text minimum is 3:1) |
+| `BG` | `#0B0E14` | cool near-black |
+| `BG_LIFT` | `#141926` | a gentle lift, top to bottom |
+| `INK` | `#E9EDF7` | cool near-white · 16.48:1 |
+| `MUTED` | `#98A3BA` | secondary notes, DSE reasons · 7.62:1 |
+| `LINE` | `#6B7893` | neutral geometry · 4.35:1 |
 
-The field is deliberately light. A dark video reads as "advanced" to a secondary student meeting
-an idea for the first time; a clean near-white page reads as a well-set textbook. That is the
-feeling we want, and it is the main reason this theme is not a 3Blue1Brown clone.
+Near-black rather than pure black: the slight cool lift keeps the brand's indigo temperature and
+is gentler on a phone at night, at almost no cost in contrast.
+
+**Everything was re-measured when the theme went dark, and the old palette did not survive it.**
+The light theme's 700-level inks all fail on this field — blue-700 3.13:1, violet-700 2.96:1,
+rose-700 3.34:1, emerald-700 3.83:1, orange-700 4.06:1. Reusing them would have looked plausible
+and been unreadable. The pens below are the same hues one tonal step lighter.
 
 ## Teaching semantics
 
 A colour means one thing for a whole video **and across the whole library**. Never reassign.
 
-| Token | Value | Meaning |
-|---|---|---|
-| Token | Value | Meaning | on page |
+| Token | Value | Meaning | on field |
 |---|---|---|---|
-| `GIVEN` | `#1D4ED8` blue-700 | what the question gives you | 6.53:1 |
-| `UNKNOWN` | `#C2410C` orange-700 | what you are solving for | 5.04:1 |
-| `RESULT` | `#047857` emerald-700 | a confirmed result, a correct step | 5.34:1 |
-| `WARN` | `#BE123C` rose-700 | the misconception, the trap, the wrong turn | 6.12:1 |
-| `AUX` | `#6D28D9` violet-700 | construction, first-use English terms | 6.92:1 |
+| `GIVEN` | `#60A5FA` blue-400 | what the question gives you | 7.60:1 |
+| `UNKNOWN` | `#FB923C` orange-400 | what you are solving for | 8.53:1 |
+| `RESULT` | `#34D399` emerald-400 | a confirmed result, a correct step | 10.05:1 |
+| `WARN` | `#FB7185` rose-400 | the misconception, the trap, the wrong turn | 7.18:1 |
+| `AUX` | `#A78BFA` violet-400 | construction, first-use English terms | 7.10:1 |
 
 Five inks at the **same tonal step**, so they read as one set of pens rather than five unrelated
-colours. Hue separation was chosen first and contrast measured second.
+colours. Hue separation was chosen first and contrast measured second. These hues are what keeps
+the theme SmartQuest rather than a 3Blue1Brown clone — the field and the type now follow his, the
+colour set does not.
 
 `GIVEN` and `UNKNOWN` share almost every frame, so they are **complementary** — blue against
 burnt orange — instead of two neighbouring blues. An earlier version used brand indigo and brand
 purple side by side and they were genuinely hard to tell apart in the figure.
 
-Measure before adopting a colour. A previous `RESULT` at `#059669` looked fine and measured
-**3.67:1**, which fails as text on a light page.
+Measure before adopting a colour, and **re-measure after any change of field**. Going dark
+invalidated every ratio in this file at once: the previous 700-level set measured 2.96–4.06:1 on
+the new background, all failing, while looking perfectly reasonable in the editor.
 
 This is the mechanism that makes a series feel like a series. A student who has watched three
 SmartQuest videos already knows purple is the unknown before you say so.
@@ -68,16 +73,15 @@ Two consequences:
   `mtex_ref()`, which colours named sub-expressions by referent.
 
 `REF_SERIES` is the hand-out order and runs to **eight** — the five above, then `REF_LIME`
-`#4D7C0F`, `REF_FUCHSIA` `#A21CAF`, `REF_CYAN` `#0E7490`. Those three carry no role meaning; they
-are further pens, for figures with more angles and sides than five colours can name. Take as many
-as the figure has parts rather than making parts share.
+`#A3E635` (12.81:1), `REF_FUCHSIA` `#E879F9` (7.85:1), `REF_CYAN` `#22D3EE` (10.69:1). Those
+three carry no role meaning; they are further pens, for figures with more angles and sides than
+five colours can name. Take as many as the figure has parts rather than making parts share.
 
-They were picked by hue gap, not by eye — the semantic five sit at 17.5°, 162.9°, 224.3°, 263.4°
-and 345.3°, and these fill the three widest gaps, holding a 30° minimum separation across all
-eight. Measured contrast 4.86:1, 6.16:1, 5.22:1. Rejected for crowding a colour already in the
-series: amber-700 (8° from orange), pink-700 (10°), teal-700 (12°), sky-700 (23°). That margin
-matters — an earlier version put brand indigo beside brand purple and they were genuinely hard to
-tell apart.
+They were picked by hue gap, not by eye, to fill the three widest gaps in the semantic five.
+Measured on the dark field the eight sit at 27.0°, 82.7°, 158.1°, 187.9°, 213.1°, 255.1°, 292.0°
+and 351.3°, a **minimum separation of 25.2°** (cyan against blue — the tightest pair, and cyan is
+the eighth pen, so it only appears on an already-busy figure). That margin matters: an earlier
+version put brand indigo beside brand purple and they were genuinely hard to tell apart.
 
 This is the mechanism generalised from the older rule below: when a quantity is split into parts
 that must be compared (two halves of an angle, two forces, two half-equations), give each part its
@@ -93,12 +97,20 @@ the title card. It is a signature, not a decoration; repeating it cheapens it.
 
 | Role | Face | Size | Note |
 |---|---|---|---|
-| Body, captions, all Chinese | **PingFang HK Medium** | 22–32 | 蘋方 Medium; steadier than Regular at video sizes |
-| Display titles | **DM Sans Bold** | **≥ 44 only** | brand face; its Latin kerning breaks under Pango below ~44 |
-| Mathematics, point labels, DSE reasons | `MathTex`, **sans-serif** | — | LaTeX via `TEX_SANS` |
+| Role | Face | Size | Note |
+|---|---|---|---|
+| Mathematics, point labels, DSE reasons | **Computer Modern** via `MathTex`/`Tex` | — | Manim's stock template, `TEX_MAIN` |
+| On-frame Chinese | **Songti TC** | 22–32 | 明體; its stroke modulation sits with Computer Modern |
+| Display titles | **DM Sans Bold** | **≥ 44 only** | the one surviving brand face; Latin kerning breaks under Pango below ~44 |
+| **Captions only** | **PingFang HK Bold** | fixed | sans on purpose — the caption track must read as a layer over the lesson, not part of it |
 
-Use **PingFang HK, not PingFang SC** — SC sets 全形 punctuation centred, which reads as
-Mainland typesetting to a Hong Kong student.
+**Latin on the figure goes through TeX, not Pango.** `label()` sends a single symbol to `MathTex`
+and a word to `Tex`, so the `A` labelling a vertex is the *same glyph* as the `A` inside
+`\angle BAD` beside it. That is what rule 17 asks for, and a Pango `A` next to a TeX `A` visibly
+is not the same letter. Chinese has no Computer Modern, so it falls through to Songti TC.
+
+Use **PingFang HK, not PingFang SC** for captions — SC sets 全形 punctuation centred, which reads
+as Mainland typesetting to a Hong Kong student.
 
 ### Never call `Text()` directly
 
@@ -113,20 +125,12 @@ So: `title()`, `body()`, `label()`, `caption_text()`, `step()`, or `_text()` —
 `Text(...)`. A single stray `Text()` in a scene is visible as one word spaced differently from
 the identical word elsewhere in the same video.
 
-### Mathematics is set sans-serif
+### Mathematics is Computer Modern
 
-Computer Modern's serif italic is the 3Blue1Brown look and clashes with a sans interface. The
-theme installs `TEX_SANS` on `config.tex_template` at import, so every `MathTex`/`Tex` is sans
-without touching the call sites.
-
-`\mathsf{}` on its own is **not** enough — it converts letters but leaves Greek and anything
-inside `\text{}` serif, so a single line ends up mixed. The template uses
-`helvet` + `\renewcommand{\familydefault}{\sfdefault}` + `sfmath`, which converts equations,
-Greek and `\text{}` together. Install once:
-
-```bash
-tlmgr install sfmath helvet
-```
+Manim's stock TeX template, which is the 3Blue1Brown setting. The theme no longer overrides it —
+`TEX_MAIN = TexTemplate()`. `TEX_SANS` survives as an alias so older scenes still import, but it
+now resolves to the same stock template; the previous `helvet` + `sfmath` build is gone, and
+neither package is needed any more.
 
 **The Tex cache does not know the template changed.** `media/Tex/*.svg` is keyed by the
 expression string, not the preamble, so after editing `TEX_SANS` — or any font setting — old
@@ -141,15 +145,15 @@ Never set DM Sans below `DISPLAY_MIN`. If a label is small, it is `body()` or `M
 
 ### Verify the fonts exist before you rely on them
 
-Both faces are installed on this machine — DM Sans via `brew install --cask font-dm-sans`
-(2026-08-11), PingFang HK ships with macOS. Neither is guaranteed elsewhere, and **Pango
+All three faces are installed on this machine — DM Sans via `brew install --cask font-dm-sans`
+(2026-08-11); Songti TC and PingFang HK ship with macOS. Neither is guaranteed elsewhere, and **Pango
 silently substitutes a missing face** rather than failing, so a title renders in the wrong font
 with no warning. Check first:
 
 ```python
 import manimpango
 have = set(manimpango.list_fonts())
-assert {"DM Sans", "PingFang HK"} <= have, sorted(have)
+assert {"DM Sans", "Songti TC", "PingFang HK"} <= have, sorted(have)
 ```
 
 If DM Sans is missing and cannot be installed, use no display type at all and say so — do not
@@ -189,10 +193,13 @@ it for one line and the first wrapped cue lands on the diagram — that happened
 
 ## Captions
 
-Shorts convention adapted to a light page: **bold dark type, no bar, no outline, no glow.** The
-caption band is reserved empty page, so dark type already has full contrast and anything behind
-it is noise. White-on-dark is the usual shorts treatment only because shorts usually sit on busy
-footage.
+**Bold near-white sans type, no bar, no outline, no glow.** The caption band is reserved empty
+field, so plain type already has full contrast (`CAPTION_INK` `#F2F5FC`, 17.70:1) and anything
+behind it is noise.
+
+Captions are the one layer that stays **PingFang HK sans** while the lesson is set in Computer
+Modern. That is deliberate: the caption is a transcript of the voice laid over the picture, not
+part of the mathematics, and the change of face is what says so.
 
 | Token | Value |
 |---|---|
@@ -392,5 +399,9 @@ spends reading time the pacing budget already allocated, and drifts it away from
 **Borrow:** geometry before algebra, colour-coded correspondence between figure and formula,
 transform instead of redraw, stillness after an insight, numbers bound to the drawing.
 
-**Do not borrow:** the black field, Computer Modern as the interface face, the Pi creatures, the
-3b1b blue/yellow palette. Those are someone else's identity.
+**Now also borrowed:** the dark field and Computer Modern, adopted deliberately after the light
+theme was tried and rejected.
+
+**Do not borrow:** the Pi creatures, and the 3b1b blue/yellow palette. The colour set is what
+carries SmartQuest identity now that the field and the type are shared, which makes rule 6 —
+never reassign a colour — matter more than it did, not less.

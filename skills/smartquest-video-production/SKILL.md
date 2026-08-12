@@ -46,7 +46,7 @@ actual re-render, not a description of what would change.
 | Subtitle language | 繁體中文**書面語**, with subject terms kept in **English** (see `references/narration-and-subtitles.md`) |
 | Long form | 1920×1080 · 16:9 · **60 fps** · 5 min or longer |
 | Shorts | 1080×1920 · 9:16 · 60 fps · about 60 s |
-| Theme | The SmartQuest theme in `references/brand-theme.md`. Not 3Blue1Brown's black field |
+| Theme | The SmartQuest theme in `references/brand-theme.md`: **dark field, Computer Modern mathematics** in the 3Blue1Brown manner. SmartQuest identity is carried by the colour set, the DM Sans title and the sans caption track |
 | Audience | Hong Kong secondary students sitting the **English-language** DSE papers, taught in Cantonese |
 
 Only reach outside Manim when Manim genuinely cannot produce the shot — a screen recording, a
