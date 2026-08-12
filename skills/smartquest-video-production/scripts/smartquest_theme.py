@@ -687,6 +687,25 @@ REST_PONDER = 3.0       # a ponder beat: the student is handed the problem.
                         # its data stay on screen; nothing else moves.
 
 
-def dim(mobject, opacity=0.3):
+# Three depths, not two. The missing tier was structure: axes, grids and the
+# frame of a graph are not "context that was recently important", they are
+# furniture, and at OP_CONTEXT they still compete with the curve drawn on them.
+OP_PRIMARY = 1.0        # what the current beat is about
+OP_CONTEXT = 0.3        # established, still relevant — the previous step
+OP_STRUCTURE = 0.15     # axes, gridlines, the box of a diagram
+
+
+def dim(mobject, opacity=OP_CONTEXT):
     """Dim context instead of deleting it. Students need what came before."""
     return mobject.animate.set_opacity(opacity)
+
+
+def structural(*mobjects):
+    """Push axes, grids and diagram furniture to OP_STRUCTURE, immediately.
+
+    Set at build time, not animated — furniture never had the student's
+    attention, so it has nothing to hand over.
+    """
+    for m in mobjects:
+        m.set_opacity(OP_STRUCTURE)
+    return mobjects[0] if len(mobjects) == 1 else VGroup(*mobjects)

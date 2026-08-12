@@ -348,6 +348,12 @@ Five moves for the whole library. Adding a sixth makes the series look inconsist
 4. **Bind labels to geometry** — `always_redraw`, so a number can never disagree with the picture.
 5. **Dim, do not delete** — context drops to 30% and stays.
 
+Three depths, not two: `OP_PRIMARY` 1.0 for what the beat is about, `OP_CONTEXT` 0.3 for the
+established step still on screen, `OP_STRUCTURE` 0.15 for axes, gridlines and diagram furniture.
+Structure is not dimmed context — it never had the student's attention — so `structural()` sets it
+at build time rather than animating it. Left at 0.3, a grid still competes with the curve drawn
+on it.
+
 Timing constants live in the theme (`T_DRAW`, `T_REVEAL`, `T_TRANSFORM`, `T_CLEAR`,
 `REST_BEAT`, `REST_AHA`). Use them rather than inventing run times per scene.
 
@@ -401,6 +407,23 @@ transform instead of redraw, stillness after an insight, numbers bound to the dr
 
 **Now also borrowed:** the dark field and Computer Modern, adopted deliberately after the light
 theme was tried and rejected.
+
+## Rejected from other Manim skills
+
+Reviewed Nous Research's bundled `creative-manim-video` skill (2026-08-12). Two things taken —
+the `OP_STRUCTURE` tier above, and its corroboration of trap #22. Two rejected, recorded here so
+they are not adopted later by someone who only reads the source:
+
+- **`FadeOut(Group(*self.mobjects))` at every scene end.** It guarantees clean scene boundaries by
+  clearing the screen, and it directly breaks invariant 10: a scene's end state must *equal* the
+  next scene's start state. Wiping between shots also destroys the thing the figure is for —
+  persisting and being transformed — and turns a lesson into a slide deck. Carry the figure
+  across; clear only when the subject genuinely changes.
+- **"Every scene needs a different dominant colour."** Sound anti-monotony advice for a general
+  explainer, and incompatible with rule 17 here. Our colours are assigned by *referent*: if the
+  unknown angle is orange in shot 3 it is orange in shot 9, and rotating the palette for variety
+  would destroy exactly the correspondence the student is being taught to read. Variety comes from
+  layout, motion and what is on screen — never from reassigning a pen.
 
 **Do not borrow:** the Pi creatures, and the 3b1b blue/yellow palette. The colour set is what
 carries SmartQuest identity now that the field and the type are shared, which makes rule 6 —

@@ -268,6 +268,14 @@ correction itself.
 **Never call `Text()` directly** for anything containing Latin — use `title()`, `body()`,
 `label()`, `caption_text()`, or `_text()`.
 
+**Independently corroborated.** Nous Research's bundled `creative-manim-video` skill reports the
+same defect in its own words — "Manim's Pango renderer produces broken kerning with proportional
+fonts at all sizes" — and works around it by mandating a **monospace** face throughout. That
+confirms the diagnosis is not local to this machine. It is a real fix, but it pays by giving up
+proportional type everywhere; laying out at `TYPE_BASE` and scaling costs nothing and keeps the
+face, so it is the better trade. Worth knowing a second party hit this hard enough to change their
+whole type system over it.
+
 ## 23. `set_stroke(width=...)` is not in scene units
 
 A stroke width computed from a mobject's `.height` — which *is* in scene units — comes out about

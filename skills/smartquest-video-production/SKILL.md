@@ -7,6 +7,40 @@ description: Produce SmartQuest DSE teaching videos — Manim-animated lessons f
 
 Teaching videos for HKDSE students, animated in Manim, narrated later by a real teacher.
 
+## What we are making
+
+**The 3Blue1Brown of the DSE syllabus — every subject, not only Maths.**
+
+Plenty of Hong Kong students already watch 3Blue1Brown. What stops it being enough is not the
+craft, it is the fit: he goes deeper than a syllabus needs, chooses topics for their beauty, and
+owes nothing to a marking scheme. So a student gets the intuition and still cannot answer Q11.
+
+SmartQuest takes his standard and binds it to the syllabus. That sets the bar in both directions:
+
+- **The reference point is 3Blue1Brown, not a typical tutorial video.** A talking head over a
+  worked past paper is not the thing being aimed at, even though it is what the market supplies.
+- **Every lesson is syllabus-bound and mark-aware.** DSE reasons on screen, the marker's exact
+  wording, no beautiful digression that earns nothing.
+
+### It has to work outside Maths
+
+The rules in this skill are written in the language of a geometry lesson — the figure, the angle,
+the derivation. They are not Maths-only, but they need translating, and the translation is part of
+designing a Physics, Chemistry or Biology lesson rather than an afterthought.
+
+| | The "figure" is | The referent a colour names | The mathematical register carries |
+|---|---|---|---|
+| **Maths** | the diagram | a point, side, angle | the derivation |
+| **Physics** | the free-body diagram, the ray path, the graph | a force, a component, a body | the equation of motion, the graph gradient |
+| **Chemistry** | the structure, the apparatus, the energy profile | a species, a bonding pair, an electron | the balanced equation, the mole calculation |
+| **Biology** | the structure, the cycle, the pathway | an organ, a molecule, a stage of a process | far less — see below |
+
+**Biology is the honest exception.** It carries much less symbolic content, so its lessons lean
+harder on the **verbal register** — the enumerated list of stages — and on the figure changing over
+time. That is a legitimate shift, not a failure to follow the rules. What does not shift: a colour
+still names one thing everywhere it appears, the figure is still built in step with the narration,
+and loose explanatory prose still belongs to the subtitle.
+
 Five gates: **(1)** lesson design + narration script + subtitle draft → **(2)** storyboard →
 **(3)** silent draft render → **(4)** picture master + caption track → **(5)** narration
 handoff, recording returned, audio mux, verified delivery.
