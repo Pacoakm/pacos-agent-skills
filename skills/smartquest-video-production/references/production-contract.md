@@ -91,6 +91,7 @@ the implementation.
         {"start": 1.0, "end": 5.2, "text": "同一弧上的 inscribed angle 相等。",
          "terms": ["inscribed angle"]}
       ],
+      "ponder": {"prompt": "求 \u2220BAD", "holdSeconds": 3.5},
       "stillSeconds": 6.0,
       "storyboardFrame": "storyboard/frames/S01.png"
     }

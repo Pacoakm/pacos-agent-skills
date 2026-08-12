@@ -656,6 +656,9 @@ T_TRANSFORM = 1.5       # morph an existing object
 T_CLEAR = 0.6           # fade something away
 REST_BEAT = 1.0         # after a normal reveal
 REST_AHA = 1.8          # after the aha moment — never shorter
+REST_PONDER = 3.0       # a ponder beat: the student is handed the problem.
+                        # Not a rest — work being handed over. The question and
+                        # its data stay on screen; nothing else moves.
 
 
 def dim(mobject, opacity=0.3):

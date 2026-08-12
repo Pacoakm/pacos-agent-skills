@@ -114,6 +114,18 @@ Write `brief.md` covering, in this order:
   reason wrong is still a wrong lesson.
 - **Known limitations** — cases the video does not cover. Say so on the record; never let the
   video imply completeness it does not have.
+- **The five lesson patterns** — answer each explicitly, per `references/lesson-patterns.md`:
+  1. **The hook question** — what the student wants to know after the opening shot, in one
+     sentence. 「今日我們講 X」 is a table of contents, not a hook.
+  2. **Behaviour before name** — for each term, the beat where the student *sees* it before it is
+     named. Never open a section with a definition.
+  3. **The concrete case** — the real numbers worked before any general form. If the lesson only
+     shows the general form, name the specific case it came from and put that case in the video.
+  4. **The ponder beat** — where the student is handed the problem before the answer, and for how
+     long. A worked example with no ponder beat needs a reason.
+  5. **Argument or illustration** — for each beat, does the animation *establish* the result or
+     merely display it? Say which, and promote at least one. The aha must be an argument; an aha
+     the student is told rather than shown is an aha in name only.
 
 Verify every formula, constant, unit, and worked number independently before animating. Record
 the check in `brief.md`. A wrong number that reaches the render is the most expensive defect
@@ -365,7 +377,10 @@ Report what you verified and how. If something was not checked, say so.
 3. **Never invent a DSE reason or a formula.** Verify against the syllabus wording.
 4. **Never let the plan and the render disagree.** `video-plan.json` wins; update it first.
 5. **Never bake subtitles into lesson scenes.** They live on the caption track.
-6. **Never change a colour's meaning** once assigned inside a video, or across a series.
+6. **Never change a colour's meaning** once assigned inside a video, or across a series — and a
+   recurring object keeps its pen across the whole series, not just within one video. If the
+   median is violet in lesson 1 it is violet in lesson 7, so a student arrives already knowing
+   what the colour means. Record the assignment in `brief.md` and reuse it.
 7. **Never hard-code 16:9 coordinates.** Use the layout tokens so shorts work from the same code.
 8. **Stop at the last verified artifact** when a dependency, asset, or decision is missing, and
    state exactly what is needed.
@@ -433,6 +448,8 @@ Report what you verified and how. If something was not checked, say so.
 - `references/on-screen-language.md` — what may appear on the picture, and how to say in
   mathematics what you were about to write as a sentence.
 - `references/narration-and-subtitles.md` — 書面語 rules, the English-term rule, subtitle format.
+- `references/lesson-patterns.md` — how a lesson is sequenced: the hook question, behaviour
+  before name, concrete before general, the ponder beat, argument versus illustration.
 - `references/pacing.md` — teaching rhythm, dwell times, narration room, checkable limits.
 - `references/production-contract.md` — `video-plan.json` schema, folder layout, invariants.
 - `scripts/smartquest_theme.py` — importable Manim theme: colours, fonts, layout, helpers.
