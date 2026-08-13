@@ -121,9 +121,27 @@ The band reserves two English lines in a short for exactly this reason, so write
 paper would use and let it wrap. What a short still may not do is take a **third** line; that is
 a gate. Do not shrink the type to buy a line either: the caption size is fixed for the whole film.
 
-The terms declared in `terms` are coloured `CAPTION_TERM` wherever they occur, and the theme
-matches the form actually written — `inscribed angle` in the plan marks `Inscribed angles` in the
-sentence, capital and plural included.
+### `terms` names both forms, and both light up
+
+`terms` is a **mapping from the English to the Chinese**:
+
+```json
+"terms": {"isosceles triangle": "等腰三角形", "inscribed angle": "圓周角", "SAS": ""}
+```
+
+Both forms are marked in `CAPTION_TERM`, in the same colour, on their own line — so the student
+sees 等腰三角形 and `isosceles triangles` light up together and reads them as one thing. That
+pairing is the whole point of a bilingual caption; marking only the English would teach the word
+without connecting it to the idea the student already has.
+
+Map a term to `""` when it genuinely has no Chinese form — `SAS`, `pH` — and only the English
+occurrence is marked, deliberately. A bare list still works and means English only, and the build
+reports it, because it is nearly always an oversight rather than a decision.
+
+The theme matches the form actually written: `inscribed angle` in the plan marks `Inscribed
+angles` in the sentence, capital and plural included, and the Chinese form is matched literally
+since Chinese has neither case nor inflection. Both forms are also protected from line breaks, so
+`等腰三角形` is never split across two lines any more than `isosceles triangle` is.
 
 Never bracket one language inside the other. `圓周角（inscribed angle）` on the Chinese line is
 the worst of both: it doubles the reading load on the line that exists to be easy, and the

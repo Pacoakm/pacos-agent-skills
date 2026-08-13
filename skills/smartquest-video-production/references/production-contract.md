@@ -92,7 +92,7 @@ the implementation.
         {"start": 1.0, "end": 5.2,
          "text": "由圓心 O 畫 2 條半徑，形成 2 個等腰三角形。",
          "en": "Draw two radii from the centre O to form two isosceles triangles.",
-         "terms": ["isosceles triangle"]}
+         "terms": {"isosceles triangle": "等腰三角形", "SAS": ""}}
       ],
       "ponder": {"prompt": "求 \u2220BAD", "holdSeconds": 3.5},
       "stillSeconds": 6.0,

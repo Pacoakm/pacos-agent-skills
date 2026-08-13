@@ -544,9 +544,10 @@ def _est_width(t, size=None):
 
 def _legal_breaks(text, terms):
     """Indices where a break is allowed: not inside a Latin word, not inside a
-    declared term, not before closing punctuation, not after a maths prefix."""
+    declared term in EITHER language, not before closing punctuation, not after
+    a maths prefix. 等腰三角形 is as unbreakable as `isosceles triangle`."""
     spans = [m.span() for m in _LATIN_RUN.finditer(text)]
-    for t in (terms or []):
+    for t in _term_candidates(terms):
         i = text.find(t)
         while i != -1:
             spans.append((i, i + len(t)))
@@ -589,12 +590,32 @@ def wrap_caption(text, terms=None, target=None, size=None):
     return "\n".join(_greedy_lines(text, terms, target, size))
 
 
+def _term_candidates(terms):
+    """Every written form of every declared term, in either language.
+
+    A cue declares its terms as a mapping from the English to the Chinese:
+
+        {"isosceles triangle": "等腰三角形"}
+
+    Both forms are then marked, so the term lights up in the SAME colour on
+    both lines and the student can see that 等腰三角形 and `isosceles triangle`
+    are one thing. A plain list is still accepted — it means English only, and
+    the Chinese line will simply have nothing to mark.
+    """
+    if isinstance(terms, dict):
+        out = list(terms.keys()) + [v for v in terms.values() if v]
+    else:
+        out = list(terms or [])
+    return [t for t in out if t and t.strip()]
+
+
 def _term_forms(string, terms):
     """The forms in which each declared term ACTUALLY occurs in `string`.
 
-    `t2c` matches a literal substring, which is fine for the Chinese line —
-    the term is quoted there in its dictionary form. It is wrong for the
-    English line, where the same term is inflected and capitalised:
+    `t2c` matches a literal substring, which is fine for the Chinese form —
+    Chinese has no case and no inflection, so 等腰三角形 is written the way it
+    was declared. It is wrong for the English, which is inflected and
+    capitalised in a real sentence:
 
         term "inscribed angle" in "Inscribed angles on the same arc…"
           literal key  →  no match at all (capital I), the term is not marked
@@ -604,17 +625,18 @@ def _term_forms(string, terms):
           literal key  →  "isosceles triangle" amber, a white "s" left hanging
           this         →  "isosceles triangles", one amber phrase
 
-    So: find each term case-insensitively, let the match run to the end of the
-    word it landed in, and colour the text that is really there. Only extends,
-    never shortens — a term written plural in the plan and singular in the
-    sentence goes unmarked rather than mis-marked.
+    So a Latin form is found case-insensitively and the match runs to the end
+    of the word it landed in, colouring the text that is really there. It only
+    extends, never shortens — a term written plural in the plan and singular in
+    the sentence goes unmarked rather than mis-marked.
     """
     forms = set()
-    for t in (terms or []):
-        if not t.strip():
-            continue
-        for m in re.finditer(re.escape(t) + r"[A-Za-z]*", string, re.IGNORECASE):
-            forms.add(m.group(0))
+    for t in _term_candidates(terms):
+        if re.search(r"[A-Za-z]", t):
+            for m in re.finditer(re.escape(t) + r"[A-Za-z]*", string, re.IGNORECASE):
+                forms.add(m.group(0))
+        elif t in string:
+            forms.add(t)
     return forms
 
 

@@ -137,6 +137,19 @@ def chinese_numerals(text: str) -> list[str]:
     return [m for m in ZH_NUMERAL.findall(text) if m not in ZH_NUMERAL_OK]
 
 
+def unpaired_terms(cue: dict) -> list[str]:
+    """Terms declared with no Chinese form, so only the English line lights up.
+
+    `terms` is a mapping from the English to the Chinese — the two forms are
+    marked in the same colour so the student can see they are one thing. A term
+    written in a bare list has no Chinese form to mark, so only half the cue
+    lights up. Mapping it to an empty string is how to say "this one has no
+    Chinese form" on purpose, as for SAS, and that is not reported.
+    """
+    terms = cue.get("terms")
+    return [] if isinstance(terms, dict) else list(terms or [])
+
+
 def limits(plan: dict) -> tuple[int, int, int]:
     """(全形字 per 中文 line, characters per English line, English lines allowed)."""
     if plan["height"] > plan["width"]:
@@ -155,6 +168,12 @@ def check(plan: dict, cues: list[dict]) -> tuple[list[str], list[str]]:
             notices.append(f'{c["shot"]} {c["start"]:.2f}s: 中文 numerals {zh_nums} — '
                            f'use Arabic for a count or a measurement '
                            f'(「2 個」 not 「兩個」); a numeral inside a word stays Chinese')
+        unpaired = unpaired_terms(c)
+        if unpaired:
+            notices.append(f'{c["shot"]} {c["start"]:.2f}s: terms {unpaired} have no Chinese '
+                           f'form, so only the English line is marked — write '
+                           f'"terms": {{"inscribed angle": "圓周角"}}, or map to "" if the '
+                           f'term genuinely has no Chinese form')
         dur = c["end"] - c["start"]
         w = weight(c["text"])
         en = (c.get("en") or "").strip()
@@ -262,7 +281,7 @@ def check_layout(plan: dict, cues: list[dict]) -> tuple[list[str], list[str]]:
     _, _, max_en_lines = limits(plan)
     problems, notices = [], []
     for c in cues:
-        terms = list(c.get("terms", []))
+        terms = c.get("terms") or {}
         en = (c.get("en") or "").strip() or None
         zh_w, en_w = theme.wrap_caption_pair(c["text"], terms, max_w, en)
         cap = theme.caption_text(zh_w, terms, en_w)
@@ -380,7 +399,7 @@ def main() -> int:
     scene = SCENE_TEMPLATE.format(
         plan_name=plan_path.name, w=plan["width"], h=plan["height"], fps=plan["fps"],
         cues=[(c["start"], c["end"], c["text"], (c.get("en") or "").strip() or None,
-               list(c.get("terms", []))) for c in cues],
+               c.get("terms") or {}) for c in cues],
         duration=float(plan["durationSeconds"]))
     (out_dir / "captions.py").write_text(scene)
 

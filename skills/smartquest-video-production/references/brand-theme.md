@@ -223,10 +223,15 @@ carry most of it, which is why 1.30 separates as cleanly as 1.75 did. Rendered s
 Do not use `AUX` for a term inside a caption — the caption is a different track from the figure,
 and the eight teaching pens belong to the figure.
 
-**`terms` marks the form actually written.** The theme matches each declared term
-case-insensitively and lets the match run to the end of its word, so `inscribed angle` in the plan
-colours `Inscribed angles` in the English sentence — capital and plural included — instead of
-leaving a white `s` hanging off an amber phrase.
+**`terms` marks both languages, in the same colour.** It is a mapping — `{"isosceles triangle":
+"等腰三角形"}` — and both forms are coloured, so 等腰三角形 and `isosceles triangles` light up
+together and read as one thing. Marking only the English would teach the word without connecting
+it to the idea the student already has.
+
+**And it marks the form actually written.** A Latin form is matched case-insensitively with the
+match running to the end of its word, so `inscribed angle` in the plan colours `Inscribed angles`
+in the sentence — capital and plural included — instead of leaving a white `s` hanging off an
+amber phrase. A Chinese form is matched literally, Chinese having neither case nor inflection.
 
 **Fixed size, wrap instead of shrink.** A caption that scales down to fit reads as inconsistent
 from cue to cue. `caption_text()` never scales; `fit_caption()` wraps both languages against the
