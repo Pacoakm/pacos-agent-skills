@@ -64,11 +64,17 @@ CAPTION_INK = "#F2F5FC"                                        # 17.70:1
 # semantic colours belong to the figure, this one belongs to the text.
 CAPTION_TERM = "#FBBF24"   # amber-400
 CAPTION_LINE_GAP = 0.16   # gap between wrapped lines WITHIN one language
-# Gap between the 中文 block and the English block. Deliberately larger than the
-# within-language gap: at equal spacing a wrapped two-line Chinese cue and its
-# English line read as one four-line paragraph, and the eye cannot tell which
-# lines belong together. The ratio, not the number, is the point.
-CAPTION_LANG_GAP = CAPTION_LINE_GAP * 1.75
+# Gap between the 中文 block and the English block. Larger than the
+# within-language gap, because at equal spacing a wrapped two-line Chinese cue
+# and its English line read as one four-line paragraph and the eye cannot tell
+# which lines belong together. The ratio, not the number, is the point.
+#
+# 1.30, down from 1.75: rendered side by side at 1.75 / 1.45 / 1.25 / 1.10, the
+# block still separates cleanly well below 1.75, because the gap is not the only
+# thing marking the boundary — the English is 0.78 the size, and the change of
+# script does the rest. Only around 1.1 does it start reading as one paragraph.
+# The tighter gap gives the height back to the lesson.
+CAPTION_LANG_GAP = CAPTION_LINE_GAP * 1.30
 
 PALETTE = dict(bg=BG, ink=INK, muted=MUTED, line=LINE, given=GIVEN,
                unknown=UNKNOWN, result=RESULT, warn=WARN, aux=AUX)
@@ -195,20 +201,21 @@ class Stage:
         # frame at the caption sizes above, with the bottom offset under them:
         #
         #            1zh+1en   2zh+1en   2zh+2en   offset   band needed
-        #   16:9       0.835     1.303     1.677    0.480   0.223 / 0.270
-        #   9:16       0.745     1.161     1.498    1.400   0.320 / 0.362
+        #   16:9       0.763     1.231     1.605    0.480   0.214 / 0.261
+        #   9:16       0.673     1.089     1.426    1.400   0.311 / 0.353
         #
         # 16:9 reserves for 2zh+1en, because build_captions.py holds the
         # English to ONE line there — a 16:9 line fits 102 Latin characters, so
         # a second English line means the sentence was too long, not that the
         # frame was too narrow. 9:16 reserves the full 2+2: a portrait line
-        # holds about 38 characters, and exam English does not always fit that.
+        # holds about 38 characters, and exam English does not always fit that,
+        # so two English lines are the format in a short rather than a fault.
         #
         # 9:16 is 1.4 units of platform-UI clearance before a word is set, so
         # the band there is mostly NOT the type — shrinking the caption from 24
         # to 20 moved it only 0.40 → 0.38. What would move it is the 2+2
-        # reservation: hold a short's 中文 to one line and the band goes to 0.32.
-        self.caption_band = self.h * (0.38 if self.portrait else 0.24)
+        # reservation: hold a short's 中文 to one line and the band goes to 0.31.
+        self.caption_band = self.h * (0.37 if self.portrait else 0.23)
         self.title_band = self.h * (0.11 if self.portrait else 0.10)
         self.margin = self.w * 0.045
 

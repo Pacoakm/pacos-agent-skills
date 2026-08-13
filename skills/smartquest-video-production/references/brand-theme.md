@@ -198,7 +198,7 @@ different pieces of typography.
 | `SIZE_CAPTION` | 24 landscape, **20 portrait** | the 中文 line |
 | `SIZE_CAPTION_EN` | 19 landscape, **16 portrait** | the English line — `CAPTION_EN_RATIO` 0.78 |
 | `CAPTION_LINE_GAP` | 0.16 | between wrapped lines within one language |
-| `CAPTION_LANG_GAP` | 0.28 | between the two languages — 1.75× the line gap |
+| `CAPTION_LANG_GAP` | 0.21 | between the two languages — 1.30× the line gap |
 
 **Caption size is measured as a share of frame height**, since that is what the eye subtends. The
 中文 line sets at 42 px in 16:9 (**3.91%** of height) and 63 px in 9:16 (**3.26%**). Streaming
@@ -215,7 +215,10 @@ em, so the English looks smaller than its nominal size before any ratio applies 
 distinguishable.
 
 The two gaps matter for the same reason: at equal spacing a wrapped two-line Chinese cue plus its
-English reads as one four-line paragraph and the eye cannot tell which lines belong together.
+English reads as one four-line paragraph and the eye cannot tell which lines belong together. But
+the gap is not the only thing marking that boundary — the size change and the change of script
+carry most of it, which is why 1.30 separates as cleanly as 1.75 did. Rendered side by side at
+1.75 / 1.45 / 1.25 / 1.10, it is only near 1.1 that the block starts reading as one paragraph.
 
 Do not use `AUX` for a term inside a caption — the caption is a different track from the figure,
 and the eight teaching pens belong to the figure.
@@ -239,18 +242,18 @@ Measured block heights on the 8-unit frame:
 
 | | 1zh+1en | 2zh+1en | 2zh+2en | reserves for | band |
 |---|---|---|---|---|---|
-| 16:9 | 0.835 | **1.303** | 1.677 | 2zh + **one** English line | **0.24** |
-| 9:16 | 0.745 | 1.161 | **1.498** | 2zh + 2en | **0.38** |
+| 16:9 | 0.763 | **1.231** | 1.605 | 2zh + **one** English line | **0.23** |
+| 9:16 | 0.673 | 1.089 | **1.426** | 2zh + 2en | **0.37** |
 
 16:9 reserves less because the English is held to one line there — a 16:9 line fits 102 Latin
 characters, so a second English line means the sentence was too long, not that the frame was too
 narrow. 9:16 reserves the full 2+2: a portrait line holds about 38 characters and exam English
 does not always fit that.
 
-**In 9:16 the band is mostly not the type.** 1.4 of its 3.04 units is platform-UI clearance
+**In 9:16 the band is mostly not the type.** 1.4 of its 2.96 units is platform-UI clearance
 before a word is set, which is why dropping the caption from 24 to 20 moved the band only
 0.40 → 0.38. The lever that would move it is the 2+2 reservation: hold a short's 中文 to one line
-and it goes to 0.32.
+and it goes to 0.31.
 
 Size the band for less and the first wrapped cue lands on the diagram, because an over-tall block
 is not clipped — it grows upward. `build_captions.py` lays every cue out and measures it against
