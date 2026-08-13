@@ -1,6 +1,6 @@
 ---
 name: smartquest-video-production
-description: Produce SmartQuest DSE teaching videos — Manim-animated lessons for HKDSE Maths, Physics, Chemistry and Biology, with 繁體中文書面語 subtitles that keep English subject terms, a locked SmartQuest brand theme, and a picture-first workflow that hands a finished silent cut to a human narrator. Use for SmartQuest lessons, DSE explainers, concept animations, exam-technique videos, 16:9 long-form lessons, and 9:16 shorts. Animation and subtitles are built first; the teacher records to picture afterwards. Manim is the only animation engine; no Remotion, no HTML/CSS/JS, no TTS, no stock or generated live action.
+description: Produce SmartQuest DSE teaching videos — Manim-animated lessons for HKDSE Maths, Physics, Chemistry and Biology, with bilingual subtitles (繁體中文書面語 above, English below) that put the exam's subject terms on screen, a locked SmartQuest brand theme, and a picture-first workflow that hands a finished silent cut to a human narrator. Use for SmartQuest lessons, DSE explainers, concept animations, exam-technique videos, 16:9 long-form lessons, and 9:16 shorts. Animation and subtitles are built first; the teacher records to picture afterwards. Manim is the only animation engine; no Remotion, no HTML/CSS/JS, no TTS, no stock or generated live action.
 ---
 
 # SmartQuest Video Production
@@ -77,7 +77,7 @@ actual re-render, not a description of what would change.
 | Animation engine | **Manim Community Edition.** No Remotion, HyperFrames, HTML/CSS/JS, After Effects. ManimGL only with permission — see rule 9 |
 | Narration | **A human teacher records it.** Never TTS. This skill writes the script, never the audio |
 | Order of work | **Picture first, voice second.** Animation and subtitles are finished, then the teacher records to picture |
-| Subtitle language | 繁體中文**書面語**, with subject terms kept in **English** (see `references/narration-and-subtitles.md`) |
+| Subtitles | **Bilingual, always** — 繁體中文**書面語** on top, **English** underneath at 0.78× the size. The 中文 line is written in Chinese; the subject terms live in the English line (see `references/narration-and-subtitles.md`) |
 | Long form | 1920×1080 · 16:9 · **60 fps** · 5 min or longer |
 | Shorts | 1080×1920 · 9:16 · 60 fps · about 60 s |
 | Theme | The SmartQuest theme in `references/brand-theme.md`: **flat dark field — one colour `#0B0E14`, never a gradient — and Computer Modern throughout** in the 3Blue1Brown manner. SmartQuest identity is carried by the colour set, `brand_rule()` and the sans caption track |
@@ -167,8 +167,17 @@ in this pipeline.
 
 ### 2. Write the narration script and the subtitles together
 
-Narration and subtitles are the same text. Follow `references/narration-and-subtitles.md` for
-書面語 style and the English-term rule.
+**Every cue is bilingual: 中文 on top, English underneath and smaller.** Write both — `text` and
+`en` — for every cue. Follow `references/narration-and-subtitles.md` for 書面語 style and for
+what each line may contain. Three rules catch people:
+
+- the **中文 line carries no English word**, only its Chinese name — `SAS`-type abbreviations,
+  single letters and notations like `pH` are the exceptions. The term lives in the English line
+- **numbers are Arabic** — 「2 個」, not 「兩個」. A numeral inside a word (三角形, 二次方程) stays
+- the **English line is one line**, and in 16:9 that is a hard gate
+
+The teacher speaks the Chinese line with the terms said in English — that is the narration, and
+it is why the term is on screen in English at the same moment.
 
 For every shot, the script must fit the shot. The pacing budget is a hard check, not advice:
 
@@ -194,8 +203,8 @@ be read without opening files:
 - **The lesson** — learning objective, prerequisites, the misconception, where the aha lands, the
   DSE reasons, and the stated limitations. Say which formulas and numbers you verified and how.
 - **The full script** — every shot in order, as a table: shot ID, timecode, allotted seconds, the
-  exact 書面語 subtitle text, 字數, and the pacing verdict against both the reading budget
-  (`字數 ≤ 秒數 × 4.0`) and the breathing budget (`stillSeconds ≥ 秒數 × 0.25`).
+  exact 書面語 subtitle text **and its English line**, 字數, and the pacing verdict against both
+  the reading budget (`字數 ≤ 秒數 × 4.0`) and the breathing budget (`stillSeconds ≥ 秒數 × 0.25`).
 - **What is on the picture** — per shot, the `onScreenText` list and its 字數 against the ≤ 12 字
   limit, so the split between picture and narration is visible before anything is drawn. Any
   sentence you moved off the frame: say where it went, and what mathematics replaced it.
@@ -354,7 +363,10 @@ to avoid Manim.
 ### Render the caption track separately
 
 Subtitles are **not** drawn inside the lesson scenes. `scripts/build_captions.py` reads
-`video-plan.json` and emits both a Manim caption scene and a sidecar `.srt`:
+`video-plan.json` and emits both a Manim caption scene and a sidecar `.srt`, each carrying both
+languages. It gates the build: a cue with no English line, with English words left in the 中文
+line, over the per-aspect line limits, or whose laid-out block would sit on the figure, fails
+here rather than in the composite.
 
 ```bash
 python3 scripts/build_captions.py --plan video-plan.json --out-dir src
@@ -516,7 +528,8 @@ Report what you verified and how. If something was not checked, say so.
 - `references/engines-and-plugins.md` — when ManimGL is allowed, and the verified plugin state.
 - `references/on-screen-language.md` — what may appear on the picture, and how to say in
   mathematics what you were about to write as a sentence.
-- `references/narration-and-subtitles.md` — 書面語 rules, the English-term rule, subtitle format.
+- `references/narration-and-subtitles.md` — the bilingual cue, 書面語 rules, what each language
+  line may contain, subtitle format.
 - `references/lesson-patterns.md` — how a lesson is sequenced: the hook question, behaviour
   before name, concrete before general, the ponder beat, argument versus illustration.
 - `references/pacing.md` — teaching rhythm, dwell times, narration room, checkable limits.

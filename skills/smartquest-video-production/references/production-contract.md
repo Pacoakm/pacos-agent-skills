@@ -63,6 +63,7 @@ the implementation.
     "track": "src/captions.py",
     "sidecar": "out/subtitles.srt",
     "burnedIn": true,
+    "bilingual": true,
     "maxCharsPerSecond": 4.0
   },
   "shots": [
@@ -88,8 +89,10 @@ the implementation.
          "cue": 1}
       ],
       "subtitles": [
-        {"start": 1.0, "end": 5.2, "text": "同一弧上的 inscribed angle 相等。",
-         "terms": ["inscribed angle"]}
+        {"start": 1.0, "end": 5.2,
+         "text": "由圓心 O 畫 2 條半徑，形成 2 個等腰三角形。",
+         "en": "Draw two radii from the centre O to form two isosceles triangles.",
+         "terms": {"isosceles triangle": "等腰三角形", "SAS": ""}}
       ],
       "ponder": {"prompt": "求 \u2220BAD", "holdSeconds": 3.5},
       "stillSeconds": 6.0,
@@ -107,7 +110,16 @@ Check these; do not assume them.
 2. No gaps, no overlaps; `end > start` for every shot.
 3. Every shot duration is a whole number of frames at `fps`. At 60 fps any multiple of 0.05 s works.
 4. Subtitle cues lie inside their shot, do not overlap, and each lasts ≥ 2.0 s.
-5. For each shot: `字數 ≤ (end − start) × 4.0`, counting a Latin word as 2 字.
+5. For each shot: `字數 ≤ (end − start) × 4.0` on the **中文** line, counting a Latin word as 2 字.
+   The English line is length-limited, not rate-limited — see `narration-and-subtitles.md`.
+5b. **Every cue has both languages.** `text` is 繁體中文書面語 and carries no English word except
+   an ALL-CAPS abbreviation (`SAS`), a single letter (`O`, `x`) or a listed notation (`pH`,
+   `mol`); counts and measurements in it are Arabic numerals (`2 個`, not `兩個`). `en` is the
+   same sentence in the paper's English, with the subject terms verbatim, **on one line**.
+   Per-aspect limits: 中文 24 全形字 in 16:9 and **15** in 9:16, two lines maximum; English 90
+   characters on one line in 16:9, **36** on up to two lines in 9:16 — portrait alone, because
+   a 9:16 line physically holds about 38. `build_captions.py` checks all of it, and additionally
+   lays every cue out to count its real lines and measure it against the reserved caption band.
 6. For each shot: `stillSeconds ≥ (end − start) × 0.25`.
 7. Shot IDs are stable after storyboard approval.
 8. `register` is `"math"` or `"verbal"` — the shot speaks one of them, never both. A figure is

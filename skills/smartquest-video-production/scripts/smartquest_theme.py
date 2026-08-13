@@ -63,7 +63,18 @@ CAPTION_INK = "#F2F5FC"                                        # 17.70:1
 # Accent for a first-use English term. NOT a teaching semantic — the eight
 # semantic colours belong to the figure, this one belongs to the text.
 CAPTION_TERM = "#FBBF24"   # amber-400
-CAPTION_LINE_GAP = 0.16   # gap between wrapped caption lines
+CAPTION_LINE_GAP = 0.16   # gap between wrapped lines WITHIN one language
+# Gap between the 中文 block and the English block. Larger than the
+# within-language gap, because at equal spacing a wrapped two-line Chinese cue
+# and its English line read as one four-line paragraph and the eye cannot tell
+# which lines belong together. The ratio, not the number, is the point.
+#
+# 1.30, down from 1.75: rendered side by side at 1.75 / 1.45 / 1.25 / 1.10, the
+# block still separates cleanly well below 1.75, because the gap is not the only
+# thing marking the boundary — the English is 0.78 the size, and the change of
+# script does the rest. Only around 1.1 does it start reading as one paragraph.
+# The tighter gap gives the height back to the lesson.
+CAPTION_LANG_GAP = CAPTION_LINE_GAP * 1.30
 
 PALETTE = dict(bg=BG, ink=INK, muted=MUTED, line=LINE, given=GIVEN,
                unknown=UNKNOWN, result=RESULT, warn=WARN, aux=AUX)
@@ -119,7 +130,32 @@ STROKE_PER_UNIT = 100.0
 HALO_RATIO = 0.12
 # Fixed for every cue in a film, but smaller in portrait: the same scene-unit
 # size is a much larger share of a 9:16 frame, and a phone needs less.
-SIZE_CAPTION = 24 if config.pixel_height > config.pixel_width else 28
+#
+# Came down from 28/24 when the caption became bilingual and the band it needed
+# started eating the lesson. Measured as a share of frame height — the figure
+# that decides legibility, since it is what the eye subtends:
+#
+#         size   cap height   % of frame height   字 per line
+#   16:9    24        42 px         3.91%            39.9
+#   9:16    20        63 px         3.26%            15.2
+#
+# Streaming subtitles run about 4.2–4.6% of frame height and broadcast guidance
+# floors at roughly 3.3%, so this sits between the two: smaller than a Netflix
+# caption, comfortably above the floor, and it buys back line capacity as well
+# as band — a 9:16 line went from 12.6 全形字 to 15.2, so an ordinary cue now
+# sets on ONE line where it used to wrap.
+SIZE_CAPTION = 20 if config.pixel_height > config.pixel_width else 24
+# The English line of a bilingual cue is SMALLER than the Chinese, because the
+# Chinese is the line being read and the English is the line being learned —
+# see narration-and-subtitles.md. Set them the same size and the block reads as
+# two competing sentences instead of one cue with a gloss under it.
+#
+# 0.78, not lower: PingFang's Latin already has a small x-height for its em, so
+# English at the same nominal size looks smaller than the Chinese before any
+# ratio is applied. Below about 0.75 the English stops being readable on a phone
+# at all, and above about 0.85 the two lines stop being distinguishable.
+CAPTION_EN_RATIO = 0.78
+SIZE_CAPTION_EN = round(SIZE_CAPTION * CAPTION_EN_RATIO)   # 19 landscape, 16 portrait
 SIZE_MIN = 22
 
 
@@ -157,9 +193,29 @@ class Stage:
         self.w, self.h = sync_frame()
         self.portrait = self.h > self.w
         # Reserved bands. The caption band must hold the platform-UI margin
-        # PLUS a two-line caption, because captions wrap rather than shrink —
-        # size it for one line and a wrapped cue lands on the diagram.
-        self.caption_band = self.h * (0.30 if self.portrait else 0.16)
+        # PLUS the largest bilingual cue the format allows, because captions
+        # wrap rather than shrink — an under-sized band does not clip the
+        # caption, it lands the caption on the diagram.
+        #
+        # Measured, not guessed. Block heights in scene units on the 8-unit
+        # frame at the caption sizes above, with the bottom offset under them:
+        #
+        #            1zh+1en   2zh+1en   2zh+2en   offset   band needed
+        #   16:9       0.763     1.231     1.605    0.480   0.214 / 0.261
+        #   9:16       0.673     1.089     1.426    1.400   0.311 / 0.353
+        #
+        # 16:9 reserves for 2zh+1en, because build_captions.py holds the
+        # English to ONE line there — a 16:9 line fits 102 Latin characters, so
+        # a second English line means the sentence was too long, not that the
+        # frame was too narrow. 9:16 reserves the full 2+2: a portrait line
+        # holds about 38 characters, and exam English does not always fit that,
+        # so two English lines are the format in a short rather than a fault.
+        #
+        # 9:16 is 1.4 units of platform-UI clearance before a word is set, so
+        # the band there is mostly NOT the type — shrinking the caption from 24
+        # to 20 moved it only 0.40 → 0.38. What would move it is the 2+2
+        # reservation: hold a short's 中文 to one line and the band goes to 0.31.
+        self.caption_band = self.h * (0.37 if self.portrait else 0.23)
         self.title_band = self.h * (0.11 if self.portrait else 0.10)
         self.margin = self.w * 0.045
 
@@ -475,18 +531,23 @@ def _char_w():
     return _CAL
 
 
-def _est_width(t):
+def _est_width(t, size=None):
+    """Estimated rendered width of `t` AT `size`. The calibration is measured at
+    SIZE_CAPTION and scaled — Manim font size is linear in advance width, so one
+    calibration serves both the Chinese line and the smaller English one."""
     c = _char_w()
+    k = 1.0 if size is None else size / SIZE_CAPTION
     lat = sum(len(m) for m in _LATIN_RUN.findall(t))
     other = len([ch for ch in _LATIN_RUN.sub("", t) if not ch.isspace()])
-    return other * c["cjk"] + lat * c["lat"] + t.count(" ") * c["sp"]
+    return k * (other * c["cjk"] + lat * c["lat"] + t.count(" ") * c["sp"])
 
 
 def _legal_breaks(text, terms):
     """Indices where a break is allowed: not inside a Latin word, not inside a
-    declared term, not before closing punctuation, not after a maths prefix."""
+    declared term in EITHER language, not before closing punctuation, not after
+    a maths prefix. 等腰三角形 is as unbreakable as `isosceles triangle`."""
     spans = [m.span() for m in _LATIN_RUN.finditer(text)]
-    for t in (terms or []):
+    for t in _term_candidates(terms):
         i = text.find(t)
         while i != -1:
             spans.append((i, i + len(t)))
@@ -499,7 +560,7 @@ def _legal_breaks(text, terms):
         yield i
 
 
-def _greedy_lines(text, terms, target):
+def _greedy_lines(text, terms, target, size=None):
     """Standard greedy line breaker over the legal break points."""
     stops = list(_legal_breaks(text, terms)) + [len(text)]
     lines, start = [], 0
@@ -508,7 +569,7 @@ def _greedy_lines(text, terms, target):
         for b in stops:
             if b <= start:
                 continue
-            if _est_width(text[start:b].strip()) <= target:
+            if _est_width(text[start:b].strip(), size) <= target:
                 chosen = b
             elif chosen is not None:
                 break
@@ -519,53 +580,131 @@ def _greedy_lines(text, terms, target):
     return [l for l in lines if l]
 
 
-def wrap_caption(text, terms=None, target=None):
+def wrap_caption(text, terms=None, target=None, size=None):
     """Break into lines that each fit `target`. Kept for callers that want the
     string; `fit_caption` is what the caption track uses."""
     if "\n" in text:
         return text
     if target is None:
         target = config.frame_width * 0.91
-    return "\n".join(_greedy_lines(text, terms, target))
+    return "\n".join(_greedy_lines(text, terms, target, size))
 
 
-def caption_text(text, terms=None):
-    """Shorts-style caption: bold dark type, no bar, no outline, no glow.
+def _term_candidates(terms):
+    """Every written form of every declared term, in either language.
+
+    A cue declares its terms as a mapping from the English to the Chinese:
+
+        {"isosceles triangle": "等腰三角形"}
+
+    Both forms are then marked, so the term lights up in the SAME colour on
+    both lines and the student can see that 等腰三角形 and `isosceles triangle`
+    are one thing. A plain list is still accepted — it means English only, and
+    the Chinese line will simply have nothing to mark.
+    """
+    if isinstance(terms, dict):
+        out = list(terms.keys()) + [v for v in terms.values() if v]
+    else:
+        out = list(terms or [])
+    return [t for t in out if t and t.strip()]
+
+
+def _term_forms(string, terms):
+    """The forms in which each declared term ACTUALLY occurs in `string`.
+
+    `t2c` matches a literal substring, which is fine for the Chinese form —
+    Chinese has no case and no inflection, so 等腰三角形 is written the way it
+    was declared. It is wrong for the English, which is inflected and
+    capitalised in a real sentence:
+
+        term "inscribed angle" in "Inscribed angles on the same arc…"
+          literal key  →  no match at all (capital I), the term is not marked
+          this         →  "Inscribed angles", the whole phrase marked
+
+        term "isosceles triangle" in "…two isosceles triangles."
+          literal key  →  "isosceles triangle" amber, a white "s" left hanging
+          this         →  "isosceles triangles", one amber phrase
+
+    So a Latin form is found case-insensitively and the match runs to the end
+    of the word it landed in, colouring the text that is really there. It only
+    extends, never shortens — a term written plural in the plan and singular in
+    the sentence goes unmarked rather than mis-marked.
+    """
+    forms = set()
+    for t in _term_candidates(terms):
+        if re.search(r"[A-Za-z]", t):
+            for m in re.finditer(re.escape(t) + r"[A-Za-z]*", string, re.IGNORECASE):
+                forms.add(m.group(0))
+        elif t in string:
+            forms.add(t)
+    return forms
+
+
+def caption_text(text, terms=None, en=None):
+    """A bilingual cue: 中文 on top, English underneath and smaller.
 
     Each line is its own mobject and the lines are arranged CENTRED — Manim's
     Text left-aligns the lines of a multi-line string, which reads as ragged in
-    a caption. Size is FIXED at SIZE_CAPTION for every cue; nothing here scales.
+    a caption. Size is FIXED for every cue — SIZE_CAPTION for the Chinese,
+    SIZE_CAPTION_EN for the English; nothing here scales.
+
+    `en` is optional at this level so a card or a one-off overlay can still
+    build a Chinese-only cue, but the caption TRACK always passes both — see
+    build_captions.py, which fails the build on a cue that is missing its
+    English.
     """
-    t2c = {k: CAPTION_TERM for k in (terms or [])}
+    def block(string, size):
+        t2c = {k: CAPTION_TERM for k in _term_forms(string, terms)}
+        lines = [_text(l, size, font=FONT_CAPTION, weight=WEIGHT_CAPTION,
+                       color=CAPTION_INK, t2c=t2c)
+                 for l in string.split("\n") if l.strip()]
+        if len(lines) == 1:
+            return lines[0]
+        # Wrapped lines of the SMALLER language get a proportionally smaller
+        # gap, so both blocks have the same line spacing relative to their type.
+        return VGroup(*lines).arrange(DOWN, buff=CAPTION_LINE_GAP * size / SIZE_CAPTION)
 
-    def one_line(line):
-        return _text(line, SIZE_CAPTION, font=FONT_CAPTION, weight=WEIGHT_CAPTION,
-                     color=CAPTION_INK, t2c=t2c)
-
-    lines = [one_line(l) for l in text.split("\n") if l.strip()]
-    if len(lines) == 1:
-        return lines[0]
-    return VGroup(*lines).arrange(DOWN, buff=CAPTION_LINE_GAP)   # centred
+    zh = block(text, SIZE_CAPTION)
+    if not (en or "").strip():
+        return zh
+    return VGroup(zh, block(en, SIZE_CAPTION_EN)).arrange(DOWN, buff=CAPTION_LANG_GAP)
 
 
-def fit_caption(text, terms, max_width, max_lines=3):
-    """Wrap to as many lines as the text needs, never scaling the type.
+def wrap_caption_pair(text, terms, max_width, en=None):
+    """The two strings, line-broken exactly as `fit_caption` will set them.
+
+    Returned so a build gate can count the lines a cue will really take — the
+    English one especially, which is meant to stay on ONE line — without
+    re-deriving the wrap and getting a different answer from the renderer.
 
     The width estimate is calibrated, not exact, so the result is MEASURED and
     the target tightened until it really fits. An earlier version trusted the
     estimate and let a line run off both edges of a 9:16 frame.
+
+    Both languages are re-wrapped against the same measured width: the English
+    is the longer line about as often as the Chinese is, so tightening only one
+    of them leaves the block just as wide.
     """
-    cap = caption_text(text, terms)
-    if cap.width <= max_width:
-        return cap
-    target = max_width
+    en = (en or "").strip() or None
+    if caption_text(text, terms, en).width <= max_width:
+        return text, en
+    target, zh, wrapped = max_width, text, en
     for _ in range(5):
-        lines = _greedy_lines(text, terms, target)
-        cap = caption_text("\n".join(lines), terms)
-        if cap.width <= max_width:
-            return cap
+        zh = "\n".join(_greedy_lines(text, terms, target))
+        # _est_width() already scales to SIZE_CAPTION_EN, so the English is
+        # measured against the SAME target — it simply fits more per line.
+        wrapped = ("\n".join(_greedy_lines(en, terms, target, SIZE_CAPTION_EN))
+                   if en else None)
+        if caption_text(zh, terms, wrapped).width <= max_width:
+            break
         target *= 0.88
-    return cap
+    return zh, wrapped
+
+
+def fit_caption(text, terms, max_width, en=None):
+    """Wrap both languages to the lines they need, never scaling the type."""
+    zh, wrapped = wrap_caption_pair(text, terms, max_width, en)
+    return caption_text(zh, terms, wrapped)
 
 
 def brand_rule(width=3.0, thickness=0.07):
