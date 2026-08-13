@@ -169,9 +169,12 @@ in this pipeline.
 
 **Every cue is bilingual: 中文 on top, English underneath and smaller.** Write both — `text` and
 `en` — for every cue. Follow `references/narration-and-subtitles.md` for 書面語 style and for
-what each line may contain. The rule that catches people: the **中文 line carries no English
-word**, only its Chinese name; `SAS`-type abbreviations, single letters and notations like `pH`
-are the exceptions. The term lives in the English line.
+what each line may contain. Three rules catch people:
+
+- the **中文 line carries no English word**, only its Chinese name — `SAS`-type abbreviations,
+  single letters and notations like `pH` are the exceptions. The term lives in the English line
+- **numbers are Arabic** — 「2 個」, not 「兩個」. A numeral inside a word (三角形, 二次方程) stays
+- the **English line is one line**, and in 16:9 that is a hard gate
 
 The teacher speaks the Chinese line with the terms said in English — that is the narration, and
 it is why the term is on screen in English at the same moment.

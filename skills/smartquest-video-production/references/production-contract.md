@@ -90,9 +90,9 @@ the implementation.
       ],
       "subtitles": [
         {"start": 1.0, "end": 5.2,
-         "text": "同一弧上的圓周角相等。",
-         "en": "Inscribed angles on the same arc are equal.",
-         "terms": ["inscribed angle"]}
+         "text": "由圓心 O 畫 2 條半徑，形成 2 個等腰三角形。",
+         "en": "Draw two radii from the centre O to form two isosceles triangles.",
+         "terms": ["isosceles triangle"]}
       ],
       "ponder": {"prompt": "求 \u2220BAD", "holdSeconds": 3.5},
       "stillSeconds": 6.0,
@@ -114,10 +114,12 @@ Check these; do not assume them.
    The English line is length-limited, not rate-limited — see `narration-and-subtitles.md`.
 5b. **Every cue has both languages.** `text` is 繁體中文書面語 and carries no English word except
    an ALL-CAPS abbreviation (`SAS`), a single letter (`O`, `x`) or a listed notation (`pH`,
-   `mol`); `en` is the same sentence in the paper's English, with the subject terms verbatim.
-   Line limits are per aspect: 中文 24 全形字 in 16:9 and **12** in 9:16, English 42 characters
-   and **32** — two lines each, maximum. `build_captions.py` checks all of it, and additionally
-   lays every cue out and measures it against the reserved caption band.
+   `mol`); counts and measurements in it are Arabic numerals (`2 個`, not `兩個`). `en` is the
+   same sentence in the paper's English, with the subject terms verbatim, **on one line**.
+   Per-aspect limits: 中文 24 全形字 in 16:9 and **15** in 9:16, two lines maximum; English 90
+   characters on one line in 16:9, **36** on up to two lines in 9:16 — portrait alone, because
+   a 9:16 line physically holds about 38. `build_captions.py` checks all of it, and additionally
+   lays every cue out to count its real lines and measure it against the reserved caption band.
 6. For each shot: `stillSeconds ≥ (end − start) × 0.25`.
 7. Shot IDs are stable after storyboard approval.
 8. `register` is `"math"` or `"verbal"` — the shot speaks one of them, never both. A figure is

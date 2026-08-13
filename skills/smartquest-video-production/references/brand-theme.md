@@ -195,10 +195,17 @@ different pieces of typography.
 |---|---|---|
 | `CAPTION_INK` | `#F2F5FC` | both lines · 17.70:1 |
 | `CAPTION_TERM` | `#FBBF24` amber-400 | the declared subject term. **Not** a teaching semantic |
-| `SIZE_CAPTION` | 28 landscape, **24 portrait** | the 中文 line |
-| `SIZE_CAPTION_EN` | 22 landscape, **19 portrait** | the English line — `CAPTION_EN_RATIO` 0.78 |
+| `SIZE_CAPTION` | 24 landscape, **20 portrait** | the 中文 line |
+| `SIZE_CAPTION_EN` | 19 landscape, **16 portrait** | the English line — `CAPTION_EN_RATIO` 0.78 |
 | `CAPTION_LINE_GAP` | 0.16 | between wrapped lines within one language |
 | `CAPTION_LANG_GAP` | 0.28 | between the two languages — 1.75× the line gap |
+
+**Caption size is measured as a share of frame height**, since that is what the eye subtends. The
+中文 line sets at 42 px in 16:9 (**3.91%** of height) and 63 px in 9:16 (**3.26%**). Streaming
+subtitles run about 4.2–4.6% and broadcast guidance floors near 3.3%, so this sits between the
+two — smaller than a Netflix caption, above the floor. It came down from 28/24 when the second
+line made the band start eating the lesson, and the smaller type buys line capacity as well: a
+9:16 line went from 12.6 全形字 to 15.2, so an ordinary cue now sets on one line where it wrapped.
 
 **The English is smaller, and that ratio is doing work.** The Chinese is the line being read; the
 English is the exam's wording underneath it. At equal size the block reads as two competing
@@ -227,11 +234,27 @@ never split across lines.
 Captions are anchored by `Stage.caption_bottom`, their **bottom edge**, so a short cue and a
 four-line bilingual one share a baseline and the block grows upward.
 
-`Stage.caption_band` reserves the platform-UI margin **plus a full 2+2 bilingual cue** — measured
-at 1.857 units in 16:9 and 1.677 in 9:16, hence bands of 0.31 and 0.40 of frame height. Size it
-for less and the first wrapped cue lands on the diagram, because an over-tall block is not
-clipped, it grows upward. `build_captions.py` lays every cue out and measures it against this
-band, so the failure is caught at build time.
+`Stage.caption_band` reserves the platform-UI margin **plus the largest cue the format allows**.
+Measured block heights on the 8-unit frame:
+
+| | 1zh+1en | 2zh+1en | 2zh+2en | reserves for | band |
+|---|---|---|---|---|---|
+| 16:9 | 0.835 | **1.303** | 1.677 | 2zh + **one** English line | **0.24** |
+| 9:16 | 0.745 | 1.161 | **1.498** | 2zh + 2en | **0.38** |
+
+16:9 reserves less because the English is held to one line there — a 16:9 line fits 102 Latin
+characters, so a second English line means the sentence was too long, not that the frame was too
+narrow. 9:16 reserves the full 2+2: a portrait line holds about 38 characters and exam English
+does not always fit that.
+
+**In 9:16 the band is mostly not the type.** 1.4 of its 3.04 units is platform-UI clearance
+before a word is set, which is why dropping the caption from 24 to 20 moved the band only
+0.40 → 0.38. The lever that would move it is the 2+2 reservation: hold a short's 中文 to one line
+and it goes to 0.32.
+
+Size the band for less and the first wrapped cue lands on the diagram, because an over-tall block
+is not clipped — it grows upward. `build_captions.py` lays every cue out and measures it against
+this band, so the failure is caught at build time rather than in the composite.
 
 Hard rules, each of which fixed a real defect:
 

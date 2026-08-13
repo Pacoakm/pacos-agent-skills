@@ -37,19 +37,27 @@ MIN_CUE = 2.0        # seconds a cue must stay on screen
 MAX_LINES = 2        # lines per language
 
 # Line length is a property of the FRAME, not of the format, and the two aspects
-# are nothing like each other. Measured at SIZE_CAPTION against the usable width
+# are nothing like each other. Measured at caption size against the usable width
 # (frame width less two margins):
 #
-#            fits per line          limit here        why
-#   16:9     34.2 全形字 / 88.9 Latin    24 / 42     readability, well inside the frame
-#   9:16     12.6 全形字 / 32.6 Latin    12 / 32     the frame itself — 4.1 units wide
+#            fits per line           limit here        why
+#   16:9     39.9 全形字 / 102.9 Latin    24 / 90     24 for readability; 90 to stay one line
+#   9:16     15.2 全形字 /  38.7 Latin    15 / 36     the frame itself — 4.1 units wide
 #
 # A single MAX_LINE of 24 was a 16:9 number applied to both, so a 24-字 line in a
 # short silently wrapped to two and a 48-字 cue to four, overflowing the caption
 # band onto the diagram. Portrait is the binding case: at 12.6 全形字 per line
 # there is no readability margin left to spend.
-MAX_LINE_LANDSCAPE, MAX_LINE_PORTRAIT = 24, 12          # 全形字
-MAX_LINE_EN_LANDSCAPE, MAX_LINE_EN_PORTRAIT = 42, 32    # Latin characters
+#
+# THE ENGLISH LINE IS ONE LINE. It is the secondary line — the eye takes it in
+# as a phrase under the Chinese, and a second line turns that glance into a
+# read. A 16:9 line holds 102 characters, so English that wraps there is a
+# sentence that was written too long, and the gate rejects it. A 9:16 line holds
+# 38, which exam English does not always fit, so portrait allows a second line
+# and the report names every cue that took one.
+MAX_LINE_LANDSCAPE, MAX_LINE_PORTRAIT = 24, 15          # 全形字
+MAX_LINE_EN_LANDSCAPE, MAX_LINE_EN_PORTRAIT = 90, 36    # Latin characters
+MAX_EN_LINES_LANDSCAPE, MAX_EN_LINES_PORTRAIT = 1, 2
 LATIN = re.compile(r"[A-Za-z][A-Za-z''\-]*")
 
 # The 中文 line is written in Chinese. An English subject term does not belong
@@ -69,6 +77,22 @@ LATIN = re.compile(r"[A-Za-z][A-Za-z''\-]*")
 LATIN_OK_IN_ZH = {"pH", "pOH", "mol", "cm", "mm", "dm", "km", "kg", "mg",
                   "Hz", "eV", "atm", "rpm", "sin", "cos", "tan", "log", "ln"}
 ALLCAPS = re.compile(r"^[A-Z]{2,6}$")
+
+# Quantities in the 中文 line are Arabic numerals: 「2 個等腰三角形」, not
+# 「兩個等腰三角形」. A digit is read at a glance, which is what a subtitle gets;
+# a spelled-out 中文 numeral has to be parsed as a word first, and it is the
+# quantities — how many, how big, which step — that the student is tracking.
+#
+# Only counts and measurements. A numeral that is part of a WORD stays Chinese:
+# 三角形, 四邊形, 二次方程, 十分重要, 一定, 一樣, 進一步. So the check looks for a
+# 中文 numeral bound to a measure word, which is the counting construction and
+# almost never part of a term — with ZH_NUMERAL_OK for the few that are.
+#
+# This is a NOTE, not a failure: 「盡量」. The pattern is narrow but Chinese is
+# not, and a false positive should cost a glance rather than a build.
+ZH_NUMERAL = re.compile(r"[零一二三四五六七八九十百千萬兩][個條隻次倍組對度]")
+ZH_NUMERAL_OK = {"一次", "二次", "三次", "四次",     # 一次函數, 二次方程
+                 "一度", "一對"}                    # 「一度」= once, 「一對」= a pair
 
 
 def weight(text: str) -> int:
@@ -108,17 +132,29 @@ def stray_english(text: str) -> list[str]:
             if len(w) > 1 and not ALLCAPS.match(w) and w not in LATIN_OK_IN_ZH]
 
 
-def limits(plan: dict) -> tuple[int, int]:
-    """(全形字 per Chinese line, characters per English line) for this aspect."""
+def chinese_numerals(text: str) -> list[str]:
+    """Counting expressions in the 中文 line that should be Arabic numerals."""
+    return [m for m in ZH_NUMERAL.findall(text) if m not in ZH_NUMERAL_OK]
+
+
+def limits(plan: dict) -> tuple[int, int, int]:
+    """(全形字 per 中文 line, characters per English line, English lines allowed)."""
     if plan["height"] > plan["width"]:
-        return MAX_LINE_PORTRAIT, MAX_LINE_EN_PORTRAIT
-    return MAX_LINE_LANDSCAPE, MAX_LINE_EN_LANDSCAPE
+        return MAX_LINE_PORTRAIT, MAX_LINE_EN_PORTRAIT, MAX_EN_LINES_PORTRAIT
+    return MAX_LINE_LANDSCAPE, MAX_LINE_EN_LANDSCAPE, MAX_EN_LINES_LANDSCAPE
 
 
-def check(plan: dict, cues: list[dict]) -> list[str]:
-    max_line, max_line_en = limits(plan)
-    problems = []
+def check(plan: dict, cues: list[dict]) -> tuple[list[str], list[str]]:
+    """Returns (problems, notices). A problem fails the build; a notice is a
+    「盡量」 rule the author should look at and may knowingly leave."""
+    max_line, max_line_en, max_en_lines = limits(plan)
+    problems, notices = [], []
     for c in cues:
+        zh_nums = chinese_numerals(c["text"])
+        if zh_nums:
+            notices.append(f'{c["shot"]} {c["start"]:.2f}s: 中文 numerals {zh_nums} — '
+                           f'use Arabic for a count or a measurement '
+                           f'(「2 個」 not 「兩個」); a numeral inside a word stays Chinese')
         dur = c["end"] - c["start"]
         w = weight(c["text"])
         en = (c.get("en") or "").strip()
@@ -160,18 +196,19 @@ def check(plan: dict, cues: list[dict]) -> list[str]:
         # word-by-word. What it must not do is take a third line — hence the
         # length limit, which is what actually pushes the block onto the figure.
         if en:
-            if "\n" in en:
+            if "\n" in en:                          # author-chosen line break
                 for line in en.split("\n"):
                     if len(line.strip()) > max_line_en:
                         problems.append(f'{c["shot"]} {c["start"]:.2f}s: English line is '
                                         f'{len(line.strip())} chars, limit {max_line_en}')
-                if len(en.split("\n")) > MAX_LINES:
-                    problems.append(f'{c["shot"]} {c["start"]:.2f}s: English is more than '
-                                    f'{MAX_LINES} lines')
-            elif len(en) > MAX_LINES * max_line_en:
+                if len(en.split("\n")) > max_en_lines:
+                    problems.append(f'{c["shot"]} {c["start"]:.2f}s: English is '
+                                    f'{len(en.split(chr(10)))} lines, {max_en_lines} allowed')
+            elif len(en) > max_en_lines * max_line_en:
                 problems.append(f'{c["shot"]} {c["start"]:.2f}s: English is {len(en)} chars, '
-                                f'will not fit {MAX_LINES} lines of {max_line_en} — '
-                                f'shorten it or split the cue')
+                                f'over {max_en_lines * max_line_en} — '
+                                + ("keep it to one line" if max_en_lines == 1 else
+                                   "shorten it or split the cue"))
     for a, b in zip(cues, cues[1:]):
         if b["start"] < a["end"] - 1e-6:
             problems.append(f'cues overlap: {a["shot"]} ends {a["end"]:.2f}s, '
@@ -187,17 +224,20 @@ def check(plan: dict, cues: list[dict]) -> list[str]:
         if spoken > span * 0.9 + 1e-6:
             problems.append(f'{shot["id"]}: subtitles fill {spoken:.1f}s of {span:.1f}s '
                             f'— no room for the teacher to breathe')
-    return problems
+    return problems, notices
 
 
-def check_layout(plan: dict, cues: list[dict]) -> list[str]:
-    """Build every cue for real and check it fits the reserved caption band.
+def check_layout(plan: dict, cues: list[dict]) -> tuple[list[str], list[str]]:
+    """Build every cue for real. Returns (problems, notices).
 
     The 字-count rules above are a proxy for how many lines a cue will take.
-    This is the thing itself: it lays each cue out at the plan's own aspect with
-    the same `fit_caption()` the track uses, and measures the block. A cue that
+    This is the thing itself: it line-breaks each cue at the plan's own aspect
+    with the same wrap the track uses, and measures the block. A cue that
     overflows does NOT get clipped — the block is anchored by its bottom, so it
     grows upward onto the diagram, which is invisible until the composite.
+
+    It is also the only honest way to count the English lines, since the wrap
+    depends on the actual glyph widths and not on a character count.
 
     Needs manim (the theme imports it). If it will not import, the character
     rules still ran and this says so rather than passing silently.
@@ -212,17 +252,28 @@ def check_layout(plan: dict, cues: list[dict]) -> list[str]:
         theme = importlib.import_module("smartquest_theme")
         importlib.reload(theme)          # pick up the pixel dimensions just set
     except Exception as exc:             # noqa: BLE001 — any import failure is the same answer
-        return [f"layout not measured — could not import the theme ({exc.__class__.__name__}: "
-                f"{exc}). The character limits still ran; render one cue and look."]
+        return ([f"layout not measured — could not import the theme ({exc.__class__.__name__}: "
+                 f"{exc}). The character limits still ran; render one cue and look."], [])
 
     theme.sync_frame()
     st = theme.Stage()
     max_w = st.w - 2 * st.margin
     headroom = st.content_bottom - st.caption_bottom
-    problems = []
+    _, _, max_en_lines = limits(plan)
+    problems, notices = [], []
     for c in cues:
-        cap = theme.fit_caption(c["text"], list(c.get("terms", [])), max_w,
-                                en=(c.get("en") or "").strip() or None)
+        terms = list(c.get("terms", []))
+        en = (c.get("en") or "").strip() or None
+        zh_w, en_w = theme.wrap_caption_pair(c["text"], terms, max_w, en)
+        cap = theme.caption_text(zh_w, terms, en_w)
+        en_lines = len(en_w.split("\n")) if en_w else 0
+        if en_lines > max_en_lines:
+            problems.append(f'{c["shot"]} {c["start"]:.2f}s: English sets on {en_lines} lines, '
+                            f'{max_en_lines} allowed — "{(en or "")[:40]}…"')
+        elif en_lines > 1:
+            notices.append(f'{c["shot"]} {c["start"]:.2f}s: English takes 2 lines '
+                           f'({len(en or "")} chars) — one line reads better if you can '
+                           f'get it under ~{MAX_LINE_EN_PORTRAIT}')
         if cap.height > headroom + 1e-6:
             problems.append(f'{c["shot"]} {c["start"]:.2f}s: caption block is '
                             f'{cap.height:.2f} units, band holds {headroom:.2f} — it would '
@@ -230,7 +281,7 @@ def check_layout(plan: dict, cues: list[dict]) -> list[str]:
         if cap.width > max_w + 1e-6:
             problems.append(f'{c["shot"]} {c["start"]:.2f}s: caption block is '
                             f'{cap.width:.2f} wide, usable width {max_w:.2f}')
-    return problems
+    return problems, notices
 
 
 SCENE_TEMPLATE = '''"""GENERATED by build_captions.py — do not hand-edit.
@@ -295,11 +346,12 @@ def main() -> int:
         print("No subtitles found in the plan — nothing to build.", file=sys.stderr)
         return 1
 
-    max_line, max_line_en = limits(plan)
-    problems = check(plan, cues)
+    max_line, max_line_en, max_en_lines = limits(plan)
+    problems, notices = check(plan, cues)
     print(f"{len(cues)} cues across {len(plan['shots'])} shots   "
-          f"({plan['width']}x{plan['height']}: {max_line} 全形字 / "
-          f"{max_line_en} English chars per line)")
+          f"({plan['width']}x{plan['height']}: {max_line} 全形字 per 中文 line, "
+          f"English {max_line_en} chars on {max_en_lines} line"
+          f"{'' if max_en_lines == 1 else 's'})")
     for c in cues:
         d = c["end"] - c["start"]
         w = weight(c["text"])
@@ -308,7 +360,13 @@ def main() -> int:
         print(f'  {"":<5} {"":>15}  {len((c.get("en") or "").strip()):>3} en          '
               f'      {(c.get("en") or "— MISSING —")[:34]}')
     if not args.skip_layout_check:
-        problems += check_layout(plan, cues)
+        extra, extra_notices = check_layout(plan, cues)
+        problems += extra
+        notices += extra_notices
+    if notices:
+        print(f"\n{len(notices)} note(s):")
+        for n in notices:
+            print(f"  · {n}")
     if problems:
         print(f"\n{len(problems)} problem(s):", file=sys.stderr)
         for p in problems:

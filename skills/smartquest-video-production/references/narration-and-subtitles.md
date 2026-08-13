@@ -59,6 +59,30 @@ reasons and named results stay in English exactly as before — `base ∠s, isos
 student writes in the paper, so it is what the figure shows. See `on-screen-language.md`. The
 caption changed because it gained a second line to put the English on; the frame did not.
 
+### Numbers are Arabic numerals
+
+A count or a measurement is written `2`, not `兩`. A digit is read at a glance, which is all a
+subtitle gets, while a spelled-out numeral has to be parsed as a word first — and quantities are
+exactly what the student is tracking through a worked example.
+
+| Write | Not |
+|---|---|
+| 由圓心 O 畫 2 條半徑。 | 由圓心 O 畫兩條半徑。 |
+| 這個 angle 是 30°。 | 這個 angle 是三十度。 |
+| 分 3 步做。 | 分三步做。 |
+
+**A numeral that is part of a word stays Chinese**: 三角形, 四邊形, 二次方程, 一次函數, 十分重要,
+一定, 一樣, 進一步. The rule is about counting, not about the character.
+
+Put a space between a half-width numeral and the Chinese around it — `畫 2 條` — the same spacing
+the Latin letters already get. Not before 全形 punctuation, and not before a unit that attaches:
+`30°`, `50%`.
+
+`build_captions.py` reports this as a **note** rather than failing the build. It looks for a
+Chinese numeral bound to a measure word (`兩個`, `三條`, `五次`), which is the counting
+construction; that pattern is narrow but Chinese is not, so a false positive should cost a glance
+rather than a build.
+
 Write 書面語, not 口語. The teacher reads it aloud in Cantonese, so it must be natural to read,
 but it is written Chinese on the page.
 
@@ -69,11 +93,33 @@ but it is written Chinese on the page.
 | 這條題目要求 | 呢條題目要求 |
 | 首先 | 首先我哋 |
 
-### The English line is the paper's English
+### The English line is the paper's English — and it is ONE line
 
 The same sentence, in the words an examiner would use — not a word-by-word translation of the
 書面語. It carries the subject terms **verbatim**: `sine law`, `ext. ∠ of △`, `inscribed angle`,
 `homologous series`, `precipitate`, and the command words `state`, `explain`, `deduce`, `hence`.
+
+**Keep it on one line.** It is the secondary line: the eye takes it in as a phrase under the
+Chinese, and a second line turns that glance into a read — which is also the moment the block
+starts pushing up onto the figure. A 16:9 line holds about **102 characters**, so English that
+wraps there is a sentence written too long, and `build_captions.py` rejects it.
+
+Write it shorter by cutting what the Chinese line already carried, not by dropping the term:
+
+| One line | Two lines |
+|---|---|
+| Inscribed angles on the same arc are equal. | As we can see from the diagram, any two inscribed angles standing on the same arc will always be equal. |
+| The two triangles satisfy SAS, so they are congruent. | Because the two triangles satisfy the SAS condition, we can conclude that they are congruent to each other. |
+
+The openers are what to cut first — `As we can see`, `Because`, `we can conclude that`. The
+Chinese line has already done the connecting; the English is there to name the thing in the
+paper's words.
+
+**9:16 is the exception, and it is physical.** A portrait line holds about **38 characters**, and
+exam English does not always fit that — `Inscribed angles on the same arc are equal.` is 43. So a
+short allows a second English line, and the build report names every cue that took one so you can
+decide whether it is worth rewriting. Do not shrink the type to buy a line: the caption size is
+fixed for the whole film.
 
 The terms declared in `terms` are coloured `CAPTION_TERM` wherever they occur, and the theme
 matches the form actually written — `inscribed angle` in the plan marks `Inscribed angles` in the
@@ -89,18 +135,24 @@ English line beneath already says it.
 |---|---|
 | One cue on screen at a time | always |
 | Languages | both, always — 中文 above, English below |
-| Maximum length, 中文 | **24 全形字** per line in 16:9, **12** in 9:16 · 2 lines maximum |
-| Maximum length, English | **42 characters** per line in 16:9, **32** in 9:16 · 2 lines maximum |
+| Maximum length, 中文 | **24 全形字** per line in 16:9, **15** in 9:16 · 2 lines maximum |
+| Maximum length, English | **one line**: ≤ 90 characters in 16:9. In 9:16, ≤ 36 on one line, 2 lines allowed |
+| Numbers | Arabic — 「2 個」, not 「兩個」 |
 | Minimum time on screen | **2.0 s**, even for a short cue |
 | Reading rate | ≤ **4.0 字/秒** on the 中文 line, counting a Latin word as 2 字 |
 | Cue boundaries | break at a 語義 boundary — never mid-term, never mid-formula |
 | Punctuation | 全形（，。？：) in the 中文 line, no 空格 before or after; ordinary English punctuation in the English line |
 | Position | inside the caption band from `Stage.caption_bottom` — never over the diagram |
 
-**Line length is a property of the frame, not of the format.** The usable width holds 34 全形字
-in 16:9 but only **12.6** in 9:16, so the single 24-字 limit that used to apply to both was a
-landscape number: in a short it silently wrapped every line in two and pushed the block onto the
-figure. Portrait is the binding case in everything below.
+**Line length is a property of the frame, not of the format.** The usable width holds 39.9 全形字
+in 16:9 but only **15.2** in 9:16 — and 102.9 Latin characters against **38.7**. The single 24-字
+limit that used to apply to both was a landscape number: in a short it silently wrapped every line
+in two and pushed the block onto the figure. Portrait is the binding case in everything below.
+
+The character limits are a fast proxy; the build also lays each cue out and counts the lines it
+really sets on, because the wrap depends on the actual glyphs. 90 characters of ordinary English
+fits one 16:9 line with room, but 90 characters of `m` would not — and the measurement, not the
+count, is what decides.
 
 **Only the 中文 line is rate-gated.** It is the line being read; the English is the same sentence
 in the exam's words, there to be recognised rather than read through. Rate-gating it as well

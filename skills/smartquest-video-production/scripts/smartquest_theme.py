@@ -124,7 +124,21 @@ STROKE_PER_UNIT = 100.0
 HALO_RATIO = 0.12
 # Fixed for every cue in a film, but smaller in portrait: the same scene-unit
 # size is a much larger share of a 9:16 frame, and a phone needs less.
-SIZE_CAPTION = 24 if config.pixel_height > config.pixel_width else 28
+#
+# Came down from 28/24 when the caption became bilingual and the band it needed
+# started eating the lesson. Measured as a share of frame height — the figure
+# that decides legibility, since it is what the eye subtends:
+#
+#         size   cap height   % of frame height   字 per line
+#   16:9    24        42 px         3.91%            39.9
+#   9:16    20        63 px         3.26%            15.2
+#
+# Streaming subtitles run about 4.2–4.6% of frame height and broadcast guidance
+# floors at roughly 3.3%, so this sits between the two: smaller than a Netflix
+# caption, comfortably above the floor, and it buys back line capacity as well
+# as band — a 9:16 line went from 12.6 全形字 to 15.2, so an ordinary cue now
+# sets on ONE line where it used to wrap.
+SIZE_CAPTION = 20 if config.pixel_height > config.pixel_width else 24
 # The English line of a bilingual cue is SMALLER than the Chinese, because the
 # Chinese is the line being read and the English is the line being learned —
 # see narration-and-subtitles.md. Set them the same size and the block reads as
@@ -135,7 +149,7 @@ SIZE_CAPTION = 24 if config.pixel_height > config.pixel_width else 28
 # ratio is applied. Below about 0.75 the English stops being readable on a phone
 # at all, and above about 0.85 the two lines stop being distinguishable.
 CAPTION_EN_RATIO = 0.78
-SIZE_CAPTION_EN = round(SIZE_CAPTION * CAPTION_EN_RATIO)   # 22 landscape, 19 portrait
+SIZE_CAPTION_EN = round(SIZE_CAPTION * CAPTION_EN_RATIO)   # 19 landscape, 16 portrait
 SIZE_MIN = 22
 
 
@@ -173,27 +187,28 @@ class Stage:
         self.w, self.h = sync_frame()
         self.portrait = self.h > self.w
         # Reserved bands. The caption band must hold the platform-UI margin
-        # PLUS a FULL bilingual cue — two lines of Chinese and two of English —
-        # because captions wrap rather than shrink, so an under-sized band does
-        # not clip the caption, it lands the caption on the diagram.
+        # PLUS the largest bilingual cue the format allows, because captions
+        # wrap rather than shrink — an under-sized band does not clip the
+        # caption, it lands the caption on the diagram.
         #
-        # Measured, not guessed. Block heights at the format maximum (2+2), in
-        # scene units on the 8-unit-high frame:
+        # Measured, not guessed. Block heights in scene units on the 8-unit
+        # frame at the caption sizes above, with the bottom offset under them:
         #
-        #                  1zh+1en   2zh+2en   bottom offset   band needed
-        #   16:9             0.926     1.857        0.480          0.292
-        #   9:16             0.835     1.677        1.400          0.385
+        #            1zh+1en   2zh+1en   2zh+2en   offset   band needed
+        #   16:9       0.835     1.303     1.677    0.480   0.223 / 0.270
+        #   9:16       0.745     1.161     1.498    1.400   0.320 / 0.362
         #
-        # The values below clear those by ~0.13 units. Portrait needs the bigger
-        # band twice over: the same block is a larger share of a shorter-looking
-        # frame, and 17.5% of the height is already spent clearing the
-        # Shorts/Reels/TikTok UI before a single word is set.
+        # 16:9 reserves for 2zh+1en, because build_captions.py holds the
+        # English to ONE line there — a 16:9 line fits 102 Latin characters, so
+        # a second English line means the sentence was too long, not that the
+        # frame was too narrow. 9:16 reserves the full 2+2: a portrait line
+        # holds about 38 characters, and exam English does not always fit that.
         #
-        # These went up when captions became bilingual (16:9 0.16 → 0.31,
-        # 9:16 0.30 → 0.40), so lesson scenes have less room than they did.
-        # That is the cost of the second line, and it is the right trade: the
-        # alternative is a caption over the figure.
-        self.caption_band = self.h * (0.40 if self.portrait else 0.31)
+        # 9:16 is 1.4 units of platform-UI clearance before a word is set, so
+        # the band there is mostly NOT the type — shrinking the caption from 24
+        # to 20 moved it only 0.40 → 0.38. What would move it is the 2+2
+        # reservation: hold a short's 中文 to one line and the band goes to 0.32.
+        self.caption_band = self.h * (0.38 if self.portrait else 0.24)
         self.title_band = self.h * (0.11 if self.portrait else 0.10)
         self.margin = self.w * 0.045
 
@@ -626,32 +641,41 @@ def caption_text(text, terms=None, en=None):
     return VGroup(zh, block(en, SIZE_CAPTION_EN)).arrange(DOWN, buff=CAPTION_LANG_GAP)
 
 
-def fit_caption(text, terms, max_width, en=None):
-    """Wrap both languages to as many lines as they need, never scaling the type.
+def wrap_caption_pair(text, terms, max_width, en=None):
+    """The two strings, line-broken exactly as `fit_caption` will set them.
+
+    Returned so a build gate can count the lines a cue will really take — the
+    English one especially, which is meant to stay on ONE line — without
+    re-deriving the wrap and getting a different answer from the renderer.
 
     The width estimate is calibrated, not exact, so the result is MEASURED and
     the target tightened until it really fits. An earlier version trusted the
     estimate and let a line run off both edges of a 9:16 frame.
 
-    Both languages are re-wrapped together against the same measured width: the
-    English is the longer line about as often as the Chinese is, so tightening
-    only one of them leaves the block just as wide.
+    Both languages are re-wrapped against the same measured width: the English
+    is the longer line about as often as the Chinese is, so tightening only one
+    of them leaves the block just as wide.
     """
-    cap = caption_text(text, terms, en)
-    if cap.width <= max_width:
-        return cap
-    target = max_width
+    en = (en or "").strip() or None
+    if caption_text(text, terms, en).width <= max_width:
+        return text, en
+    target, zh, wrapped = max_width, text, en
     for _ in range(5):
         zh = "\n".join(_greedy_lines(text, terms, target))
         # _est_width() already scales to SIZE_CAPTION_EN, so the English is
         # measured against the SAME target — it simply fits more per line.
-        en_wrapped = ("\n".join(_greedy_lines(en, terms, target, SIZE_CAPTION_EN))
-                      if (en or "").strip() else None)
-        cap = caption_text(zh, terms, en_wrapped)
-        if cap.width <= max_width:
-            return cap
+        wrapped = ("\n".join(_greedy_lines(en, terms, target, SIZE_CAPTION_EN))
+                   if en else None)
+        if caption_text(zh, terms, wrapped).width <= max_width:
+            break
         target *= 0.88
-    return cap
+    return zh, wrapped
+
+
+def fit_caption(text, terms, max_width, en=None):
+    """Wrap both languages to the lines they need, never scaling the type."""
+    zh, wrapped = wrap_caption_pair(text, terms, max_width, en)
+    return caption_text(zh, terms, wrapped)
 
 
 def brand_rule(width=3.0, thickness=0.07):
