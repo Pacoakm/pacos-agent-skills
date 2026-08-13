@@ -178,54 +178,60 @@ If either is missing and cannot be installed, say so and stop rather than lettin
 something. Computer Modern is not in this list — it comes from TinyTeX, and a missing TeX install
 fails loudly on its own.
 
-`SIZE_MIN` is 22. Nothing smaller survives a phone screen. Captions are `SIZE_CAPTION` = 23 —
-small enough to stay out of the way, large enough to read on a phone.
+`SIZE_MIN` is 22. Nothing smaller survives a phone screen.
 
-### Captions are Shorts-style
-
-Reels/Shorts/TikTok convention: **bold white type with a dark outline and no background bar.**
-The outline is what keeps a caption readable over any part of the frame, and unlike a bar it
-costs no screen area.
-
-| Token | Value | |
-|---|---|---|
-| `CAPTION_INK` | `#FFFFFF` | fill |
-| `CAPTION_OUTLINE` | `#0B1220` | `set_stroke(..., background=True)` |
-| `CAPTION_OUTLINE_W` | `5` | heavier than this and CJK strokes clog up — 9 was visibly blobby |
-| `CAPTION_TERM` | `#FDE047` | inline English term |
-| `SIZE_CAPTION` | `28` | **fixed for every cue** |
-
-Do not use `AUX` for a term inside a caption — that hue is chosen against the light page and
-goes muddy against white-on-outline.
-
-**Fixed size, wrap instead of shrink.** A caption that scales down to fit reads as inconsistent
-from cue to cue. `caption_text()` never scales; if a line does not fit, `wrap_caption()` inserts
-one newline near the weight midpoint at a natural boundary — after a comma-class punctuation
-first, then a space, then any CJK boundary. It refuses to break inside a Latin word **or inside
-a declared term**, so `inscribed angle` is never split across lines.
-
-Captions are anchored by `Stage.caption_bottom`, their **bottom edge**, so a one-line and a
-two-line cue share a baseline and the block grows upward.
-
-`Stage.caption_band` must reserve the platform-UI margin **plus a full two-line caption**. Size
-it for one line and the first wrapped cue lands on the diagram — that happened here.
-
-## Captions
+## Captions — bilingual, 中文 over English
 
 **Bold near-white sans type, no bar, no outline, no glow.** The caption band is reserved empty
-field, so plain type already has full contrast (`CAPTION_INK` `#F2F5FC`, 17.70:1) and anything
-behind it is noise.
+field, so plain type already has full contrast and anything behind it is noise.
 
 Captions are the one layer that stays **PingFang HK sans** while the lesson is set in Computer
 Modern. That is deliberate: the caption is a transcript of the voice laid over the picture, not
-part of the mathematics, and the change of face is what says so.
+part of the mathematics, and the change of face is what says so. The English line is set in the
+same face — PingFang's Latin — so the two lines are one caption in two languages rather than two
+different pieces of typography.
 
-| Token | Value |
-|---|---|
-| `CAPTION_INK` | `#1B2440` |
-| `CAPTION_TERM` | `#B45309` — first-use English term. **Not** a teaching semantic |
-| `SIZE_CAPTION` | 28 landscape, **24 portrait** |
-| `CAPTION_LINE_GAP` | 0.16 |
+| Token | Value | |
+|---|---|---|
+| `CAPTION_INK` | `#F2F5FC` | both lines · 17.70:1 |
+| `CAPTION_TERM` | `#FBBF24` amber-400 | the declared subject term. **Not** a teaching semantic |
+| `SIZE_CAPTION` | 28 landscape, **24 portrait** | the 中文 line |
+| `SIZE_CAPTION_EN` | 22 landscape, **19 portrait** | the English line — `CAPTION_EN_RATIO` 0.78 |
+| `CAPTION_LINE_GAP` | 0.16 | between wrapped lines within one language |
+| `CAPTION_LANG_GAP` | 0.28 | between the two languages — 1.75× the line gap |
+
+**The English is smaller, and that ratio is doing work.** The Chinese is the line being read; the
+English is the exam's wording underneath it. At equal size the block reads as two competing
+sentences. 0.78 rather than lower because PingFang's Latin already has a small x-height for its
+em, so the English looks smaller than its nominal size before any ratio applies — below about
+0.75 it stops being readable on a phone, above about 0.85 the two lines stop being
+distinguishable.
+
+The two gaps matter for the same reason: at equal spacing a wrapped two-line Chinese cue plus its
+English reads as one four-line paragraph and the eye cannot tell which lines belong together.
+
+Do not use `AUX` for a term inside a caption — the caption is a different track from the figure,
+and the eight teaching pens belong to the figure.
+
+**`terms` marks the form actually written.** The theme matches each declared term
+case-insensitively and lets the match run to the end of its word, so `inscribed angle` in the plan
+colours `Inscribed angles` in the English sentence — capital and plural included — instead of
+leaving a white `s` hanging off an amber phrase.
+
+**Fixed size, wrap instead of shrink.** A caption that scales down to fit reads as inconsistent
+from cue to cue. `caption_text()` never scales; `fit_caption()` wraps both languages against the
+same measured width and re-measures until the block really fits. Breaks land at a natural
+boundary and never inside a Latin word **or inside a declared term**, so `inscribed angle` is
+never split across lines.
+
+Captions are anchored by `Stage.caption_bottom`, their **bottom edge**, so a short cue and a
+four-line bilingual one share a baseline and the block grows upward.
+
+`Stage.caption_band` reserves the platform-UI margin **plus a full 2+2 bilingual cue** — measured
+at 1.857 units in 16:9 and 1.677 in 9:16, hence bands of 0.31 and 0.40 of frame height. Size it
+for less and the first wrapped cue lands on the diagram, because an over-tall block is not
+clipped, it grows upward. `build_captions.py` lays every cue out and measures it against this
+band, so the failure is caught at build time.
 
 Hard rules, each of which fixed a real defect:
 
