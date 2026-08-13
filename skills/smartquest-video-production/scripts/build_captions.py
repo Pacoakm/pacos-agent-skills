@@ -268,12 +268,10 @@ def check_layout(plan: dict, cues: list[dict]) -> tuple[list[str], list[str]]:
         cap = theme.caption_text(zh_w, terms, en_w)
         en_lines = len(en_w.split("\n")) if en_w else 0
         if en_lines > max_en_lines:
+            # Not reported below that: 9:16 allows two English lines outright,
+            # and nagging about a line the frame cannot avoid is noise.
             problems.append(f'{c["shot"]} {c["start"]:.2f}s: English sets on {en_lines} lines, '
                             f'{max_en_lines} allowed — "{(en or "")[:40]}…"')
-        elif en_lines > 1:
-            notices.append(f'{c["shot"]} {c["start"]:.2f}s: English takes 2 lines '
-                           f'({len(en or "")} chars) — one line reads better if you can '
-                           f'get it under ~{MAX_LINE_EN_PORTRAIT}')
         if cap.height > headroom + 1e-6:
             problems.append(f'{c["shot"]} {c["start"]:.2f}s: caption block is '
                             f'{cap.height:.2f} units, band holds {headroom:.2f} — it would '

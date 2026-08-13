@@ -115,11 +115,11 @@ The openers are what to cut first — `As we can see`, `Because`, `we can conclu
 Chinese line has already done the connecting; the English is there to name the thing in the
 paper's words.
 
-**9:16 is the exception, and it is physical.** A portrait line holds about **38 characters**, and
-exam English does not always fit that — `Inscribed angles on the same arc are equal.` is 43. So a
-short allows a second English line, and the build report names every cue that took one so you can
-decide whether it is worth rewriting. Do not shrink the type to buy a line: the caption size is
-fixed for the whole film.
+**9:16 takes two English lines, and that is fine.** A portrait line holds about **38 characters**
+and exam English does not always fit that — `Inscribed angles on the same arc are equal.` is 43.
+The band reserves two English lines in a short for exactly this reason, so write the sentence the
+paper would use and let it wrap. What a short still may not do is take a **third** line; that is
+a gate. Do not shrink the type to buy a line either: the caption size is fixed for the whole film.
 
 The terms declared in `terms` are coloured `CAPTION_TERM` wherever they occur, and the theme
 matches the form actually written — `inscribed angle` in the plan marks `Inscribed angles` in the
