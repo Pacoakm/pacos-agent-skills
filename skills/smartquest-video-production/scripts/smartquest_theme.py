@@ -12,10 +12,11 @@ both the 16:9 lesson and the 9:16 short.
             fig = self.stage.figure_box()
             ...
 
-The field is dark and the mathematics is Computer Modern, in the 3Blue1Brown
-manner. What stays SmartQuest is the colour set, the DM Sans title, and the
-sans caption track. Every colour here was measured against the dark background —
-see the palette block; the previous light-theme inks all fail on it.
+The field is a flat dark — one colour, no gradient — and the mathematics is
+Computer Modern, in the 3Blue1Brown manner. What stays SmartQuest is the colour
+set, brand_rule(), and the sans caption track. Every colour here was measured
+against that background — see the palette block; the previous light-theme inks
+all fail on it.
 """
 from manim import *
 import numpy as np
@@ -26,14 +27,20 @@ import re
 # the slight cool lift keeps the brand's indigo temperature and is gentler on a
 # phone at night, and it costs almost nothing in contrast.
 #
+# The field is FLAT — one colour, no wash. The earlier top-to-bottom gradient
+# made every contrast ratio a range rather than a number, and it broke the text
+# halo: halo() paints a BG-coloured stroke under the glyphs, which only
+# disappears where the background is exactly BG, so a label near the top of the
+# frame carried a visible dark patch. A flat field makes the halo invisible
+# everywhere and the measurements below exact.
+#
 # EVERY value below was re-measured against this background. The previous light
 # theme used 700-level inks, and all five of them FAIL on dark — blue-700 3.13:1,
 # violet-700 2.96:1, rose-700 3.34:1, emerald-700 3.83:1, orange-700 4.06:1.
 # The palette is therefore shifted to the 400 level, which keeps our hues (that
 # is the SmartQuest difference from 3b1b's blue/yellow) while clearing 4.5:1 with
 # a large margin.
-BG = "#0B0E14"          # cool near-black
-BG_LIFT = "#141926"     # a gentle lift, top to bottom
+BG = "#0B0E14"          # cool near-black — the whole field, flat
 INK = "#E9EDF7"         # main type — cool near-white            16.48:1
 MUTED = "#98A3BA"       # captions, secondary notes, DSE reasons  7.62:1
 LINE = "#6B7893"        # neutral geometry                        4.35:1
@@ -230,24 +237,20 @@ class Stage:
 class SQScene(Scene):
     """Base scene carrying the SmartQuest field and layout."""
 
-    def setup_stage(self, gradient=True):
+    def setup_stage(self, gradient=None):
+        """Flat dark field, plus the layout Stage.
+
+        `gradient` is accepted and ignored — the field used to carry a
+        top-to-bottom wash rectangle, and old scenes still pass the keyword.
+        The field is now one flat colour set on the camera, so there is no
+        background mobject at all: nothing sits between BG and the drawing,
+        and halo() (which paints BG under the glyphs) matches the field
+        exactly at every point of the frame.
+        """
         sync_frame()                      # must run before anything is positioned
         self.camera.background_color = BG
         self.stage = Stage()
-        if gradient:
-            self.add(brand_field())
         return self.stage
-
-
-def brand_field():
-    """A very low-contrast white-to-slate wash, so the frame reads as a designed
-    page rather than a blank white slide."""
-    r = Rectangle(width=config.frame_width * 1.02, height=config.frame_height * 1.02,
-                  stroke_width=0)
-    r.set_fill(color=[BG_LIFT, BG], opacity=1.0)
-    r.set_sheen_direction(DOWN)
-    r.set_z_index(-100)
-    return r
 
 
 # ------------------------------------------------------------- type scale ----
@@ -397,18 +400,22 @@ def halo_text(mobject, color=None, ratio=None):
 # than the five semantic colours can name. They carry NO role meaning — they are
 # simply further pens.
 #
-# Chosen by hue gap, not by eye. The five semantic hues sit at 17.5° (orange),
-# 162.9° (emerald), 224.3° (blue), 263.4° (violet), 345.3° (rose), and these
-# three land in the middle of the three widest gaps. Contrast measured against
-# BG: lime 4.86:1, fuchsia 6.16:1, cyan 5.22:1 — all above 4.5.
-REF_LIME = "#4D7C0F"    # hue  85.9°  fills the 145° orange→emerald gap
-REF_FUCHSIA = "#A21CAF" # hue 294.7°  fills the  82° violet→rose gap
-REF_CYAN = "#0E7490"    # hue 192.9°  fills the  61° emerald→blue gap
+# Chosen by hue gap, not by eye — then LIFTED to the 400 level like the semantic
+# five, because the three 700-level versions never were. Measured against the
+# dark BG they failed exactly as the old semantic inks did: lime #4D7C0F 3.87:1,
+# fuchsia #A21CAF 3.06:1, cyan #0E7490 3.61:1 — all under 4.5 while looking
+# perfectly reasonable in the editor. (The "4.86 / 6.16 / 5.22" once recorded
+# here were measured against the LIGHT page and were never re-measured.) The
+# values below are brand-theme.md's, re-measured against BG:
+REF_LIME = "#A3E635"    # hue  82.7°  fills the orange→emerald gap  12.81:1
+REF_FUCHSIA = "#E879F9" # hue 292.0°  fills the violet→rose gap      7.85:1
+REF_CYAN = "#22D3EE"    # hue 187.9°  fills the emerald→blue gap    10.69:1
 
 # Hand out referent colours in this order. The minimum hue separation across all
-# eight is 30°, so they stay tellable apart. Rejected for being too close to a
-# colour already in the series: amber-700 (8° from orange), pink-700 (10° from
-# rose), teal-700 (12° from emerald), sky-700 (23° from blue).
+# eight is 25.2° — cyan against blue, the tightest pair, and cyan is the eighth
+# pen so it only appears on an already-busy figure. Rejected for being too close
+# to a colour already in the series: amber (8° from orange), pink (10° from
+# rose), teal (12° from emerald), sky (23° from blue).
 #
 # Past about eight the figure, not the palette, is the problem — but if a
 # question genuinely names more parts, reuse a pen on the part that is furthest

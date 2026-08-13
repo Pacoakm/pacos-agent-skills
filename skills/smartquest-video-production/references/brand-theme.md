@@ -7,18 +7,27 @@ The overall look follows 3Blue1Brown: a dark field, and Computer Modern for ever
 frame including the titles. What stays SmartQuest is the **colour set**, `brand_rule()`, and the
 sans caption track.
 
-## Field — dark
+## Field — flat dark
 
 | Token | Value | |
 |---|---|---|
-| `BG` | `#0B0E14` | cool near-black |
-| `BG_LIFT` | `#141926` | a gentle lift, top to bottom |
+| `BG` | `#0B0E14` | cool near-black — the whole field, flat |
 | `INK` | `#E9EDF7` | cool near-white · 16.48:1 |
 | `MUTED` | `#98A3BA` | secondary notes, DSE reasons · 7.62:1 |
 | `LINE` | `#6B7893` | neutral geometry · 4.35:1 |
 
 Near-black rather than pure black: the slight cool lift keeps the brand's indigo temperature and
 is gentler on a phone at night, at almost no cost in contrast.
+
+**One colour, no gradient.** `setup_stage()` sets `camera.background_color = BG` and adds no
+background mobject; there is no wash rectangle behind the drawing. The earlier top-to-bottom
+gradient (`BG_LIFT → BG`) is gone, and `BG_LIFT` with it. Two reasons it had to go: every ratio in
+this file became a *range* rather than a number, since a colour measured against `#0B0E14` at the
+foot of the frame sat on `#141926` at the head of it; and `halo()` paints a `BG`-coloured stroke
+under the glyphs, which only vanishes where the background is exactly `BG` — on a graded field a
+label near the top of the frame carried a visible dark patch around it. Flat makes the halo
+invisible everywhere and the measurements exact. `setup_stage()` still accepts a `gradient=`
+keyword so older scenes import, but it does nothing.
 
 **Everything was re-measured when the theme went dark, and the old palette did not survive it.**
 The light theme's 700-level inks all fail on this field — blue-700 3.13:1, violet-700 2.96:1,
