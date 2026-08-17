@@ -8,7 +8,8 @@ These are adapted from 3Blue1Brown's practice. A caveat worth keeping: he has pu
 guide, so these are observations of the work rather than rules he stated. They are here because
 they survive the translation to a DSE lesson, not because they are anyone's authority.
 
-Answer all five in `brief.md`. They are part of what the user approves at Gate 1.
+Answer patterns 1–5 in `brief.md` for every lesson, and pattern 6 as well whenever the lesson
+works an example. They are part of what the user approves at Gate 1.
 
 ---
 
@@ -93,6 +94,31 @@ per lesson is a large difference.
 
 This is also where the **aha moment** should sit. If the aha is a sentence rather than something
 the student watches happen, the lesson has an aha in name only.
+
+## 6. A worked example is read, then pondered, then solved — with the question in view
+
+The shape of a worked part, in order. The question is on the frame throughout (rule 23,
+`on-screen-language.md`); this is how the time around it is spent.
+
+| Beat | What is on the frame | Why |
+|---|---|---|
+| **Read** | the stem lands first, alone, and is given time to be read | The student cannot ponder a question they have not finished reading. Budget it: the stem is English prose, and it is the densest reading in the video |
+| **Set up** | the part appears; the figure draws from the **givens only** | The figure at this moment is what the student would have drawn themselves |
+| **Ponder** | everything stills, question and givens up | Pattern 1. This is the beat the whole example exists for |
+| **Solve** | each step on its beat, its figure event landing in the same `play()` | Hard rule 18 — the synchrony is what makes it an explanation |
+| **Land** | the answer, then stillness | `REST_AHA`, `pacing.md` |
+
+Then the next part starts from the same stem, with the figure carrying whatever (a) established.
+
+**Read time is real time.** A 40-word DSE stem is about 12 seconds of reading for a student
+working in their second language, and a narration that starts explaining over it wastes both. The
+usual shape is: stem appears, the narration reads it aloud or paraphrases it in Cantonese, and
+only then does the lesson start.
+
+**Split a long part rather than compressing it.** Two screens with the figure and the question
+carried across, the second opening on the line the first ended on, beats one screen of shrunken
+steps — and it costs nothing but a cut. The failure to avoid is a part that ends up as a wall of
+finished algebra because it was fitted rather than split.
 
 ---
 

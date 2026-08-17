@@ -198,9 +198,13 @@ the cue once; `narration-sheet.md` carries the spoken form, with the pronunciati
 
 ```
 video-plan.json  ──►  build_captions.py  ──┬─►  src/captions.py  ──►  CaptionTrack.mov (alpha)
-                                           └─►  out/subtitles.srt        │
-                                                                          ▼
-                                            out/picture.mp4  ──►  ffmpeg overlay  ──►  picture-subbed.mp4
+                                           │                             │
+                                           │                             ▼
+                                           │     out/picture.mp4  ──►  ffmpeg overlay  ──►  picture-subbed.mp4
+                                           │
+                                           └─►  out/subtitles.srt ──┬─►  YouTube sidecar
+                                                                    │
+                                                                    └─►  muxed SOFT into out/draft.mp4
 ```
 
 The reason is iteration cost: a typo fix must never re-render the mathematics. It also gives
@@ -215,15 +219,35 @@ longer contains the terms: the English line is the indexable text.
 
 | Output | Subtitles |
 |---|---|
+| **Gate 3 draft** | **soft track, always** — `mov_text` muxed into `out/draft.mp4`, never burned |
 | 16:9 long form, YouTube | ship **both** — a clean master plus `subtitles.srt` |
 | 16:9 for 微信視頻號 / 小紅書 / IG | burned-in variant |
 | 9:16 shorts | **burned-in, always** — these platforms do not take a sidecar, and the feed autoplays muted |
 
-Both variants come from the same cue data, so they can never disagree.
+All of them come from the same cue data, so they can never disagree.
+
+The draft is soft for reasons that stop applying at the master. At 854×480 burned type would be
+reviewed at a resolution the master does not have; a typo would cost a re-encode of the draft
+rather than a rebuilt sidecar; and the reviewer could not switch the words off to look at the
+picture alone. It is also the cheap way to run `build_captions.py`'s pacing and layout gates a
+whole gate earlier — a cue that would land on the diagram then fails at Gate 3, before the
+1080p60 render exists.
+
+```bash
+ffmpeg -y -i out/draft-picture.mp4 -i out/subtitles.srt \
+  -c:v copy -c:s mov_text -metadata:s:s:0 language=zho -disposition:s:0 default \
+  out/draft.mp4
+ffprobe -v error -select_streams s -show_entries stream=index,codec_name -of csv=p=0 out/draft.mp4
+```
+
+`mov_text` is the only subtitle codec MP4 carries, and it is built into ffmpeg — unlike `ass`
+and `subtitles`, it needs no libass. Check the stream is there before sending the draft: dropping
+`-c:s` produces a video with no subtitles and no error. Tell the user it is a **soft** track and
+may need turning on in their player.
 
 ### Captions are exempt from the Manim rules
 
-Everything on a lesson frame must be a Manim mobject that enters with an animation (hard rule 18).
+Everything on a lesson frame must be a Manim mobject that enters with an animation (hard rule 20).
 Captions are **not** on the frame — they are a separate track composited afterwards — so neither
 rule applies to them:
 

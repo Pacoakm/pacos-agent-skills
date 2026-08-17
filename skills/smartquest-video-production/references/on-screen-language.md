@@ -50,6 +50,7 @@ across between them.
 | **Term cards** | the English DSE term alone, bound to a colour | `median`, `inscribed angle` |
 | **DSE reasons** | the marker's exact wording, with the step it justifies | `ext. ∠ of △` |
 | **A step list** | in the verbal register, with or without a figure | `① 先找出兩個平面的交線。` |
+| **The question** | in full, in English, on every shot of a worked example — see below | `Denote the locus of $P$ by $\Gamma$.` |
 | **Loose explanatory prose** | **never, in either register** | ~~較長一段連着頂點~~, ~~永遠在 triangle 內~~ |
 
 A term card is the term and nothing else. `median` is a term card; 「三條 median 的交點」 is a
@@ -58,9 +59,85 @@ sentence wearing a term as a hat, and it goes to the subtitle.
 "Loose prose" means a sentence that is not an item in an enumerated list. The list earns its place
 because its *structure* teaches — see below. A stray sentence has no structure to earn it.
 
+## The question band
+
+**A worked example carries its question, in full, in the paper's English, for as long as the
+example runs.** This is the one exemption from both rules above, and it is not a loophole in
+them: the banned prose is *your explanation* of the mathematics, and the question is the **object
+being studied**. It is also the text the student has to parse under time pressure in an
+English-language paper, so reading it is part of what the lesson teaches, not a preamble to it.
+
+A solution shown beside a question the student cannot see is a mechanism with no problem attached
+— they can follow every line and still not know what was being asked.
+
+| | |
+|---|---|
+| **Stem** | the question as the paper prints it. On **every** shot of the example, top of the frame, `MUTED`, left-aligned and ragged-right like the paper |
+| **Part** | only the part being answered in this shot — `(a)(i) Find the equation of $\Gamma$.` — under the stem, in `INK`, one step larger |
+| **Changes between shots** | the part, and only the part. The stem is the same mobject, wrapped the same way, in the same place |
+| **Never** | a part whose stem is missing; a 中文 translation of either; a stem shrunk to fit; referent colour inside the stem |
+
+The stem stays `MUTED` and un-coloured on purpose. It is reference text the student reads once,
+and the pens are needed by the figure and the derivation — a stem in eight colours would spend
+the palette on the part of the frame that needs it least.
+
+### It is exempt from the budget, and from nothing else
+
+The stem does not count against the ≤ 12 字 non-mathematical budget, and it may sit over a
+`math` shot or a `verbal` one. Everything else still applies inside the content area: no loose
+explanatory prose of your own, no sentence that a mark on the figure could have made, one
+register below the band.
+
+### Build it with `Stage.question()`
+
+```python
+st = self.setup_stage()
+q = st.question(STEM, r"(a)(i) Find the equation of $\Gamma$.")   # BEFORE figure_box()
+fc, fw, fh = st.figure_box()          # now laid out UNDER the question
+```
+
+`Stage.question()` reserves the band by moving `content_top` down, so the figure and the
+derivation land under the question instead of behind it. Call it before any region is asked for.
+The strings are LaTeX — inline mathematics in `$...$`, so `$\Gamma$` and `$3x - 4y - 37 = 0$`
+set exactly as the paper prints them.
+
+It **raises** if the stem plus the part would take more than about five lines. That error is a
+design instruction, and there are exactly two legitimate answers:
+
+1. Quote only the sentences this part actually needs — a stem with three paragraphs of setup and
+   a part that uses one of them should carry that one.
+2. Split the part across two shots.
+
+Shrinking the type is not one of them. A question set below reading size on a phone is a question
+that is not on the frame.
+
+Because the stem is on every shot of the example, build it from a **shared helper the scenes
+import**, never re-typed per scene: a stem that re-wraps or shifts by a few pixels between two
+shots is a jump cut on the most static thing in the frame (contract invariant 10).
+
+### Splitting a part across two screens
+
+Two things may force a split: the question band is too tall, or the derivation is longer than the
+panel holds. Both are handled the same way, and neither is handled by shrinking anything.
+
+| | |
+|---|---|
+| Carries across | the stem, the figure with every mark it had earned, the part line |
+| The second screen opens with | the last line of the first — so nothing has to be remembered across the cut |
+| Never | a cut that drops a mark the next screen's first line refers to |
+| Check it | at Gate 3, at exact frame indices — the end state of one and the start state of the next |
+
+### The solution moves against the question
+
+The point of putting the question up is lost if the answer beside it is a finished block of
+algebra. Every step lands on its own beat, with its figure event, in one `play()` (rule 18), and
+a step that names a quantity draws that quantity onto the figure at the same instant. A screen of
+steps that could have been printed on paper has failed the marking-scheme test below — the
+question band does not exempt it.
+
 ## The budget
 
-Per shot, counting only text on the picture — not captions.
+Per shot, counting only text on the picture — not captions, and not the question band.
 
 **Mathematical register:**
 
@@ -426,6 +503,14 @@ At the storyboard, per panel:
 - For every term card, name the shot where it was bound to its colour.
 - Ask of each remaining word: *would the frame still teach this if I deleted it?* If yes, delete
   it.
+
+On a worked-example panel, additionally:
+
+- Is the **stem** there, in English, complete? Is it identical — same wrapping, same position —
+  to the stem on the panel before and after?
+- Is the **part** on screen the part this shot answers, and only that one?
+- Does the panel show any derived quantity the question did not give and this shot has not yet
+  derived?
 
 ## What this is not
 

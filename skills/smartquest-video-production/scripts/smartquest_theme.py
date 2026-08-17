@@ -157,6 +157,13 @@ SIZE_CAPTION = 20 if config.pixel_height > config.pixel_width else 24
 CAPTION_EN_RATIO = 0.78
 SIZE_CAPTION_EN = round(SIZE_CAPTION * CAPTION_EN_RATIO)   # 19 landscape, 16 portrait
 SIZE_MIN = 22
+# The DSE question, set in the paper's own English at the top of the frame. It
+# is REFERENCE text — read once, then referred back to — so it sits below body
+# size and in MUTED, leaving INK and the pens for the figure and the derivation.
+# The live part is one step up and in INK, because that is the thing being
+# answered right now. See on-screen-language.md, "The question band".
+SIZE_QUESTION = 24
+SIZE_QUESTION_PART = 26
 
 
 # ---------------------------------------------------------------- layout ----
@@ -218,6 +225,10 @@ class Stage:
         self.caption_band = self.h * (0.37 if self.portrait else 0.23)
         self.title_band = self.h * (0.11 if self.portrait else 0.10)
         self.margin = self.w * 0.045
+        # Set by question_band_for() on a worked-example shot; 0 everywhere
+        # else, so a scene that never asks for a question band lays out exactly
+        # as it did before the band existed.
+        self.question_band = 0.0
 
     # -- anchors ------------------------------------------------------------
     @property
@@ -242,7 +253,7 @@ class Stage:
 
     @property
     def content_top(self):
-        return self.h / 2 - self.title_band
+        return self.h / 2 - self.title_band - self.question_band
 
     @property
     def content_bottom(self):
@@ -287,6 +298,52 @@ class Stage:
         if mobject.width > w:
             mobject.scale_to_fit_width(w)
         return mobject
+
+    # -- the question band ---------------------------------------------------
+    def question(self, stem, part=None, gap=None):
+        """The DSE question, laid across the top and reserving its own band.
+
+        `stem` is the question as the paper prints it, in English, in LaTeX —
+        inline mathematics in `$...$`. `part` is the sub-part being answered in
+        THIS shot, e.g. `r"(a)(i) Find the equation of $\\Gamma$."`.
+
+        The stem is the same mobject in every shot of the worked example and the
+        part is the only thing that changes, so build both from one helper shared
+        by the scenes (contract invariant 10) — a stem that re-wraps between two
+        shots is a jump cut.
+
+        CALL THIS BEFORE `figure_box()` / `panel_box()`. It moves `content_top`
+        down by the height of the band, so the figure and the derivation lay out
+        under the question instead of behind it.
+
+        Raises if the band would eat the frame — that is the signal to cut the
+        stem to what the part actually needs, or to split the part across two
+        shots, never to shrink the type.
+        """
+        width = self.w - 2 * self.margin
+        grp = VGroup(question_text(stem, width=width))
+        if part:
+            grp.add(question_text(part, size=SIZE_QUESTION_PART, color=INK,
+                                  width=width))
+        grp.arrange(DOWN, aligned_edge=LEFT, buff=self.h * 0.030)
+        grp.to_edge(UP, buff=self.h * 0.050)
+        grp.align_to(np.array([-self.w / 2 + self.margin, 0.0, 0.0]), LEFT)
+
+        gap = self.h * 0.045 if gap is None else gap
+        band = max(0.0, (self.h / 2 - self.title_band)
+                        - (grp.get_bottom()[1] - gap))
+        # About five lines of stem-plus-part. Past that the figure and the
+        # derivation are living in under two thirds of the frame, which is the
+        # question crowding out the lesson.
+        cap = self.h * (0.26 if self.portrait else 0.22)
+        if band > cap:
+            raise ValueError(
+                f"question band is {band / self.h:.0%} of frame height "
+                f"(cap {cap / self.h:.0%}). The stem plus the part is too long "
+                "for one frame: quote only the sentences this part needs, or "
+                "split the part across two shots. Do not shrink the type.")
+        self.question_band = band
+        return grp
 
 
 # ----------------------------------------------------------------- scene ----
@@ -393,6 +450,124 @@ def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True
     t2c = {k: term_color for k in (terms or [])}
     return _text(text, _pt(size) if scale else max(size, SIZE_MIN),
                  font=FONT_TEXT, weight=WEIGHT_TEXT, color=color, t2c=t2c)
+
+
+# ---- the question band -----------------------------------------------------
+# The DSE question is set in Computer Modern like everything else on the frame,
+# so the words the paper prints and the mathematics the lesson writes are one
+# document rather than two. That rules out Pango wrapping, so the paragraph is
+# broken here and built one Tex per line.
+#
+# Each line goes inside \mbox. WITHOUT it LaTeX wraps the line ITSELF, at its
+# own page width of about 8.5 scene units, and the `center` environment Manim's
+# Tex uses then CENTRES the pieces \u2014 which renders as a paragraph with a
+# mysteriously indented middle line. It is not a bug you would guess from the
+# code: the line breaking silently moves from this file to TeX.
+_Q_MATH = re.compile(r"\$[^$]*\$")
+_Q_CMD = re.compile(r"\\[A-Za-z]+\s*")
+_QCAL = {}
+# A realistic sentence, not a word: the calibration has to cover inter-word
+# spacing and the extra width TeX gives inline mathematics. Calibrated on
+# "semicircle" alone the estimate came out 13% narrow, which is a whole word per
+# line \u2014 enough to overflow the frame on the longest line of a stem.
+_Q_PROBE = (r"The coordinates of the points $A$ and $B$ are $(-6, 5)$ "
+            r"respectively.")
+_Q_SPACE = 0.55            # a space, in units of one average character
+_Q_SAFETY = 1.03           # break this much early; the estimate runs \u00b11.5%
+
+
+def _q_box(line, size, color=None):
+    """One unbreakable line of question text."""
+    return Tex(r"\mbox{" + line + "}", color=color, font_size=_pt(size),
+               tex_template=TEX_MAIN)
+
+
+def _q_unit(size):
+    """Width of one average character of question text at `size`.
+
+    Measured once from a real Tex mobject \u2014 a TeX compile per candidate break
+    would cost seconds per paragraph. Predicts a real line to within about 1.5%,
+    and `question_text` still fits the built block for real afterwards.
+    """
+    if "w" not in _QCAL:
+        toks = _q_tokens(_Q_PROBE)
+        units = sum(_q_len(t) for t in toks) + _Q_SPACE * (len(toks) - 1)
+        _QCAL["w"] = _q_box(_Q_PROBE, SIZE_QUESTION).width / units
+    return _QCAL["w"] * (size / SIZE_QUESTION)
+
+
+def _q_tokens(text):
+    """Break on spaces, except inside inline mathematics: `$AP = AB$.` is one
+    token, because a line that ends on `$AP =` names nothing."""
+    marked = _Q_MATH.sub(lambda m: m.group(0).replace(" ", "\x00"), text)
+    return [t.replace("\x00", " ") for t in marked.split()]
+
+
+def _q_len(token):
+    """Characters the token will actually set: a control sequence draws one
+    glyph, and `{}^_` draw none."""
+    t = _Q_MATH.sub(lambda m: _Q_CMD.sub("x", m.group(0)[1:-1]), token)
+    return len(re.sub(r"[{}^_]", "", t))
+
+
+def _q_lines(text, width, size):
+    unit = _q_unit(size)
+    space = unit * _Q_SPACE
+    target = width / _Q_SAFETY
+    lines, cur, cur_w = [], [], 0.0
+    for tok in _q_tokens(text):
+        w = _q_len(tok) * unit
+        if cur and cur_w + space + w > target:
+            lines.append(" ".join(cur))
+            cur, cur_w = [tok], w
+        else:
+            cur_w += space + w if cur else w
+            cur.append(tok)
+    if cur:
+        lines.append(" ".join(cur))
+    return lines
+
+
+def question_text(text, size=SIZE_QUESTION, color=MUTED, width=None):
+    """The DSE question \u2014 or one part of it \u2014 as a wrapped, left-aligned
+    paragraph of the paper's own English.
+
+    `text` is LaTeX: inline mathematics in `$...$`, so `$\\Gamma$` and
+    `$3x - 4y - 37 = 0$` set exactly as the paper prints them.
+
+        question_text(r"The coordinates of the points $A$ and $B$ are "
+                      r"$(-6, 5)$ and $(2, -1)$ respectively.")
+
+    Left-aligned and ragged-right, like the paper \u2014 a centred question reads as
+    a title, and the student has to find the start of every line.
+
+    The stem is MUTED and carries no referent colour: it is quoted text the
+    student reads once, and the pens belong to the figure and the derivation
+    (rule 17). `Stage.question()` is the normal caller \u2014 it also reserves the
+    band, which this helper does not.
+    """
+    if width is None:
+        width = config.frame_width * 0.91
+    lines = (text.split("\n") if "\n" in text
+             else _q_lines(text, width, size))
+    mobs = [_q_box(l, size, color) for l in lines if l.strip()]
+
+    # Lines are stacked by their TOPS at a fixed step, not by `arrange`'s
+    # bounding-box gaps: a line with no descender has a shorter box, so
+    # arrange() would open the leading under it by a few pixels and the
+    # paragraph would breathe unevenly. English prose always has an ascender,
+    # so the top is the stable edge to hang from. A \vphantom strut does NOT
+    # fix this — it draws nothing, and Manim measures drawn outlines.
+    step = max(m.height for m in mobs) * 1.42
+    top = mobs[0].get_top()[1]
+    for i, m in enumerate(mobs[1:], 1):
+        m.align_to(mobs[0], LEFT)
+        m.shift(UP * (top - i * step - m.get_top()[1]))
+
+    grp = VGroup(*mobs)
+    if grp.width > width:            # the estimate was optimistic somewhere
+        grp.scale_to_fit_width(width)
+    return grp
 
 
 _LATIN_ONLY = re.compile(r"^[\x20-\x7E]+$")

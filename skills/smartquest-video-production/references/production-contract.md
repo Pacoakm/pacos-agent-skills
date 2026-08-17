@@ -21,7 +21,9 @@ videos/<subject>/<nn>-<topic>/
 │   └── narration.wav        # returned by the teacher
 └── out/
     ├── concat-draft.txt
-    ├── draft.mp4            # 480p15 draft, shown to the user at the Gate 3 approval stop
+    ├── draft-picture.mp4    # 480p15 concatenation, before the subtitle mux
+    ├── draft.mp4            # the same picture + SOFT subtitle track — this is what
+    │                        # the user watches at the Gate 3 approval stop
     ├── concat.txt
     ├── picture.mp4          # animation, no subtitles, no audio
     ├── subtitles.srt        # sidecar
@@ -63,8 +65,17 @@ the implementation.
     "track": "src/captions.py",
     "sidecar": "out/subtitles.srt",
     "burnedIn": true,
+    "draftSoftSubs": true,
     "bilingual": true,
     "maxCharsPerSecond": 4.0
+  },
+  "question": {
+    "source": "HKDSE 2019 Paper 1 Q17",
+    "stem": "The coordinates of the points $A$ and $B$ are $(-6, 5)$ and $(2, -1)$ respectively. $P$ is a moving point in the rectangular coordinate plane such that $AP = AB$. Denote the locus of $P$ by $\\Gamma$.",
+    "parts": {
+      "a-i": "(a)(i) Find the equation of $\\Gamma$.",
+      "b": "(b) The equation of the straight line $L$ is $3x - 4y - 37 = 0$. It is found that $\\Gamma$ and $L$ do not intersect."
+    }
   },
   "shots": [
     {
@@ -79,6 +90,7 @@ the implementation.
       "transitionOut": "...",
       "knowledgePoint": "...",
       "register": "math",
+      "questionPart": "a-i",
       "onScreenText": ["1 · centroid", "median", "AO : OM = 2 : 1", "A", "B", "C", "O", "M"],
       "movedToNarration": ["較長一段連着頂點 → AO : OM = 2 : 1 on the frame",
                            "永遠在 triangle 內 → S06, vertex is dragged"],
@@ -144,6 +156,16 @@ Check these; do not assume them.
     Build both from a shared helper so they cannot drift.
 11. `narration.status` is `awaiting-teacher-recording` until a real file exists at
     `narration.media`.
+12. **A worked example carries its question.** If the lesson works one, `question.stem` holds it
+    verbatim in the paper's English as LaTeX, and every shot of the example names a
+    `questionPart` that exists in `question.parts`. A shot with a `questionPart` renders the stem
+    **and** that part; no shot renders a part without the stem, and no two consecutive shots of
+    one example disagree about the stem. The stem is exempt from invariant 8's 字 budget and from
+    the one-register rule; nothing else on those shots is.
+    See `references/on-screen-language.md`, "The question band".
+13. `out/draft.mp4` has a subtitle stream. It is built by muxing `out/subtitles.srt` into
+    `out/draft-picture.mp4` as **soft** `mov_text` — never burned in — and `ffprobe
+    -select_streams s` confirms it before the draft is shown at the Gate 3 stop.
 
 Invariant 10 is the one that bites. Scenes render independently, so a mismatch produces a jump
 cut that is invisible at draft resolution and obvious in the master.
@@ -157,7 +179,13 @@ rm -rf media/Tex media/texts    # after ANY font or TeX-template change — the 
 
 # draft — review pacing here, not resolution
 manim -ql src/script.py S01Hook S02Setup ...
-ffmpeg -y -f concat -safe 0 -i out/concat-draft.txt -c copy out/draft.mp4   # then SHOW the user
+ffmpeg -y -f concat -safe 0 -i out/concat-draft.txt -c copy out/draft-picture.mp4
+python3 scripts/build_captions.py --plan video-plan.json --out-dir src
+ffmpeg -y -i out/draft-picture.mp4 -i out/subtitles.srt \
+  -c:v copy -c:s mov_text -metadata:s:s:0 language=zho -disposition:s:0 default \
+  out/draft.mp4
+ffprobe -v error -select_streams s -show_entries stream=index,codec_name -of csv=p=0 out/draft.mp4
+                                                                           # then SHOW the user
 
 # picture master
 manim -r 1920,1080 --fps 60 src/script.py S01Hook S02Setup ...   # long
@@ -221,7 +249,7 @@ Each stop has one artifact that must reach the user's eyes, not a prose summary 
 |---|---|---|
 | `plan-awaiting-approval` | The full per-shot script table with 字數 and pacing verdicts, plus the lesson design | In the reply text; `brief.md` and `video-plan.json` on disk for detail |
 | `storyboard-awaiting-approval` | `storyboard/sheets/*.png` | `SendUserFile`, or exact paths if unavailable |
-| `draft-awaiting-approval` | `out/draft.mp4` | `SendUserFile`, or exact paths if unavailable |
+| `draft-awaiting-approval` | `out/draft.mp4` — picture **plus its soft subtitle track** | `SendUserFile`, or exact paths if unavailable. Say the track may need turning on, and name `out/subtitles.srt` as the fallback |
 
 A revision at any stop regenerates the artifact and shows it again — a re-rendered draft for a
 pacing note, rebuilt sheets for a composition note, an updated plan and script table for a
