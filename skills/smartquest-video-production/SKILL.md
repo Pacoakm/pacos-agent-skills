@@ -124,6 +124,47 @@ and let each item act on the figure as it lands.
 Full rules, the translation table and a worked before/after in
 `references/on-screen-language.md`.
 
+## Worked examples: the question is on screen, in full, in English
+
+Whenever the lesson works an example — a past paper, a textbook question, one you wrote — **the
+question text is on the frame, complete, in the English the DSE paper uses**, for as long as the
+example runs.
+
+This is not the prose ban being relaxed. Banned prose is *your* explanation of the mathematics;
+the question is the **object of study**, and it is the exact text the student has to parse in the
+exam hall. A student who watches a solution to a question they cannot see is watching a
+mechanism with no problem attached to it, and reading the English question under time pressure is
+half of what the paper actually tests. So the question band is exempt from the ≤ 12 字 budget and
+from the one-register rule — see `references/on-screen-language.md`, "The question band".
+
+**The stem never leaves.** Parts (a) and (b) may each take their own screen, but the main
+question stays up on both, above the part:
+
+| | |
+|---|---|
+| **Stem** | every shot of the example, top of the frame, `MUTED`, never re-wrapped between shots |
+| **Part** | only the part being answered right now, under the stem, `INK`. It is what changes when the example moves from (a) to (b) |
+| **Never** | a part on screen whose stem is not, and never a 中文 translation of either — the paper is in English |
+
+`Stage.question(stem, part)` builds both and reserves the band, so the figure and the derivation
+lay out underneath instead of behind. Call it before `figure_box()`. It **raises** if the stem
+plus the part would take more than about five lines — that is the signal to quote only the
+sentences this part needs, or to split the part across two shots, never to shrink the type.
+
+**The solution appears against the question, and it moves.** The derivation is not a block of
+finished algebra revealed next to a static diagram:
+
+- every step lands on its own beat, with its figure event, in one `play()` — hard rule 18
+- a step that names a quantity draws that quantity onto the figure at the same instant
+- when the derivation is longer than the panel holds, **split the shot** rather than shrinking the
+  steps: carry the figure and the question across, and open the second screen with the line the
+  first one ended on, so nothing has to be remembered across the cut
+- a screen of steps that could have been printed on paper has failed the marking-scheme test,
+  question band or no question band
+
+Sequencing — the hook, the ponder beat before the answer, and how a part is split — is in
+`references/lesson-patterns.md`, pattern 6.
+
 ## Ask only what is missing
 
 1. Subject and topic, and the **single thing** a student should be able to do afterwards.
@@ -148,7 +189,7 @@ Write `brief.md` covering, in this order:
   reason wrong is still a wrong lesson.
 - **Known limitations** — cases the video does not cover. Say so on the record; never let the
   video imply completeness it does not have.
-- **The five lesson patterns** — answer each explicitly, per `references/lesson-patterns.md`:
+- **The lesson patterns** — answer each explicitly, per `references/lesson-patterns.md`:
   1. **The hook question** — what the student wants to know after the opening shot, in one
      sentence. 「今日我們講 X」 is a table of contents, not a hook.
   2. **Behaviour before name** — for each term, the beat where the student *sees* it before it is
@@ -160,6 +201,9 @@ Write `brief.md` covering, in this order:
   5. **Argument or illustration** — for each beat, does the animation *establish* the result or
      merely display it? Say which, and promote at least one. The aha must be an argument; an aha
      the student is told rather than shown is an aha in name only.
+  6. **The worked example** — if the lesson works one: the question text verbatim in English,
+     which part goes on which screen, the reading time the stem is given, and where any part is
+     split. Skip only if there is no worked example.
 
 Verify every formula, constant, unit, and worked number independently before animating. Record
 the check in `brief.md`. A wrong number that reaches the render is the most expensive defect
@@ -208,6 +252,9 @@ be read without opening files:
 - **What is on the picture** — per shot, the `onScreenText` list and its 字數 against the ≤ 12 字
   limit, so the split between picture and narration is visible before anything is drawn. Any
   sentence you moved off the frame: say where it went, and what mathematics replaced it.
+- **The question, if the lesson works one** — the stem verbatim in English, the parts, which
+  shots carry which part, and the seconds the stem gets to be read before anything else moves.
+  Quote it; a mis-transcribed past-paper question is the same class of defect as a wrong number.
 - **The timeline** — section structure, total duration, and the knowledge-point count.
 - **Open questions** — anything you decided by assumption rather than instruction.
 
@@ -257,6 +304,9 @@ colour meaning stay constant, does each shot's end state match the next shot's s
   **displayed equation** alongside it means split the shot in two.
 - **Both** — no loose explanatory sentence anywhere, and nothing written in words that the
   figure could have shown as a mark, a colour, or a movement.
+- **Worked-example panels** — the stem is on every one of them, identical and identically
+  wrapped, with this shot's part under it. The stem does not count against the 字 budget; the
+  rest of the panel still does. A panel showing a part without its stem fails here.
 
 For every sentence that is not there, name where it went (subtitle, narration, or an animated
 beat), and for every term card, name the shot that bound it to its colour. Then ask of each
@@ -286,12 +336,37 @@ them again, and stop again.
 manim -ql src/script.py <every scene>
 ```
 
-Draft quality is 854×480 @15 fps and costs seconds per scene. Concatenate the scenes into a
-single reviewable file:
+Draft quality is 854×480 @15 fps and costs seconds per scene. Concatenate the scenes, then put
+the subtitles in as a **soft track** — every draft carries its subtitles, and none of them are
+burned in:
 
 ```bash
-ffmpeg -y -f concat -safe 0 -i out/concat-draft.txt -c copy out/draft.mp4
+ffmpeg -y -f concat -safe 0 -i out/concat-draft.txt -c copy out/draft-picture.mp4
+python3 scripts/build_captions.py --plan video-plan.json --out-dir src
+ffmpeg -y -i out/draft-picture.mp4 -i out/subtitles.srt \
+  -c:v copy -c:s mov_text -metadata:s:s:0 language=zho -disposition:s:0 default \
+  out/draft.mp4
 ```
+
+`out/draft.mp4` is then the file the user watches, exactly as before — it just has a subtitle
+stream in it. Confirm the stream is really there before sending it; a missing `-c:s` silently
+produces a video with no subtitles at all:
+
+```bash
+ffprobe -v error -select_streams s -show_entries stream=index,codec_name -of csv=p=0 out/draft.mp4
+```
+
+**Soft, never burned, at this gate.** Burning is wrong here for three separate reasons: at
+854×480 the type would be judged on a resolution the master does not have, a typo fix would cost
+a re-encode of the whole draft instead of a rebuilt sidecar, and the reviewer could no longer
+turn the words off to look at the picture alone. Burning happens once, at Gate 4, onto the
+1080p60 picture.
+
+Running `build_captions.py` here is also the point: its pacing and layout gates then fire at
+Gate 3 rather than at Gate 4, so a cue that would land on the diagram is caught before the
+expensive render. It exits non-zero on a broken plan — fix `video-plan.json`, or pass
+`--allow-pacing-failures` if you deliberately want to look at the motion first, and say which
+you did.
 
 Watch it yourself first, against the Gate 3 questions in `references/pacing.md`: sweep speeds,
 dwell after each reveal, whether a student can read every line in time, whether any beat rushes
@@ -329,6 +404,10 @@ it must be watched before Gate 4 begins. A written summary is never a substitute
 With it, state: what you already fixed, which beats you are unsure about, the timecode of the
 aha, and that draft resolution is 854×480 @15 fps so only pacing and motion are under review
 here — not sharpness, not final type rendering.
+
+Say that the subtitles are a **soft track and may need turning on** — QuickTime, IINA and VLC
+show it under their subtitle menu, and a player that ignores soft tracks will show none. Point
+at `out/subtitles.srt` beside the video as the fallback, so the wording can still be read.
 
 Invite either an approval or a list of problems with timecodes. Set
 `"status": "draft-awaiting-approval"` and **stop**.
@@ -460,7 +539,8 @@ Report what you verified and how. If something was not checked, say so.
 12. **Never animate `frame_center`.** `move_camera(frame_center=...)` does not redraw the figure;
     everything stays drawn at the old centre while the camera reports the new one. Re-centre by
     shifting the figure. See `references/manim-traps.md` #16.
-13. **Never call `Text()` directly.** Use `title()` / `body()` / `label()` / `caption_text()`.
+13. **Never call `Text()` directly.** Use `title()` / `body()` / `label()` / `question_text()` /
+    `caption_text()`.
     Pango grid-fits glyph positions to the `font_size` it is handed, so a bare `Text()` gets
     letter spacing that differs from every other string in the video — visible on screen as
     英文字距不一樣. See `references/manim-traps.md` #22.
@@ -471,6 +551,8 @@ Report what you verified and how. If something was not checked, say so.
     frame could say in mathematics or show by moving. A shot is in one register: equations with
     the figure, or an enumerated list with the figure — the figure is welcome in both, loose
     explanatory sentences in neither. If a beat needs the list and the equation, it is two shots.
+    The **question band is the one exemption** — the DSE question is the object being studied,
+    not an explanation of it, and it stays up over both registers (rule 23).
     See `references/on-screen-language.md`.
 16. **Never mock up a storyboard panel by hand.** Every panel is a Manim still rendered from the
     real scene. A hand-authored SVG is laid out by a different engine, so it looks right exactly
@@ -514,7 +596,18 @@ Report what you verified and how. If something was not checked, say so.
     bug, and cost three failed fixes on a label that turned out to be projected rather than fixed
     in frame. One projection calculation settled each. See `references/manim-traps.md`, The
     pattern.
-23. **Never let a `str.replace()` edit go unasserted.** A non-matching replacement is a silent
+23. **Never work an example without its question on the frame.** The full question text, in the
+    paper's English, from the first shot of the example to the last — the stem always up, the
+    current part under it, and only the part changing between shots. A solution shown against a
+    question the student cannot read teaches a mechanism with no problem attached, and skips the
+    part of the exam that is reading the English. Build it with `Stage.question()`; the band is
+    exempt from the ≤ 12 字 budget and from rule 15, and from nothing else.
+24. **Never let a draft go out without its subtitle track.** `out/draft.mp4` carries the cues as
+    a **soft** `mov_text` stream — never burned in at draft. Burned type at 854×480 is judged on
+    a resolution the master does not have, a typo then costs a re-encode, and the reviewer loses
+    the ability to turn the words off and look at the picture. `ffprobe -select_streams s` before
+    sending it.
+25. **Never let a `str.replace()` edit go unasserted.** A non-matching replacement is a silent
     no-op, and a batch script that raises before its `write_text()` discards **every** edit in that
     batch — including the ones that matched. A "deleted" beat survived that way into a render the
     user then reviewed, and the same bug was reported twice. Assert each replacement's match count,

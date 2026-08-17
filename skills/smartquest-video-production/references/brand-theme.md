@@ -142,8 +142,8 @@ to make two letters touch. That is the "英文字距不一樣" defect, and it is
 renderer, not of the face: every candidate Latin font drifts the same way. See
 `manim-traps.md` #22 for the measurements.
 
-So: `title()`, `body()`, `label()`, `caption_text()`, `step()`, or `_text()` — never a bare
-`Text(...)`. A single stray `Text()` in a scene is visible as one word spaced differently from
+So: `title()`, `body()`, `label()`, `question_text()`, `caption_text()`, `step()`, or `_text()` —
+never a bare `Text(...)`. A single stray `Text()` in a scene is visible as one word spaced differently from
 the identical word elsewhere in the same video.
 
 ### Mathematics is Computer Modern
@@ -366,12 +366,38 @@ the 16:9 lesson and the 9:16 short**.
 | Band | 16:9 | 9:16 |
 |---|---|---|
 | Title | 10% of height | 11% |
+| Question | 0 unless asked for; capped at **22%** | capped at **26%** |
 | Caption safe band | 13% | **22%** — platform UI covers the lowest ~15% |
 | Figure | left 52% of width | **top 60% of content height** |
 | Derivation panel | right column | **below the figure** |
 
 A side column is unreadable at 1080 px wide, which is why portrait stacks instead. Ask
 `Stage.figure_box()` and `Stage.panel_box()` for regions; never hard-code a coordinate.
+
+### The question band
+
+A worked example puts the DSE question across the top of the frame and leaves it there
+(hard rule 23). `Stage.question(stem, part)` builds it and reserves the band by moving
+`content_top` down, so **call it before `figure_box()` or `panel_box()`** — after them, the
+figure is already laid out where the question is about to be.
+
+| | |
+|---|---|
+| Stem | `SIZE_QUESTION` 24, `MUTED`, left-aligned, ragged right |
+| Part | `SIZE_QUESTION_PART` 26, `INK` |
+| Set in | Computer Modern, like the mathematics — the paper's words and the lesson's symbols are one document |
+| Wrapped by | `question_text()`, one `Tex` per line inside `\mbox` |
+| Over the cap | **raises** — quote less of the stem, or split the part across two shots. Never shrink the type |
+
+Two traps live in that helper, both of which render without an error:
+
+- **Without `\mbox`, LaTeX wraps the line itself** at its own page width of about 8.5 scene
+  units, and Manim's `center` environment then centres the pieces. It shows up as a paragraph
+  with a mysteriously indented middle line, and the line breaking has silently moved from the
+  theme to TeX.
+- **A `\vphantom` strut does not equalise line heights.** It draws nothing, and Manim measures
+  drawn outlines, so `arrange()` still opens the leading under a line with no descender. The
+  lines are stacked by their tops at a fixed step instead.
 
 ### Type is scaled to the frame
 

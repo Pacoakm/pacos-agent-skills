@@ -16,6 +16,18 @@ Every shot must satisfy all three. They are checkable, so check them.
 
 4 字/秒 is a teaching read, not a news read. Faster than that and the teacher has to rush.
 
+**The question stem has its own reading budget, on top of the subtitle.** It is English prose in
+a second language, and it is the densest reading in the video:
+
+```
+題目秒數 ≥ 英文字數 / 3.5        # ~3.5 words/second，且不少於 4 s
+```
+
+Nothing new may appear while the stem is being read for the first time — no figure, no first
+step. A stem that is still being read when the derivation starts has been shown rather than read,
+and the ponder beat after it is worth nothing. The budget applies once, on the shot where the
+stem lands; the later shots of the example carry it as context and owe it nothing.
+
 ### 2. Breathing budget
 
 ```
@@ -120,5 +132,9 @@ At Gate 3, watch the draft and answer these. If any answer is no, fix the plan, 
 - Does anything move while something else is being read?
 - Does the aha moment have room, or does the next thing start too soon?
 - Could the teacher speak the script comfortably over this, without rushing?
+- On a worked example: is the question readable in every shot of it, and was the stem given time
+  to be read before anything else moved?
+- Does the draft actually carry its soft subtitle track — `ffprobe -select_streams s` — and do the
+  cues sit where the plan says?
 
 The last question is the one that matters most, because nobody has recorded anything yet.
