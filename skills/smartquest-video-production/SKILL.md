@@ -80,7 +80,8 @@ actual re-render, not a description of what would change.
 | Subtitles | **Bilingual, always** — 繁體中文**書面語** on top, **English** underneath at 0.78× the size. The 中文 line is written in Chinese; the subject terms live in the English line (see `references/narration-and-subtitles.md`) |
 | Long form | 1920×1080 · 16:9 · **60 fps** · 5 min or longer |
 | Shorts | 1080×1920 · 9:16 · 60 fps · about 60 s |
-| Theme | The SmartQuest theme in `references/brand-theme.md`: **flat dark field — one colour `#0B0E14`, never a gradient — and Computer Modern throughout** in the 3Blue1Brown manner. SmartQuest identity is carried by the colour set, `brand_rule()` and the sans caption track |
+| Typography | **Computer Modern throughout** in the 3Blue1Brown manner — mathematics, titles and Latin figure labels alike. Songti TC for on-frame Chinese, PingFang HK Bold for the caption track. Not a per-project decision |
+| Identity | Carried by the **colour set**, `brand_rule()` and the sans caption track — never by a display face |
 | Audience | Hong Kong secondary students sitting the **English-language** DSE papers, taught in Cantonese |
 
 Only reach outside Manim when Manim genuinely cannot produce the shot — a screen recording, a
@@ -171,6 +172,12 @@ Sequencing — the hook, the ponder beat before the answer, and how a part is sp
 2. Long form or shorts (or both from one lesson).
 3. Target duration. Lock it exactly before the storyboard, not before.
 4. Whether a past-paper question should anchor the lesson.
+5. **Dark field or light field.** Both are measured and documented in
+   `references/brand-theme.md`; neither is a default that can be assumed. The dark one is the
+   library's usual look; the light one exists and is switched on with `sq.use_light()` before
+   anything is built. Ask it at Gate 1, with the dark field as the recommendation, and record the
+   answer in `video-plan.json` as `"theme": "dark"` or `"theme": "light"` — a theme discovered at
+   Gate 4 costs the whole picture master.
 
 Recommend a default rather than asking an open question. If the user already said it, do not ask again.
 

@@ -48,7 +48,7 @@ the implementation.
   "width": 1920,
   "height": 1080,
   "aspect": "16:9",
-  "theme": "smartquest",
+  "theme": "dark",                 // or "light" — asked at Gate 1, never assumed
   "learningObjective": "...",
   "misconception": "...",
   "ahaShotId": "S05",
@@ -134,6 +134,9 @@ Check these; do not assume them.
    lays every cue out to count its real lines and measure it against the reserved caption band.
 6. For each shot: `stillSeconds ≥ (end − start) × 0.25`.
 7. Shot IDs are stable after storyboard approval.
+7b. `theme` is `"dark"` or `"light"` and is the answer the user gave at Gate 1. A light-theme
+   lesson calls `sq.use_light()` before building anything; see `references/brand-theme.md`,
+   "The light theme". Discovering the wrong one at Gate 4 costs the whole picture master.
 8. `register` is `"math"` or `"verbal"` — the shot speaks one of them, never both. A figure is
    welcome in either.
    - `"math"` — equations, formulae, ratios, derivations. `onScreenText`'s **non-mathematical**
