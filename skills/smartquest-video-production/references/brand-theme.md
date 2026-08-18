@@ -99,6 +99,99 @@ that must be compared (two halves of an angle, two forces, two half-equations), 
 own colour and keep it everywhere the part appears. That is what lets the viewer *see* a
 relationship instead of being told it.
 
+## The light theme
+
+The dark field above is the library default and is what a lesson gets unless
+someone asks otherwise. A commission may ask for a light one; this is that
+theme, measured, so it is not re-derived per project. It is opt-in and changes
+nothing for the lessons that do not call it:
+
+```python
+import smartquest_theme as sq
+sq.use_light()                 # BEFORE anything is built
+from smartquest_theme import *  # the star import now copies the light values
+```
+
+Everything outside the colour table is unchanged — Computer Modern for all
+mathematics, titles and Latin figure labels, Songti TC for on-frame Chinese,
+PingFang HK Bold for the caption track, and the same sizes, bands and layout.
+
+| Token | Value | | on the field |
+|---|---|---|---|
+| `BG` | `#FBFBFD` | near-white with a trace of cool grey | — |
+| `INK` | `#3A322B` | a WARM near-black | 12.16:1 |
+| `MUTED` | `#6E6154` | DSE reasons, the exam question stem | 5.80:1 |
+| `LINE` | `#95897B` | axes, neutral geometry | 3.31:1 |
+
+Not paper white: a halo is painted in `BG` behind a label, and on pure white it
+reads as a hole rather than as the page. The near-black is warm rather than the
+dark theme's cool one, which is what keeps a light lesson from looking clinical.
+
+### The pens are the iOS system palette, deepened where it must be
+
+| Token | iOS name | Value | Means | |
+|---|---|---|---|---|
+| `GIVEN` | Blue | `#0088FF` | what the question gives you | 3.41:1 |
+| `UNKNOWN` | Orange | `#E56B00` | what you are solving for | 3.15:1 |
+| `RESULT` | Green | `#24A444` | a confirmed result, the locus | 3.15:1 |
+| `WARN` | Pink | `#FF2D55` | the trap, the misconception's answer | 3.53:1 |
+| `AUX` | — | `#8190A5` | construction — see below | 3.15:1 |
+| `REF_LIME` | Mint | `#00A08E` | further pen | 3.15:1 |
+| `REF_FUCHSIA` | Indigo | `#6155F5` | further pen | 4.92:1 |
+| `REF_CYAN` | Purple | `#CB30E0` | the second distance being compared | 4.03:1 |
+
+**Half the iOS palette cannot draw a line on a light page.** Those colours are
+designed as FILLS, with white type on top of them. Measured on `#FBFBFD` as
+thin strokes: Green 2.15:1, Mint 2.05:1, Cyan 2.09:1, Teal 2.09:1, Orange
+2.23:1, **Yellow 1.46:1** — all under the 3.0 floor for a graphical object. So
+each role takes the shipped value where it already clears the floor and the
+same hue and saturation at a darker value where it does not. Blue, Pink,
+Purple and Indigo are untouched; Green, Mint and Orange are deepened.
+
+**Yellow is unusable.** At 1.46:1 it cannot be a line, a label or a term card.
+It would work only as a fill behind dark type.
+
+**`AUX` is the one role not taken from iOS.** iOS Brown is the obvious fit for
+a construction line — until Orange is deepened enough to draw with, at which
+point it lands on `#D57621`, four degrees of hue from Brown, and the
+perpendicular and the segment beside it come out the same colour. Orange keeps
+the role and goes to full saturation; scaffolding becomes a cool slate, which
+is what scaffolding should look like beside eight teaching colours. It is a
+neutral on purpose and is excluded from the hue-separation count.
+
+Minimum hue separation across the seven coloured pens: **35°**, wider than the
+dark set's 25.2°.
+
+### What the light field costs, stated plainly
+
+These pens clear **3.0:1**, the WCAG floor for a **graphical object**, which is
+what they mostly draw. That is not the **4.5:1** for text. Where a pen colours a
+string rather than a stroke — a live readout, a term card, an answer wording —
+it is legible at 1080p and is not certified AA for small print. `INK` and
+`MUTED`, which carry the derivations and the exam question, stay well above it.
+
+On a light field brightness and contrast pull against each other, so this is a
+real ceiling, not a tuning failure. Two things buy vividness back without
+spending contrast:
+
+- **push chroma, not lightness.** A fully saturated pen at a fixed luminance
+  reads far more vivid than a pastel one and measures the same or better.
+- **a cream field** (`#FBF5EA`) is darker than white and lifts every ratio.
+  Measured, then abandoned only because this commission wanted white.
+
+### Captions
+
+Format, face, sizes, gaps and band are the skill's, untouched. Only the ink
+inverts: `CAPTION_INK` `#2A241E` (14.84:1) and `CAPTION_TERM` `#B45309`
+(4.86:1). The dark theme's `#F2F5FC` is invisible here, and shipping it would
+mean a film with no readable subtitles.
+
+### Verify before you adopt a colour
+
+`contrast(fg, bg)` is in the theme module. Measure; do not judge a colour in an
+editor. The dark theme's 400-level inks measure 1.86–2.5:1 on this field and
+look perfectly reasonable in a swatch.
+
 ## Brand signature
 
 `brand_rule()` — the indigo→purple bar, `#4B60D6 → #9747FF`. Use it **once per video**, under

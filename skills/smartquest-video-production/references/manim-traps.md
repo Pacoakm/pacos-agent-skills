@@ -410,6 +410,85 @@ find media/videos/**/partial_movie_files -name '*.mp4' -newermt '-2 minutes' | w
 A working render burns CPU and writes partial movie files. A hung one does neither. If both are
 zero, kill it and bisect against a control scene — do not wait, and do not re-run it unchanged.
 
+## 31. Rebinding a module's colours does not reach its DEFAULT ARGUMENTS
+
+Re-theming by assigning to `smartquest_theme`'s globals works for every colour
+the helpers read at CALL time — `mtex(reason, color=MUTED, ...)` inside
+`step()` picks up the new value. It does **not** reach a colour captured in a
+signature:
+
+```python
+def step(statement, reason=None, color=INK, size=SIZE_HEADING):
+```
+
+`INK` there was evaluated once, when `def` ran. Every caller that does not name
+a colour keeps the old one, and on an inverted field that is near-white type on
+a near-white page — invisible, with no error.
+
+The fingerprint is unmistakable once you know it: in lesson 08 the derivation
+panels rendered blank while the grey DSE-reason line *underneath* them was
+perfectly readable, because the reason line's colour is read inside the body
+and the statement's colour is a default.
+
+**Fix:** `use_light()` rewrites `__defaults__` and `__kwdefaults__` as well, and
+asserts that `title`, `body`, `label`, `mtex`, `mtex_ref` and `step` were all
+reached. Any re-theming that skips this ships ghost type.
+
+## 32. `manim -s` renders an EMPTY frame once scenes hand over
+
+Trap #17 says a still skips animations and applies end states. The corollary
+bites as soon as scenes are written to hand over cleanly: a shot whose last
+beat fades everything out so its final frame matches the next shot's first has
+an END STATE OF NOTHING, so `-s` produces a blank png.
+
+That breaks the Gate 2 workflow, which renders panels with `-s`. Render the
+scene as a movie and extract a frame by INDEX instead:
+
+```bash
+manim -ql src/script.py S14Parabola
+ffmpeg -i media/videos/script/480p15/S14Parabola.mp4 \
+  -vf "select=eq(n\,320)" -vsync 0 -frames:v 1 panel.png
+```
+
+## 33. `structural()` fills a stroke-only mobject, exactly as `set_opacity` does
+
+`structural()` calls `set_opacity()`, so trap #25 applies to it one tier down:
+a `Circle` or a `ParametricFunction` pushed to `OP_STRUCTURE` acquires a 15%
+FILL and renders as a soft blob instead of an outline. It is invisible on a
+`Line`, which has no area — which is why a set of axes looks correct while the
+mini-diagram beside it does not.
+
+**Fix:** for anything stroke-only, set the stroke alone:
+
+```python
+for sub in m.family_members_with_points():
+    sub.set_stroke(opacity=OP_STRUCTURE)
+```
+
+## 34. A cut is only clean if the previous shot ENDS on the next shot's opening
+
+Invariant 10 is usually read as "the next scene should rebuild what the last
+one had". The cheaper and more reliable direction is the other one: each shot
+declares what it hands over and fades everything else BEFORE the cut. A shot
+that hands over nothing ends on the empty field, which is exactly what the next
+shot's first frame is.
+
+Two failures come with it, both of which shipped in lesson 08 before being
+measured:
+
+- **No room to hand over.** If the choreography fills the shot to its last
+  frame there is no time left to fade, and a silently skipped fade means a full
+  frame handed to a scene that opens empty — a white flash. Reserve the fade
+  when spacing the reveals, and make the missing room an assertion, not a
+  skip.
+- **A parent faded whole.** Keeping one CHILD of a group and fading the parent
+  takes the kept child with it. Fade the group's non-kept children instead.
+
+Measure it per cut, on the per-scene clips, before assembling anything:
+`verify_master.py` catches this only on the finished master, where the fix
+costs a full re-render. Compare the last frame of scene N against the first of
+N+1 by frame INDEX, and gate on mean absolute luma.
+
 ---
 
 ## The pattern

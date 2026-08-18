@@ -1071,3 +1071,125 @@ def structural(*mobjects):
     for m in mobjects:
         m.set_opacity(OP_STRUCTURE)
     return mobjects[0] if len(mobjects) == 1 else VGroup(*mobjects)
+
+
+# ═════════════════════════════════════════════════════ the light theme ══════
+import sys as _sys
+# The library's default is the DARK field above. A lesson may be commissioned
+# on a light one instead; `use_light()` is that theme, measured, so it does not
+# have to be re-derived per project. Call it BEFORE any mobject is built —
+# from the scene module, above `from smartquest_theme import *`:
+#
+#     import smartquest_theme as sq
+#     sq.use_light()
+#     from smartquest_theme import *      # copies the light values
+#
+# See references/brand-theme.md, "The light theme", for how the values were
+# arrived at and what they cost.
+LIGHT = {
+    "BG": "#FBFBFD",            # near-white, a trace of cool grey
+    "INK": "#3A322B",           # warm near-black                    12.16:1
+    "MUTED": "#6E6154",         # DSE reasons, question stem          5.80:1
+    "LINE": "#95897B",          # axes, neutral geometry              3.31:1
+    "GIVEN": "#0088FF",         # iOS Blue, as shipped                3.41:1
+    "UNKNOWN": "#E56B00",       # iOS Orange at full saturation       3.15:1
+    "RESULT": "#24A444",        # iOS Green, deepened                 3.15:1
+    "WARN": "#FF2D55",          # iOS Pink, as shipped                3.53:1
+    "AUX": "#8190A5",           # cool slate — deliberately NOT iOS   3.15:1
+    "REF_LIME": "#00A08E",      # iOS Mint, deepened                  3.15:1
+    "REF_FUCHSIA": "#6155F5",   # iOS Indigo, as shipped              4.92:1
+    "REF_CYAN": "#CB30E0",      # iOS Purple, as shipped              4.03:1
+    "BRAND_FROM": "#4B60D6",
+    "BRAND_TO": "#9747FF",
+    "CAPTION_INK": "#2A241E",   # both caption lines                 14.84:1
+    "CAPTION_TERM": "#B45309",  # the declared subject term           4.86:1
+}
+
+# Every dark value that has to be swapped out of a CAPTURED DEFAULT, keyed by
+# the dark hex. See _relight_defaults() for why this exists at all.
+_DARK_KEYS = {
+    "#0B0E14": "BG", "#E9EDF7": "INK", "#98A3BA": "MUTED", "#6B7893": "LINE",
+    "#60A5FA": "GIVEN", "#FB923C": "UNKNOWN", "#34D399": "RESULT",
+    "#FB7185": "WARN", "#A78BFA": "AUX", "#A3E635": "REF_LIME",
+    "#E879F9": "REF_FUCHSIA", "#22D3EE": "REF_CYAN",
+    "#F2F5FC": "CAPTION_INK", "#FBBF24": "CAPTION_TERM",
+}
+
+# The helpers a scene calls without naming a colour. If any of them keeps a
+# dark default, its type renders near-white on the light field — silently.
+_MUST_RELIGHT = ("title", "body", "label", "mtex", "mtex_ref", "step")
+
+
+def _relight_defaults(palette):
+    """Rewrite the colours CAPTURED in helper default arguments.
+
+    Rebinding the module globals is NOT enough, and the failure is silent. A
+    helper written as
+
+        def step(statement, reason=None, color=INK, size=SIZE_HEADING):
+            ...
+            r = mtex(reason, color=MUTED, ...)
+
+    reads MUTED at CALL time — so that line picks up the new value — but
+    `color=INK` was evaluated once, when `def` ran, while the module was still
+    dark. Every caller that does not pass a colour therefore gets #E9EDF7, and
+    on a near-white field that is a barely visible ghost. It cost a full render
+    round on lesson 08: the derivation panels came out blank-looking while the
+    grey reason line under them was perfectly readable, which is the
+    fingerprint of exactly this bug.
+    """
+    import types
+    mod = _sys.modules[__name__]
+    swap = {dark: palette[name] for dark, name in _DARK_KEYS.items()
+            if name in palette}
+    patched = set()
+    for name in dir(mod):
+        fn = getattr(mod, name)
+        if not isinstance(fn, types.FunctionType) or name.startswith("__"):
+            continue
+        for slot in ("__defaults__", "__kwdefaults__"):
+            values = getattr(fn, slot, None)
+            if not values:
+                continue
+            if slot == "__defaults__":
+                new = tuple(swap.get(str(v).upper(), v) for v in values)
+            else:
+                new = {k: swap.get(str(v).upper(), v) for k, v in values.items()}
+            if new != values:
+                setattr(fn, slot, new)
+                patched.add(name)
+    missing = [n for n in _MUST_RELIGHT if n not in patched]
+    assert not missing, (
+        f"{missing} kept a dark default colour — their text would render "
+        f"near-white on the light field")
+    return patched
+
+
+def use_light(palette=None):
+    """Switch this module to the light theme, in place.
+
+    Call it before building anything. Returns the palette actually applied.
+    """
+    mod = _sys.modules[__name__]
+    p = dict(LIGHT)
+    p.update(palette or {})
+    for k, v in p.items():
+        setattr(mod, k, v)
+    mod.REF_SERIES = (p["GIVEN"], p["UNKNOWN"], p["AUX"], p["RESULT"],
+                      p["WARN"], p["REF_LIME"], p["REF_FUCHSIA"],
+                      p["REF_CYAN"])
+    mod.PALETTE = dict(bg=p["BG"], ink=p["INK"], muted=p["MUTED"],
+                       line=p["LINE"], given=p["GIVEN"], unknown=p["UNKNOWN"],
+                       result=p["RESULT"], warn=p["WARN"], aux=p["AUX"])
+    _relight_defaults(p)
+    return p
+
+
+def contrast(fg, bg):
+    """WCAG contrast ratio. Measure before adopting any colour."""
+    def lum(h):
+        r, g, b = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]
+        f = lambda c: c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+        return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+    a, b = sorted([lum(fg), lum(bg)], reverse=True)
+    return (a + 0.05) / (b + 0.05)
