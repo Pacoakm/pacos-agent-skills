@@ -58,8 +58,19 @@ a lesson that may be wrong.
 | Stop | What the user sees | What they are approving |
 |---|---|---|
 | End of Gate 1 | `brief.md` + the full narration/subtitle script + the shot timeline | The teaching, the wording, the timing |
-| End of Gate 2 | The rendered storyboard sheets, as files | Every frame's composition and continuity |
-| End of Gate 3 | The concatenated draft video, as a file | The real motion and pacing |
+| End of Gate 2 | The rendered storyboard panels | Every frame's composition and continuity |
+| End of Gate 3 | The draft video, with its subtitles as a soft track | The real motion and pacing |
+
+**All three are shown from the browser dashboard, which is installed at the start
+of Gate 1 and stays open for the whole build.** Send the file as well when it is
+a video, but the page is where the user reads the script, clicks through the
+storyboard, plays the draft with captions on, and sees every check. See
+`references/browser-tools.md`.
+
+```bash
+python3 ~/.claude/skills/smartquest-video-production/tools/install.py <project>
+python3 <project>/tools/serve.py 8777 <dir above videos/>
+```
 
 At each stop: present the work, state what you want checked, set the matching status in
 `video-plan.json`, and **stop the turn**. Do not proceed to the next gate on your own judgement,
@@ -183,6 +194,14 @@ Recommend a default rather than asking an open question. If the user already sai
 
 ## Gate 1 — Lesson design, script, subtitles
 
+### 0. Install the browser tools first
+
+Before writing anything, run `install.py` and start the server (above), then give
+the user the dashboard URL. Everything from here — the script, the storyboard,
+the draft, the renders, the checks — is shown there. Building the lesson first
+and bolting a review page on afterwards means the early gates get approved on
+prose instead of on the artifact.
+
 ### 1. Design the lesson before any code
 
 Write `brief.md` covering, in this order:
@@ -276,10 +295,11 @@ shots again, and stop again.
 
 ## Gate 2 — Storyboard
 
-One frame per shot, **rendered as a Manim still from the real scene**, then assembled into review
-sheets with `scripts/build_storyboard.py`. Each panel carries: shot ID, time range, the visual,
-the motion, the transition, and **the subtitle text with its character count and the pacing
-verdict**.
+One frame per shot, **rendered as a Manim still from the real scene**. The panels are then shown
+in the dashboard's Gate 2 card — click one for full size — each with its shot ID, time range,
+visual and motion. Rebuild the card with `python3 tools/build_dashboard.py` after rendering the
+stills. `scripts/build_storyboard.py` still produces PNG sheets when a file is wanted (to paste
+somewhere, or offline), but the browser is where the user reviews them.
 
 ```bash
 manim -ql -s --format=png -o S01.png src/script.py S01Hook     # → storyboard/frames/
@@ -338,6 +358,20 @@ On revisions: re-author the affected frames, rebuild the sheets with `build_stor
 them again, and stop again.
 
 ## Gate 3 — Silent draft render
+
+```bash
+python3 tools/render.py draft          # renders what is stale, stitches, muxes the SRT
+```
+
+One command: it renders only the scenes older than `src/`, stitches them, checks the total
+against `durationSeconds`, and muxes the subtitles in as a soft track. The dashboard's Draft
+render card does the same with a Start button and a live log, and the Gate 3 card plays the
+result with the captions toggleable.
+
+**Never edit `src/` while a render is running.** Manim imports the modules once at start, so the
+run finishes with the code it began with and every file it wrote is then older than the source.
+
+The manual equivalent, if you need it:
 
 ```bash
 manim -ql src/script.py <every scene>
@@ -518,6 +552,12 @@ Report what you verified and how. If something was not checked, say so.
 
 ## Hard rules
 
+**Never edit `src/` while a render is running, and never start the master render without
+being asked.** Manim imports the modules once at start, so a run finishes with the code it
+began with and everything it produced is then stale — three full renders were thrown away
+this way in one session. The master costs hours; it is started only on an explicit
+instruction, and only from a draft the user has approved.
+
 1. **Never skip an approval stop.** Gates 1, 2 and 3 each end by showing the user the actual
    artifact — the script, the storyboard sheets, the draft video — and stopping the turn. No
    phrasing of the request removes these three stops, and no amount of confidence in the work
@@ -623,6 +663,8 @@ Report what you verified and how. If something was not checked, say so.
 ## Bundled resources
 
 - `references/brand-theme.md` — the SmartQuest palette, typography, layout and motion grammar.
+- `references/browser-tools.md` — the dashboard, the camera picker, the beat review, the
+  render driver and the checks. Install at the start of Gate 1.
 - `references/3d-geometry.md` — the extra gates a solid-geometry lesson needs.
 - `references/manim-traps.md` — the ways Manim renders without an error and is still wrong.
 - `references/engines-and-plugins.md` — when ManimGL is allowed, and the verified plugin state.
@@ -636,6 +678,9 @@ Report what you verified and how. If something was not checked, say so.
 - `references/production-contract.md` — `video-plan.json` schema, folder layout, invariants.
 - `scripts/smartquest_theme.py` — importable Manim theme: colours, fonts, layout, helpers.
 - `scripts/build_captions.py` — plan → caption scene + `.srt` + pacing report.
+- `tools/install.py` — puts the browser tools into a project. Run at the start of Gate 1.
+- `tools/render.py` — draft and master renders, stitching, subtitle muxing.
+- `tools/serve.py` — the local server the pages need (save-back, Range, long jobs).
 - `scripts/check_camera.py` — rejects degenerate 3D camera angles before rendering.
 - `scripts/check_framing.py` — projects 3D camera keyframes through a real `ThreeDCamera`:
   frame fill, off-screen elements, caption-band intrusions, and the angle a shot will actually

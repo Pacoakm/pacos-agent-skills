@@ -513,3 +513,72 @@ almost all of it:
 ffmpeg -y -i master.mp4 -vf "select=eq(n\,9719)" -vsync 0 -frames:v 1 a.png
 ffmpeg -y -i master.mp4 -vf "select=eq(n\,9720)" -vsync 0 -frames:v 1 b.png
 ```
+
+## 35. A figure that moves between keyframes desynchronises in three ways
+
+A shot whose figure offset differs between its opening and its closing camera has to
+*travel*. Shifting "everything on stage" looks right and is wrong three separate ways.
+All three were found by eye, in the video, one render at a time.
+
+**(a) A captured origin goes stale.** `O = ORG + self.off` taken before the move still
+holds the opening offset afterwards. Anything built later from `O` — a flipped normal,
+a curl arc, a projection line — stays where the figure used to be. Re-read the origin
+*immediately after* the move, not two beats later:
+
+```python
+self.move_camera_kf(1, run_time=7.0)
+O = self.at_offset(ORG)      # re-read: the move took the figure with it
+```
+
+**(b) `always_redraw` throws the shift away.** The updater rebuilds the mobject from its
+own lambda on the very next frame, at the old origin, so it parts company with the static
+geometry by exactly the offset delta. Exclude updater-driven mobjects from the shift and
+give them a *live* offset to read instead — a `VectorizedPoint` animated in step:
+
+```python
+b = always_redraw(lambda: vec3d(self.live_off + ORG, ..., REF_LIME))
+```
+
+**(c) Built before the move, added after it.** A mobject constructed early but only
+`Create`d later is not on stage when the shift animation runs, so it never receives it.
+This is how a φ arc ended up drawn on C instead of A. Build it after the move.
+
+Sweep for (c) with a scan for `Create(x)` after a camera move where `x` was assigned
+before it — it is invisible in review otherwise.
+
+## 36. `face_camera` puts the label on screen immediately
+
+`ThreeDScene.add_fixed_orientation_mobjects` calls `Scene.add` itself. Registering a label
+so it keeps facing the lens therefore *shows* it, from frame 0 — which is how an
+`AB × AC` label was on the figure a full beat before the arrow it names existed. Register
+and remove, then reveal with the beat that draws the thing:
+
+```python
+def face_camera(self, *mobs, show=False):
+    self.add_fixed_orientation_mobjects(*mobs)
+    if not show:
+        self.remove(*mobs)
+```
+
+Draw the line first, name it second — one beat apart. The only exception is a bare vertex
+dot, which is not worth a beat of its own, so its letter arrives with it.
+
+## 37. `GrowArrow` raises on `Arrow3D`
+
+```
+TypeError: VMobject.scale() got an unexpected keyword argument 'scale_tips'
+```
+
+`GrowArrow` passes `scale_tips`, which only Manim's 2D `Arrow` understands; `Arrow3D` is a
+`Surface`. Use `GrowFromPoint(v, v.start)` — same reading, plain scale about the tail.
+And do use it: `Create` on an `Arrow3D` traces the outline of a cylinder-and-cone mesh, so
+the vector appears to be drawn as a piece of plumbing rather than to leave its origin.
+
+## 38. `check_framing.project` silently ignored `gamma`
+
+The helper never called `set_gamma`, so every framing check ever run on a rolled camera
+was measured against an unrolled one. Two shots in this lesson ship at `gamma = 323.5°`;
+their reports were confidently wrong, and it only surfaced because a browser tool computing
+the same projection independently disagreed. Fixed in the script — but the lesson is that a
+checking tool needs its own check: bake reference projections from a real `ThreeDCamera`
+into the data and have the second implementation verify itself against them on load.

@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>13 Vector Product — production</title>
+<style>
+  :root{--bg:#0B0E14;--panel:#11151f;--edge:#232a3a;--ink:#E9EDF7;--muted:#98A3BA;
+        --line:#6B7893;--ok:#34D399;--warn:#FB7185;--accent:#7B8CF0;--amber:#FBBF24}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;
+       font:13px/1.55 ui-sans-serif,-apple-system,"PingFang HK",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:12px 20px;
+         border-bottom:1px solid var(--edge);position:sticky;top:0;background:var(--bg);z-index:5}
+  header h1{font-size:14px;margin:0;font-weight:600}
+  a.tool{display:inline-block;background:var(--accent);color:#0B0E14;font-weight:600;
+         text-decoration:none;border-radius:6px;padding:5px 12px;font-size:12px}
+  a.tool.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  main{padding:16px 20px 60px;display:grid;gap:16px;
+       grid-template-columns:repeat(auto-fit,minmax(430px,1fr));max-width:1500px}
+  section{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:14px 16px}
+  section h2{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.09em;
+             color:var(--muted);font-weight:600;display:flex;align-items:center;gap:9px}
+  .pill{font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--edge);color:var(--muted)}
+  .pill.ok{color:var(--ok);border-color:#1d4b3c}
+  .pill.bad{color:var(--warn);border-color:#5a2530}
+  .pill.warn{color:var(--amber);border-color:#5a4a20}
+  .sub{color:var(--line);font-size:12px;margin:0 0 10px}
+  button{background:#171d2b;border:1px solid var(--edge);color:var(--ink);border-radius:6px;
+         padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button[disabled]{opacity:.5;cursor:default}
+  pre{background:#0a0d13;border:1px solid var(--edge);border-radius:6px;padding:9px;
+      font:11px/1.5 ui-monospace,Menlo,monospace;max-height:280px;overflow:auto;
+      white-space:pre-wrap;color:var(--muted);margin:9px 0 0}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+  td{padding:2px 0;vertical-align:top}
+  td.k{color:var(--muted)} td.v{text-align:right;font-variant-numeric:tabular-nums}
+  .bar{height:9px;border-radius:5px;background:#0a0d13;border:1px solid var(--edge);overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+  .chip{font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid var(--edge);color:var(--line)}
+  .chip.done{color:var(--ok);border-color:#1d4b3c}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  section.wide{grid-column:1 / -1}
+  .gate{font-size:10px;padding:1px 7px;border-radius:4px;background:#1b2233;color:var(--accent);
+        letter-spacing:.06em;font-weight:700}
+  .doc{max-height:420px;overflow:auto;border:1px solid var(--edge);border-radius:6px;
+       padding:10px 12px;background:#0a0d13}
+  .doc h1,.doc h2,.doc h3{font-size:13px;margin:12px 0 4px;color:var(--ink)}
+  .doc h1:first-child{margin-top:0}
+  .doc p,.doc li{color:var(--muted);font-size:12px;margin:3px 0}
+  .doc code{background:#151b28;padding:0 4px;border-radius:3px;font-size:11px}
+  .doc strong{color:var(--ink)}
+  .tl{width:100%;border-collapse:collapse;font-size:12px}
+  .tl td{padding:3px 6px;border-bottom:1px solid #171d2b;vertical-align:top}
+  .tl td.i{color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .tl td.p{color:var(--muted)}
+  .tl tr.aha td{background:#1a1526}
+  .sb{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+      max-height:640px;overflow:auto;padding-right:4px}
+  .sb figure{margin:0;border:1px solid var(--edge);border-radius:8px;overflow:hidden;background:#0d1017}
+  .sb img{width:100%;display:block;background:#000;cursor:zoom-in}
+  .sb figcaption{padding:5px 7px;font-size:11px;color:var(--muted)}
+  .sb .id{color:var(--accent);font-variant-numeric:tabular-nums}
+  .tabs{display:flex;gap:4px;margin-bottom:8px}
+  .tabs button.on{border-color:var(--accent);color:var(--accent)}
+  video{width:100%;border-radius:6px;background:#000;display:block}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">…</h1>
+  <a class="tool" href="camera-picker.html">Camera picker</a>
+  <a class="tool" href="review.html">Beat review</a>
+  <a class="tool alt" href="../out/draft.mp4">draft.mp4</a>
+  <span class="pill" id="served"></span>
+</header>
+<main>
+
+<section class="wide">
+  <h2><span class="gate">GATE 1</span> Lesson design, script, timeline
+      <span class="pill" id="g1-pill">—</span></h2>
+  <p class="sub">What the user approves first: the teaching, the wording, the timing.
+     Read it here rather than opening four files.</p>
+  <div class="tabs" id="g1-tabs"></div>
+  <div class="doc" id="g1-doc">—</div>
+</section>
+
+<section class="wide">
+  <h2><span class="gate">GATE 2</span> Storyboard <span class="pill" id="g2-pill">—</span></h2>
+  <p class="sub">One real Manim still per shot, with its visual, motion and transition.
+     Click a panel to see it full size. Never a hand-drawn mock — the panel has to be
+     the frame.</p>
+  <div class="sb" id="g2-sb"></div>
+</section>
+
+<section class="wide">
+  <h2><span class="gate">GATE 3</span> Draft <span class="pill" id="g3-pill">—</span></h2>
+  <p class="sub">The silent picture with its subtitles as a <b>soft track</b> — toggle them
+     in the player. Burned-in captions belong to the master only.</p>
+  <video id="g3-vid" controls preload="metadata" crossorigin="anonymous"></video>
+  <div class="row">
+    <a class="tool alt" id="g3-dl" href="#">download draft.mp4</a>
+    <a class="tool alt" href="review.html">beat review</a>
+    <span class="pill" id="g3-info"></span>
+  </div>
+</section>
+
+<section>
+  <h2>Draft render <span class="pill" id="p-pill">—</span>
+      <span class="pill" id="draft-state">idle</span></h2>
+  <p class="sub">480p15, no captions — the version you review. Only scenes older than
+     <code>src/</code> are re-rendered; the rest are stitched as they are.
+     Result: <code>out/draft.mp4</code></p>
+  <div class="bar"><i id="p-bar" style="width:0"></i></div>
+  <table id="p-tab"></table>
+  <div class="chips" id="p-chips"></div>
+  <div class="row">
+    <button data-start="draft">Start draft render</button>
+    <button data-stop="draft">Stop</button>
+    <button data-run="progress">Refresh</button>
+    <label class="pill"><input type="checkbox" id="p-auto" checked> auto every 10s</label>
+  </div>
+  <pre id="draft-log">not started</pre>
+</section>
+
+<section>
+  <h2>Master render <span class="pill" id="m-pill">—</span>
+      <span class="pill" id="master-state">idle</span></h2>
+  <p class="sub" id="m-sub">1080p60 with the bilingual caption track burned on.
+     Hours, not minutes — start it when you are done reviewing.
+     Result: <code>out/master.mp4</code></p>
+  <div class="bar"><i id="m-bar" style="width:0"></i></div>
+  <table id="m-tab"></table>
+  <div class="chips" id="m-chips"></div>
+  <div class="row">
+    <button data-start="master">Start master render</button>
+    <button data-stop="master">Stop</button>
+  </div>
+  <pre id="master-log">not started</pre>
+</section>
+
+<section>
+  <h2>Camera poses <span class="pill" id="c-pill">—</span></h2>
+  <p class="sub">Framing against the reserved bands, plus the three cameras that carry a
+     geometric guarantee (true-size angle, edge-on plane).</p>
+  <div class="row"><button data-run="poses">Run check</button>
+    <a class="tool alt" href="camera-picker.html">open picker</a></div>
+  <div id="c-body"></div>
+</section>
+
+<section>
+  <h2>Cuts <span class="pill" id="j-pill">—</span></h2>
+  <p class="sub">Camera and figure either side of every join, and what is on stage before
+     and after. Pixels cannot tell those apart; this can.</p>
+  <div class="row"><button data-run="joins">Run check</button></div>
+  <pre id="j-out">not run yet</pre>
+</section>
+
+<section>
+  <h2>Labels <span class="pill" id="l-pill">—</span></h2>
+  <p class="sub">Written by the render itself: every label measured against the thing it
+     names, every beat. Distance, timing, collisions.</p>
+  <div id="l-body"></div>
+</section>
+
+<section>
+  <h2>Rebuild <span class="pill" id="d-pill">—</span></h2>
+  <p class="sub">Stitch without re-rendering, refresh the review page, re-extract the
+     3D figures the camera picker draws.</p>
+  <div class="row"><button data-run="concat">Stitch draft</button>
+    <button data-run="review">Rebuild beat review</button>
+    <button data-run="extract">Re-extract 3D for the picker</button>
+    <button data-run="dashboard">Reload gates 1–3</button></div>
+  <pre id="d-out">—</pre>
+</section>
+
+</main>
+<script>
+const $ = id => document.getElementById(id);
+const HERE = location.pathname.replace(/\/tools\/[^/]*$/, "");
+const pill = (el, cls, text) => { el.className = "pill " + cls; el.textContent = text; };
+const esc = s => (s||"").replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+let live = false;
+
+async function jget(path){
+  try{ const r = await fetch(path + "?t=" + Date.now(), {cache:"no-store"});
+       return r.ok ? await r.json() : null; }catch(e){ return null; }
+}
+async function run(name, out){
+  const btns = document.querySelectorAll(`[data-run="${name}"]`);
+  btns.forEach(b=>b.disabled = true);
+  if(out) out.textContent = "running…";
+  try{
+    const r = await fetch(`${HERE}/run/${name}`, {method:"POST"});
+    if(!r.ok) throw new Error(r.status === 403 ? "server has no /run endpoint" : r.status);
+    const d = await r.json();
+    if(out) out.textContent = d.out.trim() || "(no output)";
+    live = true;
+    await refresh();
+  }catch(e){
+    if(out) out.textContent = "could not run: " + e.message
+      + "\n\nserve this page with tools/serve.py to get the buttons working.";
+  }finally{ btns.forEach(b=>b.disabled = false); }
+}
+/* ---- long jobs: start, stop, tail the log ---- */
+async function job(verb, name){
+  try{
+    const r = await fetch(`${HERE}/${verb}/${name}`, {method:"POST"});
+    const d = await r.json();
+    if(d.error) $(name + "-log").textContent = d.error;
+    live = true;
+  }catch(e){ $(name + "-log").textContent = "server not reachable: " + e.message; }
+  pollJob(name);
+}
+async function pollJob(name){
+  try{
+    const r = await fetch(`${HERE}/job/${name}`, {method:"POST"});
+    const d = await r.json();
+    const st = $(name + "-state");
+    st.className = "pill " + (d.running ? "warn" : (d.lines ? "ok" : ""));
+    st.textContent = d.running ? "running" : (d.lines ? "finished" : "idle");
+    if(d.log) $(name + "-log").textContent = d.log.trim().split("\n").slice(-14).join("\n");
+    return d.running;
+  }catch(e){ return false; }
+}
+document.querySelectorAll("[data-start]").forEach(b=>
+  b.onclick = ()=> job("start", b.dataset.start));
+document.querySelectorAll("[data-stop]").forEach(b=>
+  b.onclick = ()=> job("stop", b.dataset.stop));
+
+document.querySelectorAll("[data-run]").forEach(b=>{
+  const targets = {joins:$("j-out"), concat:$("d-out"), review:$("d-out"), extract:$("d-out")};
+  b.onclick = ()=> run(b.dataset.run, targets[b.dataset.run] || null);
+});
+
+/* ---- gates 1-3 ---- */
+let DASH = null;
+const md = t => (t||"")
+  .replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]))
+  .replace(/^### (.*)$/gm,"<h3>$1</h3>").replace(/^## (.*)$/gm,"<h2>$1</h2>")
+  .replace(/^# (.*)$/gm,"<h1>$1</h1>")
+  .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+  .replace(/`([^`]+)`/g,"<code>$1</code>")
+  .replace(/^[-*] (.*)$/gm,"<li>$1</li>")
+  .replace(/\n{2,}/g,"</p><p>");
+
+function timelineHTML(d){
+  return `<table class="tl">` + d.timeline.map(s=>
+    `<tr class="${s.id===d.ahaShotId?"aha":""}"><td class="i">${s.id}</td>`
+    + `<td class="i">${s.start}–${s.end}s</td>`
+    + `<td class="p">${esc(s.purpose||s.knowledgePoint||"")}</td>`
+    + `<td class="i">${s.cues} cues</td></tr>`).join("") + `</table>`;
+}
+function showG1(which){
+  const d = DASH; if(!d) return;
+  document.querySelectorAll("#g1-tabs button").forEach(b=>
+    b.className = b.dataset.g1 === which ? "on" : "");
+  const box = $("g1-doc");
+  if(which === "timeline") box.innerHTML = timelineHTML(d);
+  else if(which === "plan") box.innerHTML =
+      `<p><strong>${esc(d.title||"")}</strong> — ${esc(d.subject||"")} · ${esc(d.topic||"")}</p>`
+    + `<p>${d.format.w}×${d.format.h} @ ${d.format.fps}fps · ${d.format.seconds}s · status <code>${esc(d.status||"")}</code></p>`
+    + `<p><strong>Objective</strong> ${esc(d.learningObjective||"")}</p>`
+    + `<p><strong>Misconception</strong> ${esc(d.misconception||"")}</p>`
+    + `<p><strong>Aha</strong> ${esc(d.ahaShotId||"")}</p>`
+    + (d.dseReasons?.length ? `<p><strong>DSE reasons</strong> ${esc(d.dseReasons.join(", "))}</p>` : "");
+  else{
+    const doc = which === "brief" ? d.brief : d.script;
+    box.innerHTML = doc ? "<p>" + md(doc.text) + "</p>" : "<p>not written yet</p>";
+  }
+}
+function renderGates(d){
+  DASH = d;
+  const tabs = [["plan","plan"],["brief", d.brief?.name || "brief"],
+                ["script", d.script?.name || "script"],["timeline","timeline"]];
+  $("g1-tabs").innerHTML = tabs.map(([k,label])=>
+    `<button data-g1="${k}">${esc(label)}</button>`).join("");
+  document.querySelectorAll("#g1-tabs button").forEach(b=>
+    b.onclick = ()=> showG1(b.dataset.g1));
+  showG1("plan");
+  pill($("g1-pill"), d.brief && d.script ? "ok" : "warn",
+       `${d.timeline.length} shots · ${d.brief?"brief":"no brief"} · ${d.script?"script":"no script"}`);
+
+  $("g2-sb").innerHTML = d.storyboard.map(s=>
+    `<figure><img loading="lazy" src="${s.src}" onclick="window.open(this.src)">`
+    + `<figcaption><span class="id">${s.id} · ${s.start}–${s.end}s</span><br>`
+    + `${esc((s.visual||"").slice(0,110))}</figcaption></figure>`).join("")
+    || `<p class="sub">no panels yet — render them at Gate 2</p>`;
+  pill($("g2-pill"), d.storyboard.length ? "ok" : "",
+       `${d.storyboard.length} panel(s)`);
+
+  const v = $("g3-vid");
+  if(d.draft){
+    v.innerHTML = d.vtt
+      ? `<track default kind="subtitles" srclang="zh" label="中文/EN" src="${d.vtt}">` : "";
+    v.src = d.draft;
+    $("g3-dl").href = d.draft;
+    pill($("g3-pill"), "ok", d.vtt ? "draft + soft subs" : "draft, no subtitle track");
+    $("g3-info").textContent = d.vtt ? "subtitles: pick the track in the player"
+                                     : "no subtitle sidecar found";
+  }else pill($("g3-pill"), "", "not rendered");
+}
+
+/* ---- render ---- */
+async function refreshProgress(){
+  const d = await jget("../out/render-progress.json");
+  if(!d){ pill($("p-pill"), "", "no data"); return; }
+  const pc = Math.round(100 * d.done / d.total);
+  pill($("p-pill"), d.done === d.total ? "ok" : "warn", `${d.done}/${d.total}  ${pc}%`);
+  $("p-bar").style.width = pc + "%";
+  const mm = s => s == null ? "—" : `${Math.floor(s/60)}m${String(Math.round(s%60)).padStart(2,"0")}s`;
+  $("p-tab").innerHTML =
+      `<tr><td class="k">elapsed</td><td class="v">${mm(d.elapsed)}</td></tr>`
+    + `<tr><td class="k">per scene</td><td class="v">${d.per_scene ?? "—"}s</td></tr>`
+    + `<tr><td class="k">eta</td><td class="v">${mm(d.eta)}</td></tr>`
+    + `<tr><td class="k">rendering</td><td class="v">${d.current || "—"}</td></tr>`;
+  $("p-chips").innerHTML = d.scenes.map(s=>
+    `<span class="chip ${s.fresh?"done":""}">${s.id}</span>`).join("");
+}
+
+/* ---- poses ---- */
+async function refreshPoses(){
+  const d = await jget("../out/check-poses.json");
+  if(!d){ pill($("c-pill"), "", "not run"); return; }
+  pill($("c-pill"), d.problems ? "bad" : "ok",
+       d.problems ? `${d.problems} problem(s)` : `${d.poses} poses clean`);
+  const bad = d.rows.filter(r=>r.framing.length || (r.guarantee && !r.guarantee.ok));
+  $("c-body").innerHTML = bad.length
+    ? bad.map(r=>`<pre>${esc(r.key)}  φ${r.cam.phi.toFixed(1)} θ${r.cam.theta.toFixed(1)} γ${r.cam.gamma.toFixed(1)}\n`
+        + esc([...r.framing, r.guarantee && !r.guarantee.ok
+               ? r.guarantee.name + ": " + r.guarantee.detail : ""].filter(Boolean)
+              .map(x=>"  " + x).join("\n")) + `</pre>`).join("")
+    : `<pre>all ${d.poses} poses pass framing and every geometric guarantee</pre>`;
+}
+
+/* ---- labels ---- */
+async function refreshLabels(){
+  const d = await jget("../out/label-faults.json");
+  if(!d){ pill($("l-pill"), "", "no render yet"); $("l-body").innerHTML =
+    `<pre>renders write this automatically — nothing recorded yet</pre>`; return; }
+  const n = Object.values(d).reduce((a,v)=>a+v.length,0);
+  pill($("l-pill"), n ? "bad" : "ok", n ? `${n} fault(s)` : "clean");
+  $("l-body").innerHTML = n
+    ? Object.entries(d).map(([sid,rows])=>`<pre>${sid}\n`
+        + esc(rows.map(r=>`  ${r[0].toFixed(1)}s  ${r[1]}`).join("\n")) + `</pre>`).join("")
+    : `<pre>every label sits on what it names, at every beat</pre>`;
+}
+
+/* ---- cuts + draft ---- */
+async function refreshJoins(){
+  const d = await jget("../out/joins.json");
+  if(!d){ pill($("j-pill"), "", "not run"); return; }
+  const bad = d.filter(j=>j.disappears.length || j.appears.length);
+  pill($("j-pill"), bad.length ? "warn" : "ok",
+       bad.length ? `${bad.length} join(s) pop` : `${d.length} joins clean`);
+}
+async function refreshDraft(){
+  const d = await jget("../out/render-progress.json");
+  pill($("d-pill"), "", d && d.done === d.total ? "scenes ready" : "scenes incomplete");
+  const m = await jget("../out/render-progress-master.json");
+  if(!m){ pill($("m-pill"), "", "not started"); return; }
+  const pc = Math.round(100 * m.done / m.total);
+  pill($("m-pill"), m.done === m.total ? "ok" : "warn", `${m.done}/${m.total}  ${pc}%`);
+  $("m-bar").style.width = pc + "%";
+  $("m-chips").innerHTML = m.scenes.map(s=>
+    `<span class="chip ${s.fresh?"done":""}">${s.id}</span>`).join("");
+}
+async function refresh(){
+  const dash = await jget("../out/dashboard-data.json");
+  if(dash) renderGates(dash);
+  await Promise.all([refreshProgress(), refreshPoses(), refreshLabels(),
+                     refreshJoins(), refreshDraft()]);
+  pill($("served"), live ? "ok" : "", live ? "server connected" : "static view");
+}
+setInterval(()=>{
+  if($("p-auto").checked){ refreshProgress(); }
+  pollJob("draft"); pollJob("master");
+}, 6000);
+pollJob("draft"); pollJob("master");
+(async()=>{
+  const p = await jget("../video-plan.json");
+  if(p){ $("title").textContent = p.title || "video";
+         document.title = (p.title || "video") + " — production";
+         $("m-sub").innerHTML = `${p.width}x${p.height} at ${p.fps}fps`
+           + (p.captions?.burnedIn ? ", with the caption track burned on" : "")
+           + `. Hours, not minutes. Result: <code>out/master.mp4</code>`; }
+})();
+refresh();
+</script>
+</body>
+</html>

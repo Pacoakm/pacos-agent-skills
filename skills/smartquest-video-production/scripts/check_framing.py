@@ -42,6 +42,10 @@ def project(cam, points, offset=None):
     c = ThreeDCamera()
     c.set_phi(cam["phi"])
     c.set_theta(cam["theta"])
+    # gamma was silently dropped here until a rolled camera was measured against
+    # a real ThreeDCamera and disagreed: S16/S17 run at gamma 323.5 deg, and
+    # without this every point they report is rotated out of place.
+    c.set_gamma(cam.get("gamma", 0.0))
     c.set_zoom(cam.get("zoom", 1.0))
     c.set_focal_distance(cam.get("focal_distance", 20.0))
     # project_points uses a CACHED rotation matrix. Without this every result is
