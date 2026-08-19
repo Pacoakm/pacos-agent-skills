@@ -174,3 +174,60 @@ weakness. Hold still for `REST_AHA` once the plane is square to the lens.
 background from `BG`, colours from the semantic palette, strokes from `SW_*`, labels from
 `mtex()`. The colour contract is unchanged: `GIVEN` for what the question supplies, `UNKNOWN`
 for the target, `AUX` for construction lines added to solve it.
+
+## Gate B, in the browser — pick the camera by hand
+
+The grid scan (`check_camera.py`) rejects degenerate angles. It cannot tell you whether a
+shot *reads*. On the lesson this workflow came from, every camera passed the scan and the
+user still had to fix eleven separate things by eye.
+
+So Gate B now has two halves. Scan to rule out the collapsed angles, then **pick by hand**
+in `tools/camera-picker.html`: drag to orbit, `shift`+drag to roll, `alt`+drag to move the
+figure, scroll to zoom, with the caption band and the panel column drawn on the frame and
+the framing measurements live beside it. Export writes `tools/camera-poses.json`, which
+`src/` reads at import — so re-picking a camera never means editing scene code.
+
+**The picked values are the user's.** Tools may *measure* a pose and report that it breaks
+a geometric guarantee — the true-size angle, the edge-on plane — and say by how much. No
+tool changes one without being asked. `snap_poses.py` exists for that and is run only on
+request; it is deliberately not wired to a button.
+
+Three things about the picker, so it is not trusted further than it should be:
+
+* **The projection is exact.** It is a port of `ThreeDCamera.project_points`, and the JSON
+  carries reference projections from a real `ThreeDCamera` that the page checks itself
+  against on load — currently agreeing to 5e-10 over 22 cameras.
+* **The depth sorting is not.** The page paints back-to-front; ManimCE sorts by mobject.
+  Occlusion there is a hint. Gate E still means looking at the render.
+* **`focal_distance` is 90, not infinity.** A plane is only edge-on when the *camera
+  position* lies in it, so a figure offset with a component along the plane normal bows a
+  genuinely edge-on plane on screen. Measure the collapse; do not assume it from the
+  view direction.
+
+## Every keyframe's offset, and why `frame_center` still never moves
+
+A pose carries a figure offset as well as an angle, because re-centring is done by shifting
+the figure (trap #16). When two keyframes of one shot have different offsets, the figure
+has to travel during the camera move — and doing that correctly is trap #35, all three
+parts of it. `Lesson3D.move_camera_kf` and `exit_to` share one `_glide` for exactly this
+reason: there is one place where the camera and the figure move together, and it is the
+only place that knows about updater-driven mobjects and the live offset.
+
+## Cuts inside one figure
+
+S13–S17 of that lesson are five scenes but one solid. A cut between two different camera
+angles reads as the solid jumping. Land the move in the tail of the *outgoing* shot, so the
+incoming one opens already at the camera it was composed for:
+
+```python
+self.exit_to("S14PartA")     # glide to the next shot's opening camera
+self.pad_to()
+```
+
+Take a *short* move — 2 s — and hold. Letting it use all the remaining time produced 10-13
+second camera moves that read as wandering and doubled the render.
+
+A camera that lines up is only half of it. Anything belonging to the outgoing shot alone —
+a construction arc, a projection line, a vector the next shot does not carry — must be
+faded out **before** the cut, or it vanishes in a single frame and the join looks broken
+even though the camera is perfect. `check_joins.py` reports exactly this.

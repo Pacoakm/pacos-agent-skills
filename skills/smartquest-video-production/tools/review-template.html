@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Beat review — 13 Vector Product</title>
+<style>
+  :root{--bg:#0B0E14;--panel:#11151f;--edge:#232a3a;--ink:#E9EDF7;--muted:#98A3BA;
+        --line:#6B7893;--ok:#34D399;--warn:#FB7185;--accent:#7B8CF0;--amber:#FBBF24}
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--ink);overflow:hidden;
+       font:13px/1.5 ui-sans-serif,-apple-system,"PingFang HK",system-ui,sans-serif;
+       display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:12px;padding:8px 14px;flex:0 0 auto;
+         border-bottom:1px solid var(--edge)}
+  header h1{font-size:13px;font-weight:600;margin:0;white-space:nowrap}
+  #filters{display:flex;gap:4px;overflow-x:auto;flex:1 1 auto}
+  #filters button{background:transparent;border:1px solid var(--edge);color:var(--muted);
+    border-radius:6px;padding:3px 9px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+  #filters button.on{background:var(--accent);border-color:var(--accent);color:#0B0E14;font-weight:600}
+  #filters button.has::after{content:"●";margin-left:5px;color:var(--amber);font-size:9px}
+  .badge{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--edge);
+         color:var(--muted);white-space:nowrap}
+  .badge.ok{color:var(--ok);border-color:#1d4b3c}
+  .badge.warn{color:var(--amber);border-color:#5a4a20}
+  main{flex:1 1 auto;display:flex;min-height:0}
+  #grid{flex:1 1 auto;overflow-y:auto;padding:10px;display:grid;gap:10px;
+        grid-template-columns:repeat(auto-fill,minmax(250px,1fr));align-content:start}
+  .beat{border:1px solid var(--edge);border-radius:8px;overflow:hidden;cursor:pointer;
+        background:#0d1017}
+  .beat.on{border-color:var(--accent)}
+  .beat.noted{border-color:var(--amber)}
+  .beat img{width:100%;display:block;background:#000}
+  .beat .m{padding:5px 7px}
+  .beat .t{font-size:11px;color:var(--accent);font-variant-numeric:tabular-nums}
+  .beat .w{font-size:11px;color:var(--muted);line-height:1.35;max-height:2.7em;overflow:hidden}
+  .beat .n{font-size:11px;color:var(--amber);margin-top:3px}
+  .beat .f{font-size:11px;color:var(--warn);margin-top:3px}
+  aside{flex:0 0 380px;border-left:1px solid var(--edge);background:var(--panel);
+        overflow-y:auto;padding:12px 14px 40px}
+  aside video{width:100%;border-radius:6px;background:#000;display:block}
+  h2{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+     margin:16px 0 6px;font-weight:600}
+  h2:first-of-type{margin-top:10px}
+  .note{color:var(--muted);font-size:12px;margin:4px 0}
+  textarea{width:100%;background:#0a0d13;color:var(--ink);border:1px solid var(--edge);
+    border-radius:6px;padding:8px;font:inherit;font-size:12px;resize:vertical}
+  #notebox{height:88px}
+  #punch{height:190px;font:11px/1.5 ui-monospace,Menlo,monospace}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .btns button{background:#171d2b;border:1px solid var(--edge);color:var(--ink);
+    border-radius:6px;padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}
+  .btns button:hover{border-color:var(--accent)}
+  kbd{background:#171d2b;border:1px solid var(--edge);border-radius:4px;padding:0 4px;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Beat review</h1>
+  <div id="filters"></div>
+  <div class="badge" id="savestate">…</div>
+  <div class="badge" id="audit"></div>
+</header>
+<main>
+  <div id="grid"></div>
+  <aside>
+    <video id="vid" preload="metadata" playsinline muted controls></video>
+    <div class="note" id="vinfo"></div>
+
+    <h2>What this beat should show</h2>
+    <div class="note" id="should"></div>
+    <div class="note" id="faults"></div>
+
+    <h2>Your note</h2>
+    <textarea id="notebox" placeholder="e.g. label 太早出現 / 向量錯位 / 過渡太慢"></textarea>
+    <div class="btns">
+      <button id="bclear">Clear this note</button>
+      <button id="bpunch">Punch list</button>
+      <button id="bcopy">Copy</button>
+    </div>
+    <textarea id="punch" spellcheck="false"></textarea>
+    <div class="note">
+      <kbd>j</kbd> / <kbd>k</kbd> 上下一個 beat · <kbd>space</kbd> 播放 ·
+      筆記自動存入 <code>tools/review-notes.json</code>
+    </div>
+  </aside>
+</main>
+<script>
+const DATA = "__REVIEW__";
+const NOTES_FILE = "review-notes.json";
+let notes = {}, etag = null, blocked = false, cur = 0, filter = null, saveTimer = null;
+
+const $ = id => document.getElementById(id);
+const V = $("vid");
+V.src = "../" + DATA.video;
+
+/* ---- notes live in a file, same contract as the camera picker ---- */
+function saveState(cls, text, title){
+  const el = $("savestate"); el.className = "badge " + cls; el.textContent = text;
+  el.title = title || "";
+}
+function persist(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async ()=>{
+    if(blocked) return;
+    try{
+      const h = {"Content-Type":"application/json"};
+      if(etag) h["If-Match"] = etag;
+      const r = await fetch(NOTES_FILE, {method:"PUT", headers:h,
+                                         body: JSON.stringify(notes)});
+      if(r.status === 409){ blocked = true;
+        saveState("warn", "STALE — reload", "the notes file changed elsewhere"); return; }
+      if(!r.ok) throw new Error(r.status);
+      etag = r.headers.get("ETag") || etag;
+      saveState("ok", `saved ${Object.keys(notes).length} · ${new Date().toLocaleTimeString()}`);
+    }catch(e){
+      saveState("warn", "browser only", "serve it with tools/serve.py to save to disk");
+    }
+  }, 300);
+}
+async function load(){
+  try{
+    const r = await fetch(NOTES_FILE, {cache:"no-store"});
+    if(!r.ok) throw 0;
+    etag = r.headers.get("ETag");
+    notes = await r.json();
+    saveState("ok", `${Object.keys(notes).length} notes on disk`);
+  }catch(e){ saveState("", "no notes yet"); }
+  draw();
+}
+
+/* ---- grid ---- */
+function shots(){ return [...new Set(DATA.beats.map(b=>b.shot))]; }
+function buildFilters(){
+  const el = $("filters"); el.innerHTML = "";
+  const mk = (name, val)=>{
+    const b = document.createElement("button");
+    b.textContent = name;
+    b.className = (filter === val ? "on " : "")
+      + (DATA.beats.some(x=>(val===null||x.shot===val) && notes[x.id]) ? "has" : "");
+    b.onclick = ()=>{ filter = val; buildFilters(); draw(); };
+    el.appendChild(b);
+  };
+  mk("all", null);
+  shots().forEach(s=>mk(s, s));
+}
+function visible(){ return DATA.beats.filter(b=>!filter || b.shot === filter); }
+function draw(){
+  buildFilters();
+  const g = $("grid"); g.innerHTML = "";
+  visible().forEach((b)=>{
+    const i = DATA.beats.indexOf(b);
+    const d = document.createElement("div");
+    d.className = "beat" + (i === cur ? " on" : "") + (notes[b.id] ? " noted" : "");
+    d.innerHTML = `<img loading="lazy" src="${DATA.dir}/${b.file}" alt="">`
+      + `<div class="m"><div class="t">${b.shot} · ${b.t.toFixed(1)}s</div>`
+      + `<div class="w">${esc(b.what)}</div>`
+      + (b.faults?.length ? `<div class="f">⚠ ${esc(b.faults[0])}</div>` : "")
+      + (notes[b.id] ? `<div class="n">✎ ${esc(notes[b.id])}</div>` : "")
+      + `</div>`;
+    d.onclick = ()=> select(i);
+    g.appendChild(d);
+  });
+  const n = DATA.beats.reduce((a,b)=>a + (b.faults?.length || 0), 0);
+  const el = $("audit");
+  el.className = "badge " + (n ? "warn" : "ok");
+  el.textContent = n ? `${n} label faults` : "labels clean";
+}
+const esc = s => (s||"").replace(/[<>&]/g, c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+
+function select(i){
+  cur = i;
+  const b = DATA.beats[i];
+  $("should").textContent = b.what || "";
+  $("faults").innerHTML = (b.faults||[]).map(f=>"⚠ " + esc(f)).join("<br>");
+  $("notebox").value = notes[b.id] || "";
+  $("vinfo").textContent = `${b.shot} · plan ${b.t.toFixed(1)}s`;
+  if(V.readyState) V.currentTime = b.t;
+  draw();
+  document.querySelectorAll(".beat")[visible().indexOf(b)]
+    ?.scrollIntoView({block:"nearest"});
+}
+$("notebox").addEventListener("input", e=>{
+  const b = DATA.beats[cur];
+  if(e.target.value.trim()) notes[b.id] = e.target.value.trim();
+  else delete notes[b.id];
+  persist(); draw();
+});
+$("bclear").onclick = ()=>{ delete notes[DATA.beats[cur].id]; $("notebox").value=""; persist(); draw(); };
+$("bcopy").onclick = ()=>{ $("punch").select(); document.execCommand("copy"); };
+$("bpunch").onclick = ()=>{
+  const rows = DATA.beats.filter(b=>notes[b.id]).map(b=>{
+    const m = Math.floor(b.t/60), s = (b.t%60).toFixed(0).padStart(2,"0");
+    return `${m}:${s}  ${b.shot}  ${notes[b.id]}`;
+  });
+  const auto = DATA.beats.flatMap(b=>(b.faults||[]).map(f=>{
+    const m = Math.floor(b.t/60), s = (b.t%60).toFixed(0).padStart(2,"0");
+    return `${m}:${s}  ${b.shot}  [audit] ${f}`;
+  }));
+  $("punch").value = [...rows, ...(auto.length ? ["", "— from the label audit —", ...auto] : [])]
+    .join("\n") || "nothing noted yet";
+};
+addEventListener("keydown", e=>{
+  if(e.target.tagName === "TEXTAREA") return;
+  if(e.key === "j"){ select(Math.min(cur+1, DATA.beats.length-1)); e.preventDefault(); }
+  if(e.key === "k"){ select(Math.max(cur-1, 0)); e.preventDefault(); }
+  if(e.key === " "){ V.paused ? V.play() : V.pause(); e.preventDefault(); }
+});
+load().then(()=> select(0));
+</script>
+</body>
+</html>
