@@ -19,12 +19,17 @@ What is generic and gets copied:
     dashboard.html        the page every gate is reviewed from
     review-template.html  the beat review page
 
+    picker-template.html  the camera picker
+    check_poses.py        framing for every pose
+
 What stays with the lesson (never overwritten):
     camera-poses.json     the hand-picked cameras — the user's work
     review-notes.json     review notes
-    extract_3d.py         which figure each 3D shot draws
-    check_poses.py        the geometric guarantees THIS lesson leans on
-    picker-template.html  the camera picker (needs the project's figures)
+    extract_3d.py         which figure each 3D shot draws (seeded from a
+                          template on first install, yours after that)
+    pose_guarantees.py    the geometric promises THIS lesson's solved cameras
+                          carry — true-size angle, edge-on plane
+    snap_poses.py         solving a pose back onto its constraint
 """
 from __future__ import annotations
 
@@ -36,9 +41,12 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 GENERIC = ["project.py", "render.py", "serve.py", "render_progress.py",
            "concat_draft.py", "build_dashboard.py", "build_review.py",
-           "check_joins.py", "beats.py", "dashboard.html", "review-template.html"]
+           "check_joins.py", "check_poses.py", "beats.py",
+           "dashboard.html", "review-template.html", "picker-template.html"]
+# dropped in once, then the lesson's own — never overwritten
+SEEDS = {"extract_3d.py": "extract_3d.template.py"}
 KEEP = {"camera-poses.json", "review-notes.json", "extract_3d.py",
-        "check_poses.py", "snap_poses.py", "picker-template.html"}
+        "pose_guarantees.py", "snap_poses.py"}
 
 
 def find_project(arg):
@@ -62,12 +70,19 @@ def main() -> int:
             continue
         shutil.copy2(HERE / name, dest)
         copied.append(name)
+    seeded = []
+    for name, template in SEEDS.items():
+        if not (tools / name).exists() and (HERE / template).exists():
+            shutil.copy2(HERE / template, tools / name)
+            seeded.append(name)
     for name in sorted(KEEP):
         if (tools / name).exists():
             kept.append(name)
 
     print(f"project  {project}")
     print(f"copied   {len(copied)} tool(s)" + (": " + ", ".join(copied) if copied else ""))
+    if seeded:
+        print(f"seeded   {', '.join(seeded)} — edit it to describe this lesson's figures")
     if kept:
         print(f"kept     {', '.join(kept)}")
 
