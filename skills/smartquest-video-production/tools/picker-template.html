@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>Camera picker</title>
+<style>
+  :root{
+    --bg:#0B0E14; --panel:#11151f; --edge:#232a3a; --ink:#E9EDF7;
+    --muted:#98A3BA; --line:#6B7893; --ok:#34D399; --warn:#FB7185;
+    --accent:#7B8CF0;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{background:var(--bg);color:var(--ink);
+       font:13px/1.5 ui-sans-serif,-apple-system,"PingFang HK",system-ui,sans-serif;
+       display:flex;flex-direction:column;overflow:hidden}
+  header{display:flex;align-items:center;gap:14px;padding:8px 14px;
+         border-bottom:1px solid var(--edge);flex:0 0 auto}
+  header h1{font-size:13px;font-weight:600;margin:0;white-space:nowrap}
+  #shots{display:flex;gap:4px;overflow-x:auto;flex:1 1 auto}
+  #shots button{background:transparent;border:1px solid var(--edge);color:var(--muted);
+    border-radius:6px;padding:3px 9px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+  #shots button.on{background:var(--accent);border-color:var(--accent);color:#0B0E14;font-weight:600}
+  #shots button.edited::after{content:"•";margin-left:5px;color:var(--ok)}
+  #shots button.on.edited::after{color:#0B0E14}
+  #savestate{font-size:11px;padding:3px 8px;border-radius:6px;white-space:nowrap;
+             border:1px solid var(--edge);color:var(--muted)}
+  #savestate.disk{color:var(--ok);border-color:#1d4b3c}
+  #savestate.local{color:#FBBF24;border-color:#5a4a20}
+  #savestate.err{color:var(--warn);border-color:#5a2530}
+  #selfcheck{font-size:11px;padding:3px 8px;border-radius:6px;white-space:nowrap}
+  #selfcheck.pass{color:var(--ok);border:1px solid #1d4b3c}
+  #selfcheck.fail{color:var(--warn);border:1px solid #5a2530}
+  main{flex:1 1 auto;display:flex;min-height:0}
+  #stage{flex:1 1 auto;display:flex;align-items:center;justify-content:center;
+         padding:14px;min-width:0;position:relative}
+  #wrap{position:relative;box-shadow:0 0 0 1px var(--edge)}
+  canvas{display:block;cursor:grab;touch-action:none}
+  canvas.drag{cursor:grabbing}
+  #ref{position:absolute;inset:0;opacity:.35;pointer-events:none;display:none;
+       width:100%;height:100%;object-fit:fill}
+  #hint{position:absolute;left:14px;bottom:6px;color:var(--muted);font-size:11px}
+  aside{flex:0 0 372px;border-left:1px solid var(--edge);overflow-y:auto;
+        padding:12px 14px 40px;background:var(--panel)}
+  #draftbox video{width:100%;display:block;border-radius:6px;background:#000}
+  #draftbox.off{display:none}
+  .vrow{display:flex;align-items:center;gap:8px;margin-top:6px}
+  .vrow button{background:#171d2b;border:1px solid var(--edge);color:var(--ink);
+    border-radius:5px;width:28px;height:24px;font:inherit;font-size:11px;cursor:pointer;flex:0 0 auto}
+  .vrow input[type=range]{flex:1 1 auto;accent-color:var(--accent);min-width:0}
+  .vrow .t{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;
+    white-space:nowrap;flex:0 0 auto}
+  .vfoot{display:flex;justify-content:space-between;align-items:center;
+    color:var(--line);font-size:11px;margin-top:4px}
+  .vfoot label{color:var(--muted);cursor:pointer}
+  h2{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);
+     margin:18px 0 7px;font-weight:600}
+  h2:first-child{margin-top:0}
+  .row{display:flex;align-items:center;gap:8px;margin:5px 0}
+  .row label{width:52px;color:var(--muted);font-size:12px}
+  .row input[type=range]{flex:1 1 auto;accent-color:var(--accent);min-width:0}
+  .row input[type=number]{width:66px;background:#0a0d13;border:1px solid var(--edge);
+    color:var(--ink);border-radius:5px;padding:2px 4px;font:inherit;font-size:12px;
+    text-align:right;font-variant-numeric:tabular-nums}
+  .row input[type=number]:focus{outline:none;border-color:var(--accent)}
+  .row .u{width:9px;color:var(--muted);font-size:11px}
+  .kf{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:6px}
+  .kf button{background:#171d2b;border:1px solid var(--edge);color:var(--ink);
+    border-radius:5px;padding:3px 8px;font:inherit;font-size:11px;cursor:pointer}
+  .kf button.on{border-color:var(--accent);color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td{padding:2px 0;vertical-align:top}
+  td.k{color:var(--muted);width:52%}
+  td.v{text-align:right;font-variant-numeric:tabular-nums}
+  .ok{color:var(--ok)} .bad{color:var(--warn)}
+  .note{color:var(--muted);font-size:12px;margin:4px 0}
+  .sub{border-left:2px solid var(--edge);padding:2px 0 2px 8px;margin:7px 0}
+  .sub .t{font-size:12px}
+  .sub .e{font-size:11px;color:var(--muted)}
+  .sub .w{font-size:10px;color:var(--line);font-variant-numeric:tabular-nums}
+  .sub.now{border-left-color:var(--accent)}
+  .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .btns button{background:#171d2b;border:1px solid var(--edge);color:var(--ink);
+    border-radius:6px;padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}
+  .btns button:hover{border-color:var(--accent)}
+  textarea{width:100%;height:150px;background:#0a0d13;color:var(--ink);
+    border:1px solid var(--edge);border-radius:6px;padding:8px;font:11px/1.45 ui-monospace,Menlo,monospace;
+    resize:vertical}
+  kbd{background:#171d2b;border:1px solid var(--edge);border-radius:4px;padding:0 4px;font-size:11px}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="who">Camera picker</h1>
+  <div id="shots"></div>
+  <div id="savestate">…</div>
+  <div id="selfcheck"></div>
+</header>
+<main>
+  <div id="stage">
+    <div id="wrap">
+      <canvas id="c"></canvas>
+      <img id="ref" alt="">
+    </div>
+    <div id="hint">drag 轉 φ/θ · shift+drag 轉 γ · alt+drag 平移圖形 · 滾輪 zoom · <kbd>r</kbd> 還原 · <kbd>[</kbd><kbd>]</kbd> 換 shot · <kbd>f</kbd> 對照分鏡 · <kbd>space</kbd> 播 draft</div>
+  </div>
+  <aside>
+    <h2>Draft render</h2>
+    <div id="draftbox">
+      <video id="vid" preload="metadata" playsinline muted></video>
+      <div class="vrow">
+        <button id="vplay" title="play / pause (space)">▶</button>
+        <input type="range" id="vseek" step="0.05">
+        <span class="t" id="vtime"></span>
+      </div>
+      <div class="vfoot">
+        <span>original cameras — not your edit</span>
+        <label><input type="checkbox" id="vloop" checked> loop shot</label>
+      </div>
+    </div>
+    <div class="note" id="draftmiss" style="display:none"></div>
+
+    <h2>Keyframe</h2>
+    <div class="kf" id="kf"></div>
+    <div class="note" id="kfnote"></div>
+
+    <h2>Camera</h2>
+    <div class="row"><label>φ phi</label><input type="range" id="rphi" min="0" max="180" step="0.1"><input type="number" id="ophi" min="0" max="180" step="0.1"><span class="u">°</span></div>
+    <div class="row"><label>θ theta</label><input type="range" id="rtheta" min="-360" max="360" step="0.1"><input type="number" id="otheta" min="-360" max="360" step="0.1"><span class="u">°</span></div>
+    <div class="row"><label>γ gamma</label><input type="range" id="rgamma" min="-180" max="180" step="0.1"><input type="number" id="ogamma" min="-180" max="180" step="0.1"><span class="u">°</span></div>
+    <div class="row"><label>zoom</label><input type="range" id="rzoom" min="0.4" max="2.2" step="0.01"><input type="number" id="ozoom" min="0.4" max="2.2" step="0.01"><span class="u"></span></div>
+    <div class="row"><label>focal</label><input type="range" id="rfocal" min="10" max="120" step="1"><input type="number" id="ofocal" min="10" max="120" step="1"><span class="u"></span></div>
+    <div class="row" id="sweeprow" style="display:none"><label id="sweeplab"></label><input type="range" id="rsweep"><input type="number" id="osweep" step="0.5"><span class="u">°</span></div>
+    <div class="note" id="delta"></div>
+
+    <h2>Framing</h2>
+    <table id="metrics"></table>
+
+    <h2>What this shot says</h2>
+    <div class="note" id="purpose"></div>
+    <div id="subs"></div>
+
+    <h2>Export</h2>
+    <div class="btns">
+      <button id="bsave">Save this pose</button>
+      <button id="breset">Reset shot</button>
+      <button id="bpy">Python</button>
+      <button id="bjson">JSON</button>
+      <button id="bcopy">Copy</button>
+      <button id="bclear">Clear all</button>
+    </div>
+    <textarea id="out" spellcheck="false"></textarea>
+  </aside>
+</main>
+<script>
+const DATA = "__SCENE3D__";
+const DEG = Math.PI / 180;
+// keyed on where the page is served from, so two lessons open at once keep
+// their own fallback store instead of overwriting each other
+const LS = "camera-picker" + location.pathname.replace(/\/tools\/[^/]*$/, "");
+
+/* ---- projection: a line-for-line port of ThreeDCamera.project_points ---- */
+function rotZ(a){const c=Math.cos(a),s=Math.sin(a);return [[c,-s,0],[s,c,0],[0,0,1]];}
+function rotX(a){const c=Math.cos(a),s=Math.sin(a);return [[1,0,0],[0,c,-s],[0,s,c]];}
+function mul(A,B){const R=[[0,0,0],[0,0,0],[0,0,0]];
+  for(let i=0;i<3;i++)for(let j=0;j<3;j++){let s=0;for(let k=0;k<3;k++)s+=A[i][k]*B[k][j];R[i][j]=s;}
+  return R;}
+function rotationMatrix(cam){
+  // manim: rotation_about_z(gamma) @ rotation_matrix(-phi, RIGHT) @ rotation_about_z(-theta - 90deg)
+  return mul(rotZ(cam.gamma*DEG), mul(rotX(-cam.phi*DEG), rotZ(-cam.theta*DEG - Math.PI/2)));
+}
+function project(cam, p, R){
+  R = R || rotationMatrix(cam);
+  const o = cam.offset || [0,0,0];
+  const q = [p[0]+o[0], p[1]+o[1], p[2]+o[2]];          // frame_center stays ORIGIN
+  const r = [0,0,0];
+  for(let i=0;i<3;i++) r[i] = R[i][0]*q[0] + R[i][1]*q[1] + R[i][2]*q[2];
+  const d = cam.focal_distance;
+  let f = d - r[2] < 0 ? 1e6 : d/(d - r[2]);
+  return [r[0]*f*cam.zoom, r[1]*f*cam.zoom, r[2]];       // z kept for depth sort
+}
+
+/* ---- self-check against the Python reference ---- */
+function selfCheck(){
+  let worst = 0;
+  for(const c of DATA.reference){
+    const R = rotationMatrix(c.cam);
+    c.pts.forEach((p,i)=>{
+      const g = project(c.cam, p, R);
+      worst = Math.max(worst, Math.abs(g[0]-c.out[i][0]), Math.abs(g[1]-c.out[i][1]));
+    });
+  }
+  const el = document.getElementById("selfcheck");
+  const pass = worst < 1e-6;
+  el.className = pass ? "pass" : "fail";
+  el.textContent = (pass ? "projection ✓ " : "projection ✗ ")
+    + DATA.reference.length + " cams, max err " + worst.toExponential(1);
+  return pass;
+}
+
+/* ---- state ---- */
+let shotIx = 0, kfIx = 0, cam = null, sweepVal = null;
+let edits = JSON.parse(localStorage.getItem(LS) || "{}");
+const shot = () => DATA.shots[shotIx];
+
+/* ---- persistence -------------------------------------------------------
+   localStorage alone was not good enough: it is per-origin (file:// and
+   localhost are two different stores), invisible, and anything that clears
+   site data takes the poses with it. So every edit is also PUT to
+   tools/camera-poses.json, which is what tools/serve.py exists for. The file
+   is the source of truth on load; localStorage stays as the offline fallback. */
+const POSES = "camera-poses.json";
+let saveTimer = null, etag = null, blocked = false;
+function saveState(cls, text, title){
+  const el = document.getElementById("savestate");
+  el.className = cls; el.textContent = text; el.title = title || "";
+}
+function persist(){
+  localStorage.setItem(LS, JSON.stringify(edits));
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(pushToDisk, 300);
+}
+async function pushToDisk(){
+  if(blocked) return;
+  const n = Object.keys(edits).length;
+  try{
+    const h = {"Content-Type":"application/json"};
+    if(etag) h["If-Match"] = etag;                 // refuse to clobber a newer file
+    const r = await fetch(POSES, {method:"PUT", headers:h, body: JSON.stringify(edits)});
+    if(r.status === 409){
+      blocked = true;
+      saveState("err", "STALE — reload",
+        "another tab or a script has written tools/" + POSES + " since this page "
+        + "loaded. Saving is stopped so your poses are not overwritten. Copy "
+        + "anything you still need out of the Export box, then reload.");
+      return;
+    }
+    if(!r.ok) throw new Error(r.status + " " + r.statusText);
+    etag = r.headers.get("ETag") || etag;
+    saveState("disk", `saved ${n} · ${new Date().toLocaleTimeString()}`,
+              "written to tools/" + POSES);
+  }catch(err){
+    saveState("local", `browser only · ${n}`,
+      "could not write tools/" + POSES + " (" + err.message + ")\n"
+      + "serve the page with tools/serve.py to save to disk");
+  }
+}
+async function loadFromDisk(){
+  try{
+    const r = await fetch(POSES, {cache:"no-store"});
+    if(!r.ok) throw new Error(String(r.status));
+    etag = r.headers.get("ETag");
+    const d = await r.json();
+    edits = d;
+    localStorage.setItem(LS, JSON.stringify(edits));
+    saveState("disk", `${Object.keys(d).length} poses on disk`,
+              "loaded from tools/" + POSES);
+    loadCam(); syncUI();
+  }catch(err){
+    const n = Object.keys(edits).length;
+    saveState(n ? "local" : "", n ? `browser only · ${n}` : "no poses yet",
+      "no tools/" + POSES + " yet — it is written on your first edit");
+  }
+}
+const key = () => shot().scene + "#" + kfIx;
+
+function sourceCam(){ return JSON.parse(JSON.stringify(shot().cameras[kfIx])); }
+/** Keyframe `i` of this shot AS IT STANDS — the source camera with your saved
+ *  edit laid over it. `sourceCam()` is the pristine value from the scene code
+ *  and is only for deciding whether an edit still differs from it. */
+function camAt(i){
+  const src = JSON.parse(JSON.stringify(shot().cameras[i]));
+  const e = edits[shot().scene + "#" + i];
+  return e ? Object.assign(src, e) : src;
+}
+function loadCam(){
+  cam = camAt(kfIx);
+  const sw = shot().sweep;
+  sweepVal = sw ? (edits[key()] && edits[key()]._sweep != null ? edits[key()]._sweep : sw.value) : null;
+}
+function markEdited(){
+  const s = sourceCam();
+  const same = ["phi","theta","gamma","zoom","focal_distance"].every(k=>Math.abs(cam[k]-s[k])<1e-9)
+    && cam.offset.every((v,i)=>Math.abs(v-s.offset[i])<1e-9);
+  if(same) delete edits[key()];
+  else edits[key()] = {phi:cam.phi,theta:cam.theta,gamma:cam.gamma,zoom:cam.zoom,
+                       focal_distance:cam.focal_distance,offset:cam.offset.slice(),
+                       _sweep:sweepVal};
+  persist();
+  buildTabs();
+}
+
+/* ---- sweep: b rotated in the a-b plane, same formula as b_at() ---- */
+function sweptElements(){
+  const sw = shot().sweep;
+  const els = shot().elements;
+  if(!sw) return els;
+  const a = sw.a, org = sw.org;
+  const base = Math.atan2(a[1], a[0]) * 180/Math.PI;
+  const t = (base + sweepVal) * DEG;
+  const b = [sw.len*Math.cos(t), sw.len*Math.sin(t), 0];
+  const add = (p,q,k)=>[p[0]+q[0]*k, p[1]+q[1]*k, p[2]+q[2]*k];
+  const k = (b[0]*a[0]+b[1]*a[1]+b[2]*a[2]) / (a[0]*a[0]+a[1]*a[1]+a[2]*a[2]);
+  return els.map(e=>{
+    if(e.sweep === "vec")   return Object.assign({}, e, {b: add(org,b,1)});
+    if(e.sweep === "label") return Object.assign({}, e, {at: add(org,b,1.16)});
+    if(e.sweep === "drop")  return Object.assign({}, e, {pts:[add(org,b,1), add(org,a,k)]});
+    if(e.sweep === "para")  return Object.assign({}, e, {pts:[org, add(org,a,1),
+                              [org[0]+a[0]+b[0],org[1]+a[1]+b[1],org[2]+a[2]+b[2]], add(org,b,1)]});
+    return e;
+  });
+}
+function sweptNamed(){
+  const sw = shot().sweep;
+  if(!sw) return shot().named;
+  const a = sw.a, org = sw.org;
+  const t = (Math.atan2(a[1], a[0]) * 180/Math.PI + sweepVal) * DEG;
+  const out = Object.assign({}, shot().named);
+  out["b→"] = [org[0] + sw.len*Math.cos(t), org[1] + sw.len*Math.sin(t), org[2]];
+  return out;
+}
+
+/* ---- canvas ---- */
+const cvs = document.getElementById("c"), ctx = cvs.getContext("2d");
+let W = 0, H = 0;
+function sizeCanvas(){
+  const st = document.getElementById("stage");
+  const pad = 28, availW = st.clientWidth - pad, availH = st.clientHeight - pad - 18;
+  const ar = DATA.stage.frame_w / DATA.stage.frame_h;
+  // a zero-size viewport (page opened in a hidden pane) must not leave a
+  // degenerate canvas behind; the resize handler upgrades it once laid out
+  W = Math.max(320, Math.min(availW, availH * ar)); H = W / ar;
+  const dpr = window.devicePixelRatio || 1;
+  cvs.width = Math.round(W*dpr); cvs.height = Math.round(H*dpr);
+  cvs.style.width = W+"px"; cvs.style.height = H+"px";
+  document.getElementById("wrap").style.width = W+"px";
+  document.getElementById("wrap").style.height = H+"px";
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+const S = DATA.stage;
+const sx = x => (x / S.frame_w + 0.5) * W;
+const sy = y => (0.5 - y / S.frame_h) * H;
+const su = u => u / S.frame_w * W;                    // scene units -> px
+
+function bands(){
+  ctx.save();
+  ctx.fillStyle = "rgba(123,140,240,.05)";
+  ctx.fillRect(0, 0, W, su(S.title_band));
+  ctx.fillRect(0, H - S.caption_band/S.frame_h*H, W, S.caption_band/S.frame_h*H);
+  ctx.strokeStyle = "rgba(152,163,186,.22)"; ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+  const fb = S.figure_box, pb = S.panel_box;
+  ctx.strokeRect(sx(fb.cx - fb.w/2), sy(fb.cy + fb.h/2), su(fb.w), fb.h/S.frame_h*H);
+  ctx.strokeStyle = "rgba(251,146,60,.30)";
+  ctx.strokeRect(sx(pb.x), sy(pb.top), su(pb.w), (pb.top - S.content_bottom)/S.frame_h*H);
+  ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(152,163,186,.45)"; ctx.font = "10px ui-sans-serif";
+  ctx.fillText("caption band", 8, H - 8);
+  ctx.fillText("panel column", sx(pb.x) + 6, sy(pb.top) + 14);
+  ctx.restore();
+}
+
+function arrowHead(p, q, color){
+  const dx = q[0]-p[0], dy = q[1]-p[1], L = Math.hypot(dx,dy);
+  if(L < 1) return;
+  const ux = dx/L, uy = dy/L, h = Math.min(13, L*0.34), w = h*0.42;
+  ctx.beginPath();
+  ctx.moveTo(q[0], q[1]);
+  ctx.lineTo(q[0]-ux*h - uy*w, q[1]-uy*h + ux*w);
+  ctx.lineTo(q[0]-ux*h + uy*w, q[1]-uy*h - ux*w);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = DATA.colors.BG; ctx.fillRect(0,0,W,H);
+  bands();
+  const R = rotationMatrix(cam);
+  const pr = p => { const q = project(cam, p, R); return [sx(q[0]), sy(q[1]), q[2]]; };
+
+  // painter's algorithm on the camera's own depth axis. ManimCE sorts by
+  // mobject, so this is a guide to occlusion, not a promise of it.
+  const items = sweptElements().map(e=>{
+    let pts = e.type === "label" ? [e.at] : (e.pts || [e.a, e.b]);
+    const P = pts.map(pr);
+    const z = P.reduce((s,q)=>s+q[2],0)/P.length;
+    return {e, P, z};
+  }).sort((u,v)=>v.z - u.z);
+
+  for(const {e, P} of items){
+    if(e.type === "label"){
+      ctx.font = "600 13px ui-sans-serif";
+      ctx.fillStyle = DATA.colors.BG; ctx.lineWidth = 3.5;
+      ctx.strokeStyle = DATA.colors.BG; ctx.strokeText(e.text, P[0][0]-4, P[0][1]+5);
+      ctx.fillStyle = e.color; ctx.fillText(e.text, P[0][0]-4, P[0][1]+5);
+      continue;
+    }
+    if(e.type === "vector"){
+      ctx.strokeStyle = e.color; ctx.lineWidth = 2.4; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(P[0][0],P[0][1]); ctx.lineTo(P[1][0],P[1][1]); ctx.stroke();
+      arrowHead(P[0], P[1], e.color);
+      continue;
+    }
+    ctx.setLineDash(e.dashed ? [6,4] : []);
+    ctx.beginPath();
+    P.forEach((q,i)=> i ? ctx.lineTo(q[0],q[1]) : ctx.moveTo(q[0],q[1]));
+    if(e.type === "poly") ctx.closePath();
+    if(e.fill && e.opacity){ ctx.globalAlpha = e.opacity; ctx.fillStyle = e.fill;
+      ctx.fill(); ctx.globalAlpha = 1; }
+    ctx.strokeStyle = e.stroke || e.color; ctx.lineWidth = e.width || 1.2; ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  metrics(pr);
+}
+
+/* ---- framing metrics: the same questions check_camera / check_framing ask -- */
+function metrics(pr){
+  const named = sweptNamed();
+  const keys = Object.keys(named);
+  const R = rotationMatrix(cam);
+  const sc = {};                                   // scene-unit screen coords
+  for(const k of keys){ const q = project(cam, named[k], R); sc[k] = q; }
+
+  let worst = Infinity, pair = "";
+  for(let i=0;i<keys.length;i++) for(let j=i+1;j<keys.length;j++){
+    const a = sc[keys[i]], b = sc[keys[j]];
+    const d = Math.hypot(a[0]-b[0], a[1]-b[1]);
+    if(d < worst){ worst = d; pair = keys[i]+"–"+keys[j]; }
+  }
+  const fb = S.figure_box, pb = S.panel_box;
+  let off = [], inPanel = [], inCaption = [];
+  for(const k of keys){
+    const q = sc[k];
+    if(Math.abs(q[0]) > S.frame_w/2 || Math.abs(q[1]) > S.frame_h/2) off.push(k);
+    else if(q[0] > pb.x) inPanel.push(k);
+    if(q[1] < S.content_bottom) inCaption.push(k);
+  }
+  const src = shot().cameras[kfIx];
+  const row = (k,v,cls)=>`<tr><td class="k">${k}</td><td class="v ${cls||''}">${v}</td></tr>`;
+  const list = a => a.length ? a.join(", ") : "—";
+  document.getElementById("metrics").innerHTML =
+      row("min check-point sep", keys.length < 2 ? "—"
+            : worst.toFixed(2) + "  (" + pair + ")",
+          keys.length < 2 ? "" : worst < 0.6 ? "bad" : worst < 1.0 ? "" : "ok")
+    + row("off frame", list(off), off.length ? "bad" : "ok")
+    + row("under panel column", list(inPanel), inPanel.length ? "bad" : "ok")
+    + row("into caption band", list(inCaption), inCaption.length ? "bad" : "ok")
+    + row("figure offset", cam.offset.map(v=>v.toFixed(2)).join(", "));
+  document.getElementById("delta").innerHTML =
+    `source: φ ${src.phi.toFixed(1)}° θ ${src.theta.toFixed(1)}° γ ${src.gamma.toFixed(1)}° · `
+    + `Δ ${(cam.phi-src.phi).toFixed(1)} / ${(cam.theta-src.theta).toFixed(1)} / ${(cam.gamma-src.gamma).toFixed(1)}`;
+}
+
+/* ---- sidebar ---- */
+function buildTabs(){
+  const el = document.getElementById("shots");
+  el.innerHTML = "";
+  DATA.shots.forEach((s,i)=>{
+    const b = document.createElement("button");
+    b.textContent = s.id;
+    b.title = s.scene + " — " + (s.purpose||"");
+    b.className = (i===shotIx ? "on " : "")
+      + (s.cameras.some((_,k)=>edits[s.scene+"#"+k]) ? "edited" : "");
+    b.onclick = ()=>{ shotIx = i; kfIx = 0; loadCam(); syncUI(); vSyncRange(); };
+    el.appendChild(b);
+  });
+}
+function buildKeyframes(){
+  const el = document.getElementById("kf"); el.innerHTML = "";
+  shot().cameras.forEach((c,i)=>{
+    const b = document.createElement("button");
+    b.textContent = (c.kind === "start" ? "start" : "move") + " @" + c.at.toFixed(0) + "s";
+    b.className = i===kfIx ? "on" : "";
+    b.onclick = ()=>{ kfIx = i; loadCam(); syncUI(); seekVideo(c.at); };
+    el.appendChild(b);
+  });
+  if(kfIx > 0){
+    // a move usually wants to start from the opening pose and be nudged from
+    // there, so this copies the start keyframe verbatim — angles, zoom, focal
+    // AND the figure offset. It copies the start AS IT STANDS: if you have
+    // re-picked the opening camera, that is what lands here, not the value the
+    // scene code shipped with. On S16 it also drops the nudge the move carries;
+    // the framing readout says at once if the solid then lands under the panel.
+    const b = document.createElement("button");
+    const s0 = camAt(0);          // as the start stands now, including your edit
+    b.textContent = "⤺ copy start angle";
+    b.title = `φ ${s0.phi.toFixed(1)}  θ ${s0.theta.toFixed(1)}  γ ${s0.gamma.toFixed(1)}`
+            + `  zoom ${s0.zoom.toFixed(2)}  focal ${s0.focal_distance}`
+            + `  offset [${s0.offset.map(v=>v.toFixed(2)).join(", ")}]`;
+    b.style.marginLeft = "auto";
+    b.onclick = ()=>{
+      cam.phi = s0.phi; cam.theta = s0.theta; cam.gamma = s0.gamma;
+      cam.zoom = s0.zoom; cam.focal_distance = s0.focal_distance;
+      cam.offset = s0.offset.slice();
+      markEdited(); syncUI();
+    };
+    el.appendChild(b);
+  }
+  const c = shot().cameras[kfIx];
+  document.getElementById("kfnote").textContent =
+    (c.kind === "start" ? "opening camera" : `move over ${c.run_time ?? "?"}s`)
+    + ` · plan t=${c.at}s · focal ${c.focal_distance}`;
+}
+function buildText(){
+  const s = shot();
+  document.getElementById("purpose").innerHTML =
+    `<b>${s.scene}</b> — ${s.purpose || ""}<br><span style="color:var(--line)">${s.motion || ""}</span>`;
+  const t = shot().cameras[kfIx].at;
+  document.getElementById("subs").innerHTML = (s.subtitles||[]).map(u=>
+      `<div class="sub" data-a="${u.start}" data-b="${u.end}">`
+    + `<div class="w">${u.start}–${u.end}s</div>`
+    + `<div class="t">${u.text}</div><div class="e">${u.en}</div></div>`).join("");
+  highlightSubs(t);
+  const img = document.getElementById("ref");
+  img.src = s.frame ? "../" + s.frame : "";
+}
+function syncUI(){
+  buildTabs(); buildKeyframes(); buildText();
+  // never rewrite the box being typed into — it would eat a half-typed number
+  const set = (id,v,dp)=>{
+    document.getElementById("r"+id).value = v;
+    const n = document.getElementById("o"+id);
+    if(document.activeElement !== n) n.value = (+v).toFixed(dp);
+  };
+  set("phi", cam.phi, 1);
+  set("theta", cam.theta, 1);
+  set("gamma", cam.gamma, 1);
+  set("zoom", cam.zoom, 2);
+  set("focal", cam.focal_distance, 0);
+  const sw = shot().sweep, row = document.getElementById("sweeprow");
+  row.style.display = sw ? "flex" : "none";
+  if(sw){
+    document.getElementById("sweeplab").textContent = sw.label;
+    const r = document.getElementById("rsweep");
+    r.min = sw.min; r.max = sw.max; r.step = 0.5; r.value = sweepVal;
+    const n = document.getElementById("osweep");
+    n.min = sw.min; n.max = sw.max;
+    if(document.activeElement !== n) n.value = (+sweepVal).toFixed(1);
+  }
+  draw();
+}
+const clamp = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
+for(const [id,k,lo,hi] of [["phi","phi",0,180], ["theta","theta",-360,360],
+                           ["gamma","gamma",-180,180], ["zoom","zoom",0.4,2.2],
+                           ["focal","focal_distance",10,120]]){
+  const apply = v => { if(!isFinite(v)) return; cam[k] = clamp(v,lo,hi); markEdited(); syncUI(); };
+  document.getElementById("r"+id).addEventListener("input", e=> apply(parseFloat(e.target.value)));
+  document.getElementById("o"+id).addEventListener("input", e=> apply(parseFloat(e.target.value)));
+  // typing 9 on the way to 97 must not be clamped mid-word, so only snap the
+  // box back to the stored value once it loses focus
+  document.getElementById("o"+id).addEventListener("blur", ()=> syncUI());
+}
+const sweepApply = v => {
+  const sw = shot().sweep;
+  if(!isFinite(v) || !sw) return;
+  sweepVal = clamp(v, sw.min, sw.max); markEdited(); syncUI();
+};
+document.getElementById("rsweep").addEventListener("input", e=> sweepApply(parseFloat(e.target.value)));
+document.getElementById("osweep").addEventListener("input", e=> sweepApply(parseFloat(e.target.value)));
+document.getElementById("osweep").addEventListener("blur", ()=> syncUI());
+
+/* ---- mouse ---- */
+let drag = null;
+cvs.addEventListener("pointerdown", e=>{
+  drag = {x:e.clientX, y:e.clientY, cam:JSON.parse(JSON.stringify(cam)),
+          mode: e.shiftKey ? "roll" : e.altKey ? "shift" : "orbit"};
+  cvs.setPointerCapture(e.pointerId); cvs.classList.add("drag");
+});
+cvs.addEventListener("pointermove", e=>{
+  if(!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if(drag.mode === "orbit"){
+    cam.theta = drag.cam.theta - dx * 0.35;
+    cam.phi = Math.max(0, Math.min(180, drag.cam.phi - dy * 0.35));
+  }else if(drag.mode === "roll"){
+    cam.gamma = drag.cam.gamma + dx * 0.35;
+  }else{
+    // move the FIGURE, never frame_center — see manim-traps.md #16. The drag
+    // is applied along the camera's own screen axes so it tracks the mouse.
+    const p = cam.phi*DEG, t = cam.theta*DEG, g = cam.gamma*DEG;
+    const r0 = [-Math.sin(t), Math.cos(t), 0];
+    const u0 = [-Math.cos(p)*Math.cos(t), -Math.cos(p)*Math.sin(t), Math.sin(p)];
+    const cg = Math.cos(g), sg = Math.sin(g);
+    const rg = r0.map((v,i)=> cg*v - sg*u0[i]);
+    const ug = r0.map((v,i)=> sg*v + cg*u0[i]);
+    const kx = dx / W * S.frame_w, ky = -dy / H * S.frame_h;
+    cam.offset = drag.cam.offset.map((v,i)=> v + kx*rg[i] + ky*ug[i]);
+  }
+  markEdited(); syncUI();
+});
+const stop = e=>{ if(drag){ drag = null; cvs.classList.remove("drag"); } };
+cvs.addEventListener("pointerup", stop);
+cvs.addEventListener("pointercancel", stop);
+cvs.addEventListener("wheel", e=>{
+  e.preventDefault();
+  cam.zoom = Math.max(0.4, Math.min(2.2, cam.zoom * (1 - e.deltaY*0.0012)));
+  markEdited(); syncUI();
+}, {passive:false});
+
+/* ---- keys ---- */
+addEventListener("keydown", e=>{
+  if(e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+  const k = e.key;
+  if(k === "[") { shotIx = (shotIx - 1 + DATA.shots.length) % DATA.shots.length; kfIx = 0; loadCam(); syncUI(); vSyncRange(); }
+  else if(k === "]") { shotIx = (shotIx + 1) % DATA.shots.length; kfIx = 0; loadCam(); syncUI(); vSyncRange(); }
+  else if(k === "r") { delete edits[key()]; persist(); loadCam(); syncUI(); }
+  else if(k === " ") { if(haveVideo) togglePlay(); e.preventDefault(); }
+  else if(k === "f") { const r = document.getElementById("ref");
+                       r.style.display = r.style.display === "block" ? "none" : "block"; }
+  else if(k === "ArrowLeft" || k === "ArrowRight"){
+    cam.theta += (k === "ArrowRight" ? 1 : -1) * (e.shiftKey ? 5 : 1); markEdited(); syncUI(); e.preventDefault();
+  }else if(k === "ArrowUp" || k === "ArrowDown"){
+    cam.phi = Math.max(0, Math.min(180, cam.phi + (k === "ArrowDown" ? 1 : -1) * (e.shiftKey ? 5 : 1)));
+    markEdited(); syncUI(); e.preventDefault();
+  }else if(k >= "1" && k <= "9"){
+    const i = +k - 1; if(i < shot().cameras.length){ kfIx = i; loadCam(); syncUI(); }
+  }
+});
+
+/* ---- watch the file for edits made outside this tab ---- */
+setInterval(async ()=>{
+  if(blocked) return;
+  try{
+    const r = await fetch(POSES, {method:"HEAD", cache:"no-store"});
+    const now = r.headers.get("ETag");
+    if(now && etag && now !== etag){
+      blocked = true;
+      saveState("err", "CHANGED — reload",
+        "tools/" + POSES + " was written outside this tab. Saving is stopped so "
+        + "this page does not overwrite it. Reload to pick up the new poses.");
+    }
+  }catch(e){ /* server gone; the next save will report it */ }
+}, 4000);
+
+/* ---- draft player -------------------------------------------------------
+   out/draft.mp4 is the 18 shots concatenated in plan order and every scene is
+   frame-exact, so VIDEO TIME IS PLAN TIME: 760.000s of file against a plan that
+   runs 0 to 760. That is what lets a shot be played by seeking to its start and
+   stopping at its end, with no per-shot cutting.
+
+   It shows the cameras that are in the code TODAY. It is the thing you are
+   judging, not a preview of your edit. */
+const V = document.getElementById("vid");
+const vseek = document.getElementById("vseek"), vtime = document.getElementById("vtime");
+const vplay = document.getElementById("vplay"), vloop = document.getElementById("vloop");
+let haveVideo = false, wrapResume = false, intendPlay = false, resumes = 0;
+
+function highlightSubs(t){
+  document.querySelectorAll("#subs .sub").forEach(d=>{
+    const a = +d.dataset.a, b = +d.dataset.b;
+    d.classList.toggle("now", t >= a - 0.01 && t <= b + 0.01);
+  });
+}
+function shotRange(){ const s = shot(); return [s.start ?? 0, s.end ?? 0]; }
+function vSyncRange(){
+  if(!haveVideo) return;
+  const [a,b] = shotRange();
+  vseek.min = a; vseek.max = b;
+  intendPlay = false; V.pause();
+  seekVideo(a);
+}
+function seekVideo(t){
+  if(!haveVideo) return;
+  const [a,b] = shotRange();
+  V.currentTime = Math.max(a, Math.min(b - 0.05, t));
+}
+function vTick(){
+  if(!haveVideo) return;
+  const [a,b] = shotRange();
+  const t = V.currentTime;
+  if(t >= b - 0.02){
+    if(vloop.checked){
+      // Measured event order on the wrap: seeking -> waiting -> PAUSE -> seeked.
+      // The element pauses itself while it waits for the new byte range, and it
+      // does so AFTER this line, so calling play() here is swallowed. Resume in
+      // the `seeked` handler instead, once the pause has already happened.
+      wrapResume = !V.paused;
+      V.currentTime = a;
+    }else{
+      intendPlay = false; V.pause(); V.currentTime = b - 0.05;
+    }
+  }
+  vseek.value = V.currentTime;
+  vtime.textContent = `${V.currentTime.toFixed(1)}s / ${a}–${b}`;
+  highlightSubs(V.currentTime);
+}
+V.addEventListener("timeupdate", vTick);
+V.addEventListener("seeked", ()=>{
+  vTick();
+  if(wrapResume){ wrapResume = false; V.play().catch(()=>{}); }
+});
+V.addEventListener("play", ()=>{ vplay.textContent = "❚❚"; resumes = 0; });
+V.addEventListener("pause", ()=>{
+  vplay.textContent = "▶";
+  // The element pauses itself whenever it has to wait for a byte range — on the
+  // loop wrap, and on any underrun. If the user asked for playback and we are
+  // not sitting at the end of the shot, put it back. Capped, so a video that
+  // genuinely cannot play does not turn into a play/pause storm.
+  const [, b] = shotRange();
+  if(intendPlay && V.currentTime < b - 0.05 && resumes < 8){
+    resumes++;
+    setTimeout(()=> { if(intendPlay && V.paused) V.play().catch(()=>{}); }, 120);
+  }
+});
+V.addEventListener("loadedmetadata", ()=>{
+  haveVideo = true;
+  document.getElementById("draftbox").classList.remove("off");
+  vSyncRange();
+});
+V.addEventListener("error", ()=>{
+  haveVideo = false;
+  document.getElementById("draftbox").classList.add("off");
+  const m = document.getElementById("draftmiss");
+  m.style.display = "block";
+  m.textContent = "no out/draft.mp4 — render the draft to see the shot as it stands";
+});
+function togglePlay(){
+  if(V.paused){ intendPlay = true; resumes = 0; V.play().catch(()=>{}); }
+  else { intendPlay = false; V.pause(); }
+}
+vplay.onclick = togglePlay;
+vseek.addEventListener("input", e=>{
+  intendPlay = false; V.pause(); seekVideo(parseFloat(e.target.value));
+});
+V.src = "../out/draft.mp4";
+
+/* ---- export ---- */
+function poses(){
+  const out = {};
+  for(const s of DATA.shots){
+    s.cameras.forEach((c,i)=>{
+      const e = edits[s.scene+"#"+i];
+      if(!e) return;
+      (out[s.scene] = out[s.scene] || []).push({
+        keyframe: i, kind: c.kind, at: c.at, run_time: c.run_time,
+        phi: +e.phi.toFixed(3), theta: +e.theta.toFixed(3), gamma: +e.gamma.toFixed(3),
+        zoom: +e.zoom.toFixed(4), focal_distance: +e.focal_distance.toFixed(2),
+        offset: e.offset.map(v=>+v.toFixed(4)),
+        was: {phi:+c.phi.toFixed(3), theta:+c.theta.toFixed(3), gamma:+c.gamma.toFixed(3),
+              offset: c.offset.map(v=>+v.toFixed(4))}
+      });
+    });
+  }
+  return out;
+}
+function py(){
+  const p = poses();
+  if(!Object.keys(p).length) return "# nothing edited yet";
+  let s = "# hand-picked cameras — paste into src/part_b.py\n";
+  for(const scene in p){
+    s += `\n# ${scene}\n`;
+    for(const c of p[scene]){
+      const g = Math.abs(c.gamma) > 1e-9 ? `, gamma=${c.gamma}` : "";
+      s += c.kind === "start"
+        ? `self.setup_stage(phi=${c.phi}, theta=${c.theta}${g})`
+          + `   # was phi=${c.was.phi}, theta=${c.was.theta}\n`
+        : `self.move_camera(phi=${c.phi} * DEGREES, theta=${c.theta} * DEGREES`
+          + (g ? `, gamma=${c.gamma} * DEGREES` : "")
+          + `, run_time=${c.run_time})`
+          + `   # t=${c.at}s, was phi=${c.was.phi}, theta=${c.was.theta}\n`;
+      // report the offset whenever it is non-zero OR whenever it changed — a
+      // move whose offset you zeroed still needs its shift() taken OUT of the
+      // code, and saying nothing there would read as "no change needed".
+      const moved = c.offset.some((v,i)=>Math.abs(v - c.was.offset[i]) > 1e-6);
+      if(c.offset.some(v=>Math.abs(v) > 1e-6) || moved)
+        s += `#   figure offset ${JSON.stringify(c.offset)}`
+           + (moved ? ` (was ${JSON.stringify(c.was.offset)})` : "")
+           + ` — shift the figure, not frame_center\n`;
+    }
+  }
+  return s;
+}
+const ta = document.getElementById("out");
+document.getElementById("bpy").onclick = ()=> ta.value = py();
+document.getElementById("bjson").onclick = ()=> ta.value = JSON.stringify(poses(), null, 2);
+document.getElementById("bsave").onclick = ()=>{ markEdited(); ta.value = py(); };
+document.getElementById("bcopy").onclick = ()=>{ ta.select(); document.execCommand("copy"); };
+document.getElementById("breset").onclick = ()=>{
+  shot().cameras.forEach((_,i)=> delete edits[shot().scene+"#"+i]);
+  persist(); loadCam(); syncUI();
+};
+document.getElementById("bclear").onclick = ()=>{
+  if(!confirm("Discard every saved pose?")) return;
+  for(const k in edits) delete edits[k];
+  persist(); loadCam(); syncUI(); ta.value = "";
+};
+
+/* ---- go ---- */
+if(DATA.project){
+  document.getElementById("who").textContent = DATA.project;
+  document.title = DATA.project + " — camera picker";
+}
+selfCheck();
+loadCam();
+sizeCanvas();
+syncUI();
+loadFromDisk();
+addEventListener("resize", ()=>{ sizeCanvas(); draw(); });
+</script>
+</body>
+</html>

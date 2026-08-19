@@ -55,7 +55,7 @@ anyone remembering to run anything.
 
 | Check | Catches | Written by |
 |---|---|---|
-| Camera poses | a label off frame, under the panel column or in the caption band; a solved camera that no longer satisfies its guarantee | `check_poses.py` (per lesson) |
+| Camera poses | a label off frame, under the panel column or in the caption band; a solved camera that no longer satisfies its guarantee | `check_poses.py` + the lesson's `pose_guarantees.py` |
 | Cuts | camera or figure mismatch at a join, and anything that appears or vanishes in one frame | `check_joins.py` |
 | Labels | a label far from the thing it names, a label on screen before that thing exists, two labels overlapping | the render, every beat |
 
@@ -91,13 +91,19 @@ by walking up for `video-plan.json`, and works out which module holds which scen
 by **reading the class definitions in `src/*.py`** — never by mapping shot ids to
 file names, which silently rots the moment a scene is renamed.
 
-Generic tools live in the skill and are copied in by `install.py`. Three things
-stay with the lesson because they encode its content, and `install.py` never
-overwrites them:
+Generic tools live in the skill and are copied in by `install.py`. Almost
+everything is generic, **including both HTML apps** — the camera picker is
+driven entirely by `scene3d.json`, so the page itself knows nothing about any
+lesson.
 
-* `camera-poses.json` — the user's hand-picked cameras
-* `extract_3d.py` — which figure each 3D shot draws
-* `check_poses.py` — the geometric guarantees this lesson leans on
+What stays with the lesson, and is never overwritten:
+
+| File | Why it cannot be generic |
+|---|---|
+| `camera-poses.json` | the user's hand-picked cameras |
+| `extract_3d.py` | which figure each 3D shot draws. Seeded from `extract_3d.template.py` on first install, yours after that. Rewrite `FIGURES` (and `SWEEPS` / `NUDGE` if a figure moves during a shot) by calling the scene module's own helpers, so the picker cannot drift from the render. |
+| `pose_guarantees.py` | the geometric promises this lesson's solved cameras carry — a true-size angle, an edge-on plane. `check_poses.py` measures framing for any project and runs whatever it finds here; a lesson with no solved cameras needs no such file. |
+| `snap_poses.py` | solving a pose back onto its constraint. Run only when the user asks. |
 
 ## The server
 
