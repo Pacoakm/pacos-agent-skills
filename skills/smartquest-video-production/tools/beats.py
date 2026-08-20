@@ -14,7 +14,7 @@ of every shot, plus the moment each subtitle cue starts (with `--subs`).
     python3 tools/beats.py                 # shot starts + declared beats
     python3 tools/beats.py --subs          # every subtitle cue too
     python3 tools/beats.py --shots S13,S14 # just those
-    python3 tools/beats.py --video out/master.mp4
+    python3 tools/beats.py --video out/picture-subbed.mp4
 
 Frames come from a file that already exists, so this costs seconds. It does not
 render — if the draft is older than `src/`, it says so and stops.

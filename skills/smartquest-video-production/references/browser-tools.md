@@ -41,6 +41,14 @@ for the user any more — the panels are here.
 builder converts the SRT sidecar to WebVTT, because a `<track>` will not take
 SRT). Toggle the captions in the player.
 
+A **button per shot** above the player switches it to that scene's own mp4, so a
+picture note is checked against the shot rather than by scrubbing the whole
+film. A shot older than `src/` is dotted, and **Re-render this scene** beside the
+player rebuilds just it — seconds instead of tens of minutes. The scene name is
+checked against the plan before it reaches a command line, so only a class this
+lesson declares can be rendered. A mark made on a clip converts to plan time, so
+the prompt reads the same whichever you were watching.
+
 **Marking a fault** is the point of that player. Reporting one used to be three
 chores — screenshot the frame, read the timecode off the scrubber, write a
 prompt naming the shot — and that friction is why faults got batched up and

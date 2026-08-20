@@ -368,6 +368,31 @@ against `durationSeconds`, and muxes the subtitles in as a soft track. The dashb
 render card does the same with a Start button and a live log, and the Gate 3 card plays the
 result with the captions toggleable.
 
+### Coming back from Gate 3 notes — re-render the shot, not the film
+
+When the user asks for a picture change, **render only the scenes it touches**:
+
+```bash
+python3 tools/render.py draft --scenes S14PartA
+python3 tools/render.py draft --scenes S15LinePlane,S16Distance   # a change across a join
+```
+
+A scene is seconds to a couple of minutes; the whole draft is tens of minutes, and almost all
+of it is re-rendering shots nobody changed. Watch the result as **that scene's own mp4** —
+the Gate 3 card has a button per shot, and a **Re-render this scene** button beside the player,
+so the loop is: watch the shot, fix it, re-render the shot, watch it again. Marks made on a
+clip still carry the plan timecode, so notes read the same either way.
+
+Restitch when you are ready to show the whole thing:
+
+```bash
+python3 tools/render.py draft          # only what is stale, then stitch
+```
+
+Judgement, not a rule: if a change moves timing, crosses a join, or you have lost track of what
+is stale, re-render the lot. `render.py` decides staleness by mtime against `src/`, so a full
+run after a broad edit costs the same as it always did.
+
 **Never edit `src/` while a render is running.** Manim imports the modules once at start, so the
 run finishes with the code it began with and every file it wrote is then older than the source.
 

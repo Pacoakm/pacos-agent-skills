@@ -5,7 +5,7 @@ one machine's paths. Everything here comes from `video-plan.json` and from the
 source, so the same command serves any SmartQuest lesson.
 
     python3 tools/render.py draft                 # 480p15  -> out/draft.mp4
-    python3 tools/render.py master                # 1080p60 -> out/master.mp4
+    python3 tools/render.py master                # 1080p60 -> out/picture-subbed.mp4
     python3 tools/render.py draft --scenes S07,S09
     python3 tools/render.py master --no-captions  # picture only
 
@@ -35,6 +35,20 @@ import project as P                                            # noqa: E402
 
 QUAL = ["draft"]        # set once from argv; the retry needs it
 ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]|\x1b\]8;[^\x07\x1b]*(\x07|\x1b\\)")
+
+
+def stage(root, quality, name, **extra):
+    """Say which part of the run is happening, for the dashboard to read.
+
+    The scene count is visible from the mp4 files, but everything after it —
+    concat, the caption track, the overlay encode — used to be invisible: the
+    bar sat at 18/18 for another twenty minutes with nothing to show for it.
+    """
+    d = P.out_dir(root) / "jobs"
+    d.mkdir(exist_ok=True)
+    rec = {"stage": name, "at": time.time(), **extra}
+    (d / f"{quality}-stage.json").write_text(json.dumps(rec), encoding="utf-8")
+    return rec
 
 
 def log(msg):
@@ -248,6 +262,7 @@ def burn_captions(root, silent, plan, env):
     if not cap_src.exists():
         log("  no src/captions.py — leaving the picture silent")
         return silent
+    stage(root, "master", "captions")
     log("[captions] transparent track")
     w, h, fps = plan.get("width", 1920), plan.get("height", 1080), plan.get("fps", 60)
     subprocess.run([sys.executable, "-m", "manim", "-r", f"{w},{h}", "--fps", str(fps),
@@ -258,12 +273,17 @@ def burn_captions(root, silent, plan, env):
     if not hits:
         log("  caption track did not render — leaving the picture silent")
         return silent
-    dest = P.out_dir(root) / "master.mp4"
-    log("[captions] burning on")
+    dest = P.out_dir(root) / "picture-subbed.mp4"
+    prog = P.out_dir(root) / "jobs" / "overlay.progress"
+    stage(root, "master", "subbed", of=plan["durationSeconds"])
+    log("[captions] burning on — this is the one real encode")
     subprocess.run(["ffmpeg", "-nostdin", "-y", "-i", str(silent), "-i", str(hits[0]),
                     "-filter_complex", "[0:v][1:v]overlay=0:0:format=auto",
                     "-c:v", "libx264", "-preset", "slow", "-crf", "18",
-                    "-pix_fmt", "yuv420p", str(dest)], check=True, capture_output=True)
+                    "-pix_fmt", "yuv420p",
+                    # ffmpeg's own progress, so the bar is measured not guessed
+                    "-progress", str(prog), "-nostats", str(dest)],
+                   check=True, capture_output=True)
     return dest
 
 
@@ -315,6 +335,7 @@ def main() -> int:
     jobs = a.jobs or auto
     tasks = [(P.scene_modules(root).get(s, "?"), s) for s in todo]
     QUAL[0] = a.quality
+    stage(root, a.quality, "scenes", total=len(todo))
     if jobs > 1 and len(tasks) > 1:
         log(f"[tex] warming the LaTeX cache before the workers start")
         warm_tex(root, tasks, env)
@@ -340,7 +361,10 @@ def main() -> int:
         return 0
 
     log("[stitch]")
-    dest = P.out_dir(root) / ("draft.mp4" if a.quality == "draft" else "master-silent.mp4")
+    stage(root, a.quality, "picture")
+    # the names Gate 5 expects: picture.mp4 is the silent cut, picture-subbed.mp4
+    # is it with the caption track burned on
+    dest = P.out_dir(root) / ("draft.mp4" if a.quality == "draft" else "picture.mp4")
     out = stitch(root, a.quality, dest, plan)
     if out is None:
         return 1
@@ -349,6 +373,7 @@ def main() -> int:
         out = burn_captions(root, out, plan, env)
     elif a.quality == "draft" and not a.no_captions:
         out = soft_subs(root, out, plan, env)
+    stage(root, a.quality, "done", file=out.name)
     log(f"\ndone in {time.time() - started:.0f}s  ->  out/{out.name}")
     return 0
 

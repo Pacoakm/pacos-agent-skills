@@ -61,11 +61,28 @@ def storyboard(root):
 
 
 def timeline(root):
-    return [{"id": s["id"], "scene": s["manimScene"], "start": s["start"],
-             "end": s["end"], "purpose": s.get("purpose", ""),
-             "knowledgePoint": s.get("knowledgePoint", ""),
-             "register": s.get("register", ""), "ponder": s.get("ponder"),
-             "cues": len(s.get("subtitles") or [])} for s in P.shots(root)]
+    """Each shot, plus its own rendered mp4 if there is one.
+
+    A picture fix usually touches one shot. Watching that shot's file is
+    seconds; re-rendering the whole draft to see it is minutes. So the page
+    offers the scene directly, and says when it was last rendered so a stale one
+    is obvious.
+    """
+    newest = max(f.stat().st_mtime for f in (root / "src").glob("*.py"))
+    out = []
+    for s in P.shots(root):
+        f = P.scene_file(s["manimScene"], "draft", root)
+        rec = {"id": s["id"], "scene": s["manimScene"], "start": s["start"],
+               "end": s["end"], "purpose": s.get("purpose", ""),
+               "knowledgePoint": s.get("knowledgePoint", ""),
+               "register": s.get("register", ""), "ponder": s.get("ponder"),
+               "cues": len(s.get("subtitles") or []), "clip": None, "stale": None}
+        if f.exists():
+            rec["clip"] = "../" + str(f.relative_to(root))
+            rec["stale"] = f.stat().st_mtime < newest
+            rec["rendered"] = int(f.stat().st_mtime)
+        out.append(rec)
+    return out
 
 
 def main() -> int:
@@ -93,7 +110,11 @@ def main() -> int:
         "timeline": timeline(root), "storyboard": storyboard(root),
         "vtt": vtt,
         "draft": "../out/draft.mp4" if (out / "draft.mp4").exists() else None,
-        "master": "../out/master.mp4" if (out / "master.mp4").exists() else None,
+        # Gate 5's names: picture.mp4 is the silent cut, picture-subbed.mp4 has
+        # the caption track burned on and is what narration is muxed onto
+        "picture": "../out/picture.mp4" if (out / "picture.mp4").exists() else None,
+        "master": ("../out/picture-subbed.mp4"
+                   if (out / "picture-subbed.mp4").exists() else None),
     }
     (out / "dashboard-data.json").write_text(
         json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
