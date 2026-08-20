@@ -28,12 +28,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 DEG = math.pi / 180.0
 
-# Cuts where a change of figure is the point; a fade is right and continuity
-# is not expected. Everything else should carry across.
-SECTION_BREAKS = {("S10Properties", "S11CrossComponents"),
-                  ("S11CrossComponents", "S12Resolve"),
-                  ("S12Resolve", "S13Question"),
-                  ("S17Volume", "S18End")}
+def declared_fades(plan):
+    """Joins the plan says are fades — `join: "fade"` on the incoming shot.
+
+    A hardcoded list of section breaks was here first, which meant this file
+    knew one lesson's structure. The plan is where that belongs, and it is the
+    same field `transitions.py` reads, so the check and the edit cannot drift.
+    """
+    out, shots = set(), plan["shots"]
+    for prev, s in zip(shots, shots[1:]):
+        if (s.get("join") or "cut").lower() == "fade":
+            out.add((prev["manimScene"], s["manimScene"]))
+    return out
 
 
 def view(c):
@@ -57,18 +63,20 @@ def main() -> int:
         r = json.loads(f.read_text(encoding="utf-8"))
         recs[r["scene"]] = r
 
+    FADES = declared_fades(plan)
     order = [s["manimScene"] for s in plan["shots"]]
     problems, report = 0, []
     for a, b in zip(order, order[1:]):
         ra, rb = recs.get(a), recs.get(b)
         if not ra or not rb or "closing" not in ra or "opening" not in rb:
             continue
-        section = (a, b) in SECTION_BREAKS
+        section = (a, b) in FADES
         ca, cb = ra.get("closing_cam"), rb.get("opening_cam")
         gone = [x for x in ra["closing"] if x not in rb["opening"]]
         new = [x for x in rb["opening"] if x not in ra["closing"]]
 
-        line = [f"\n{a[:3]} -> {b[:3]}" + ("   (section break, a fade)" if section else "")]
+        line = [f"\n{a[:3]} -> {b[:3]}"
+                + ("   (declared a fade — continuity not expected)" if section else "")]
         if ca and cb and not section:
             sw = swing(ca, cb)
             droll = abs((cb["gamma"] - ca["gamma"] + 180) % 360 - 180)

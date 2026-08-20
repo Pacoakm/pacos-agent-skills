@@ -53,6 +53,10 @@ RUNNABLE = {
 JOBS = {
     "draft":  ["render.py", "draft"],
     "master": ["render.py", "master"],
+    # verify decodes every frame of a 1080p60 master looking for black frames
+    # and comparing shot boundaries; minutes, not seconds, so it is a job with a
+    # log rather than a request that hangs
+    "verify": ["verify.py"],
 }
 
 
@@ -218,11 +222,14 @@ class Handler(SimpleHTTPRequestHandler):
         import project as _P
         importlib.reload(_P)
         plan = _P.plan(project)
-        # `since` is when THIS quality last started. With no marker, every file
-        # that exists counts as done — falling back to a marker the other
-        # quality wrote made a finished draft read as 0/18.
-        marker = project / "out" / f".render-start-{quality}"
-        since = marker.stat().st_mtime if marker.exists() else 0
+        # Between runs the useful question is "is my cut current?", so measure
+        # against the SOURCE. Measuring against the last run's start meant a
+        # one-scene re-render left the card reading 1/18 for ever after.
+        src = project / "src"
+        since = max((f.stat().st_mtime for f in src.glob("*.py")), default=0)
+        poses = project / "tools" / "camera-poses.json"
+        if poses.exists():
+            since = max(since, poses.stat().st_mtime)
         rows, done = [], []
         for sh in plan["shots"]:
             f = _P.scene_file(sh["manimScene"], quality, project)
@@ -233,13 +240,27 @@ class Handler(SimpleHTTPRequestHandler):
                 done.append(t)
         stages = self._stages(project, quality, plan) if quality == "master" else None
         n, total = len(done), len(rows)
+
+        # A run of two scenes out of eighteen was reporting 2/18, which reads as
+        # "sixteen still to go". Ask the run what it is actually doing.
+        run = None
+        try:
+            st = json.loads((project / "out" / "jobs" /
+                             f"{quality}-stage.json").read_text("utf-8"))
+        except (OSError, ValueError):
+            st = {}
+        want = st.get("scenes")
+        if want and st.get("stage") != "done":
+            mine = [r for r in rows if r["scene"] in want]
+            run = {"scenes": want, "done": sum(1 for r in mine if r["fresh"]),
+                   "total": len(want), "stage": st.get("stage")}
         per = (max(done) - since) / n if n and n < total and since else None
         return {"quality": quality, "done": n, "total": total,
                 "elapsed": round(time.time() - since, 1) if since else None,
                 "per_scene": round(per, 1) if per else None,
                 "eta": round(per * (total - n), 1) if per else None,
                 "current": next((r["scene"] for r in rows if not r["fresh"]), None),
-                "scenes": rows, "stages": stages}
+                "scenes": rows, "stages": stages, "run": run}
 
     @staticmethod
     def _ffmpeg_progress(f):
