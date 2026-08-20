@@ -30,7 +30,7 @@ from pathlib import Path
 
 # the files a page may write back. Everything else is refused.
 SAVE_NAME = "camera-poses.json"
-WRITABLE = {"camera-poses.json", "review-notes.json"}
+WRITABLE = {"camera-poses.json", "review-notes.json", "draft-marks.json"}
 
 # Checks the dashboard may run. A fixed list of argv vectors — nothing from the
 # request reaches a shell, so a page can offer a "re-check" button without the

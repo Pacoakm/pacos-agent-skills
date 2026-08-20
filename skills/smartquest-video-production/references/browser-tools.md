@@ -41,6 +41,32 @@ for the user any more — the panels are here.
 builder converts the SRT sidecar to WebVTT, because a `<track>` will not take
 SRT). Toggle the captions in the player.
 
+**Marking a fault** is the point of that player. Reporting one used to be three
+chores — screenshot the frame, read the timecode off the scrubber, write a
+prompt naming the shot — and that friction is why faults got batched up and
+described from memory.
+
+| | |
+|---|---|
+| **Mark this frame** (`m`) | marks the instant and pauses |
+| **Mark range** (`M`) | first press sets the start, second the end |
+| **Copy frame** | that frame to the clipboard as PNG. Single marks only — a range does not need one |
+| **Copy prompt** | one line: timecode, shot, note |
+| **Copy all prompts** | the whole list, ready to paste |
+
+```
+08:54        S14 (S14PartA)     AB x AC label appears a beat early
+09:34-09:40  S15 (S15LinePlane) AV pops in at the cut
+```
+
+The shot is looked up from the plan's timeline, so nobody has to remember which
+second belongs to which scene. Marks live in `tools/draft-marks.json` under the
+same ETag guard as the poses, and are **read back on load** — writing them and
+forgetting to read them is a bug that looks exactly like not saving at all. The
+frame is grabbed by drawing the `<video>` to a canvas, so the page seeks there
+first and returns to where you were; if the clipboard refuses the image it falls
+back to downloading a PNG.
+
 **Draft render / Master render** — two separate cards, each with Start, Stop and
 a live log tail. Renders run detached: closing the browser does not stop them.
 The draft card shows a progress bar built from the mp4 files themselves, because
@@ -74,6 +100,27 @@ python3 tools/render.py draft --scenes S07,S09
 
 Only scenes older than `src/` are rendered; the rest are stitched as they are.
 So a two-scene fix costs two scenes, not eighteen. `--all` forces everything.
+
+Renders run in parallel — `min(4, cores/2)` workers by default, `--jobs N` to
+choose, `--jobs 1` to debug. Scenes are dealt longest-first, because a lesson's
+shots run from 16 s to 84 s and the long one must not be last in line.
+
+**Each worker gets its own Tex and text cache**, written as a `--config_file`
+override. Manim caches both by content hash, so two workers needing the same
+uncached string race on one filename — one deletes an intermediate the other is
+reading, and that worker dies mid-render. Warming the cache first (a `-s` pass,
+which runs every `construct` without writing frames) helps and does not close
+it; separate caches do. The warm pass is kept anyway, so four workers do not
+each compile the same LaTeX. Anything a worker still fails to produce gets one
+serial retry.
+
+Six 2D scenes: 12 s on four workers. At 1080p60 the win is smaller — the
+bottleneck moves from CPU to writing 1920x1080 partial movie files.
+
+`render.py` writes `out/jobs/<quality>.pid` and clears it on exit, so a render
+started from a terminal and one started from the dashboard both report honestly.
+A pid file left behind by a dead job read as "running" — and a recycled pid
+reads as running while being something else entirely.
 
 The stitch checks the total against `durationSeconds` and says so if it is off —
 a scene that renders one frame long is invisible until the whole thing is 0.2 s
@@ -109,8 +156,10 @@ What stays with the lesson, and is never overwritten:
 
 `serve.py` is `http.server` plus four things it needs:
 
-* **PUT** for `camera-poses.json` and `review-notes.json`, with an ETag/If-Match
-  check so two open tabs cannot silently overwrite each other — they did.
+* **PUT** for `camera-poses.json`, `review-notes.json` and `draft-marks.json`,
+  with an ETag/If-Match check so two open tabs cannot silently overwrite each
+  other — they did. Adding a name to that whitelist needs the server restarted:
+  it is read once at import, and until then the page saves nothing and says so.
 * **Range** requests, so the draft player can seek. Plain `http.server` answers a
   range request with the whole file and `currentTime` never moves.
 * **`POST /run/<check>`** and **`POST /start|stop|job/<job>`**, each a fixed argv

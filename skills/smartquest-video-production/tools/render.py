@@ -18,6 +18,7 @@ Only scenes whose file is older than `src/` are rendered unless you pass
 from __future__ import annotations
 
 import argparse
+import atexit
 import concurrent.futures as cf
 import json
 import os
@@ -59,9 +60,28 @@ def manim_env():
     return env
 
 
-def run_manim(root, module, scenes, flag, env, tag=""):
-    cmd = [sys.executable, "-m", "manim", flag, "--media_dir", "./media",
-           f"src/{module}.py", *scenes]
+def worker_config(root, i):
+    """A private Tex and text cache for one worker.
+
+    Manim caches both by content hash under `media/`. Two workers needing the
+    same uncached string race on the same filename — one deletes an
+    intermediate the other is about to read, and that worker dies mid-render.
+    Warming the cache first helps and does not close it. Separate caches do.
+    `video_dir` still comes from --media_dir, so the mp4s land where they belong.
+    """
+    d = root / "media" / f".worker{i}"
+    d.mkdir(parents=True, exist_ok=True)
+    cfg = d / "manim.cfg"
+    cfg.write_text(f"[CLI]\ntex_dir = {d / 'Tex'}\ntext_dir = {d / 'texts'}\n",
+                   encoding="utf-8")
+    return cfg
+
+
+def run_manim(root, module, scenes, flag, env, tag="", config=None):
+    cmd = [sys.executable, "-m", "manim", flag, "--media_dir", "./media"]
+    if config:
+        cmd += ["--config_file", str(config)]
+    cmd += [f"src/{module}.py", *scenes]
     p = subprocess.Popen(cmd, cwd=str(root), env=env, stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT, text=True, bufsize=1)
     bad = []
@@ -86,6 +106,10 @@ def warm_tex(root, tasks, env):
 
     `-s` runs the whole `construct` and only skips writing frames, so it creates
     every Tex the real render will ask for — in about a tenth of the time.
+
+    Workers now hold private caches (`worker_config`), so this is no longer what
+    keeps them from colliding; it is what stops four of them each compiling the
+    same LaTeX from scratch.
     """
     tmp = root / "media" / ".warm"
     for mod, group in group_by_module([(m, s) for m, s in tasks]):
@@ -127,9 +151,11 @@ def render_parallel(root, tasks, flag, env, jobs, plan):
     failed = []
 
     def work(i, bucket):
+        cfg = worker_config(root, i + 1)
         out = []
         for mod, group in group_by_module(bucket):
-            code, bad = run_manim(root, mod, group, flag, env, tag=f"[w{i+1}] ")
+            code, bad = run_manim(root, mod, group, flag, env,
+                                  tag=f"[w{i+1}] ", config=cfg)
             if code:
                 out += bad or [f"w{i+1} {mod} exited {code}"]
         return out
@@ -258,6 +284,16 @@ def main() -> int:
     env = manim_env()
     started = time.time()
     (P.out_dir(root) / ".render-start").write_text("", encoding="utf-8")
+
+    # Claim the job file whatever started this run. The dashboard decides
+    # "running" from it, so a render launched from a terminal used to show as
+    # finished while it was still going — and a pid left behind by a job that
+    # died showed as running. Owning it here makes both impossible.
+    jobs = P.out_dir(root) / "jobs"
+    jobs.mkdir(exist_ok=True)
+    pidf = jobs / f"{a.quality}.pid"
+    pidf.write_text(str(os.getpid()), encoding="utf-8")
+    atexit.register(lambda: pidf.unlink(missing_ok=True))
 
     want = [x.strip() for x in a.scenes.split(",") if x.strip()] or \
            [s["manimScene"] for s in plan["shots"]]
