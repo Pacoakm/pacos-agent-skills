@@ -65,6 +65,20 @@
   .tabs{display:flex;gap:4px;margin-bottom:8px}
   .tabs button.on{border-color:var(--accent);color:var(--accent)}
   video{width:100%;border-radius:6px;background:#000;display:block}
+  .marks{margin-top:10px}
+  .mark{display:flex;gap:8px;align-items:flex-start;padding:7px 8px;border:1px solid var(--edge);
+        border-radius:7px;margin-bottom:6px;background:#0d1017}
+  .mark.on{border-color:var(--accent)}
+  .mark .tc{font-variant-numeric:tabular-nums;color:var(--accent);white-space:nowrap;
+            cursor:pointer;font-size:12px;padding-top:3px}
+  .mark .sid{color:var(--amber);font-size:11px;white-space:nowrap;padding-top:4px}
+  .mark textarea{flex:1 1 auto;min-height:34px;height:34px;background:#0a0d13;color:var(--ink);
+    border:1px solid var(--edge);border-radius:5px;padding:4px 6px;font:inherit;font-size:12px;
+    resize:vertical}
+  .mark .acts{display:flex;gap:4px;flex-wrap:wrap}
+  .mark .acts button{padding:3px 7px;font-size:11px}
+  .markbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .markbar .live{color:var(--amber);font-size:11px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -99,11 +113,18 @@
   <p class="sub">The silent picture with its subtitles as a <b>soft track</b> — toggle them
      in the player. Burned-in captions belong to the master only.</p>
   <video id="g3-vid" controls preload="metadata" crossorigin="anonymous"></video>
-  <div class="row">
+  <div class="markbar">
+    <button id="mk-frame">Mark this frame</button>
+    <button id="mk-range">Mark range: set start</button>
+    <span class="live" id="mk-live"></span>
+    <span style="flex:1 1 auto"></span>
+    <button id="mk-all">Copy all prompts</button>
     <a class="tool alt" id="g3-dl" href="#">download draft.mp4</a>
     <a class="tool alt" href="review.html">beat review</a>
     <span class="pill" id="g3-info"></span>
   </div>
+  <div class="marks" id="mk-list"></div>
+  <canvas id="mk-canvas" style="display:none"></canvas>
 </section>
 
 <section>
@@ -302,6 +323,116 @@ function renderGates(d){
   }else pill($("g3-pill"), "", "not rendered");
 }
 
+/* ---- marking the draft --------------------------------------------------
+   Reporting a fault used to mean three separate chores: screenshot the frame,
+   read the timecode off the scrubber, then write a prompt naming the shot.
+   Mark it here instead and the page does all three. */
+const V3 = $("g3-vid");        // the element, not a getter — it exists by now
+const MARKS_FILE = "draft-marks.json";
+let MARKS = [], mkEtag = null, mkStart = null, mkCur = null, mkLoaded = false;
+
+const tc = t => `${String(Math.floor(t/60)).padStart(2,"0")}:`
+              + `${String(Math.floor(t%60)).padStart(2,"0")}`;
+function shotAt(t){
+  const tl = (DASH && DASH.timeline) || [];
+  return tl.find(s => t >= s.start && t < s.end) || null;
+}
+async function marksLoad(){
+  try{
+    const r = await fetch(MARKS_FILE, {cache:"no-store"});
+    if(!r.ok) throw 0;
+    mkEtag = r.headers.get("ETag");
+    MARKS = await r.json();
+  }catch(e){ MARKS = []; }
+  mkLoaded = true;
+  drawMarks();
+}
+async function marksSave(){
+  try{
+    const h = {"Content-Type":"application/json"};
+    if(mkEtag) h["If-Match"] = mkEtag;
+    const r = await fetch(MARKS_FILE, {method:"PUT", headers:h,
+                                        body: JSON.stringify(MARKS)});
+    if(r.ok) mkEtag = r.headers.get("ETag") || mkEtag;
+  }catch(e){ /* browser-only; the page still works */ }
+}
+function promptFor(m){
+  const s = shotAt(m.t);
+  const when = m.t2 != null ? `${tc(m.t)}-${tc(m.t2)}` : tc(m.t);
+  const where = s ? `${s.id} (${s.scene})` : "?";
+  return `${when}  ${where}  ${m.note || "(no note)"}`;
+}
+function drawMarks(){
+  const box = $("mk-list");
+  if(!MARKS.length){ box.innerHTML =
+    `<p class="sub">nothing marked. Play the draft, hit <b>Mark this frame</b> when
+     something is wrong, type what it is, then copy the prompt.</p>`; return; }
+  box.innerHTML = "";
+  MARKS.slice().sort((a,b)=>a.t-b.t).forEach(m=>{
+    const s = shotAt(m.t);
+    const d = document.createElement("div");
+    d.className = "mark" + (m.id === mkCur ? " on" : "");
+    const when = m.t2 != null ? `${tc(m.t)}–${tc(m.t2)}` : tc(m.t);
+    d.innerHTML = `<span class="tc">${when}</span>`
+      + `<span class="sid">${s ? s.id : "?"}</span>`
+      + `<textarea placeholder="what is wrong here">${esc(m.note||"")}</textarea>`
+      + `<span class="acts">`
+      + (m.t2 == null ? `<button data-a="frame">Copy frame</button>` : "")
+      + `<button data-a="prompt">Copy prompt</button>`
+      + `<button data-a="del">×</button></span>`;
+    d.querySelector(".tc").onclick = ()=>{ V3.currentTime = m.t; mkCur = m.id; drawMarks(); };
+    const ta = d.querySelector("textarea");
+    ta.oninput = ()=>{ m.note = ta.value.trim(); marksSave(); };
+    d.querySelectorAll("[data-a]").forEach(b=> b.onclick = async ()=>{
+      if(b.dataset.a === "del"){
+        MARKS = MARKS.filter(x=>x.id !== m.id); marksSave(); drawMarks(); return;
+      }
+      if(b.dataset.a === "prompt"){
+        await copyText(promptFor(m), b); return;
+      }
+      await copyFrame(m, b);
+    });
+    box.appendChild(d);
+  });
+}
+async function copyText(text, btn){
+  try{ await navigator.clipboard.writeText(text); flash(btn, "copied"); }
+  catch(e){ flash(btn, "blocked"); }
+}
+async function copyFrame(m, btn){
+  // the frame has to be ON SCREEN to be grabbed, so seek there first
+  const was = V3.currentTime;
+  V3.currentTime = m.t;
+  await new Promise(r=>{ const f=()=>{V3.removeEventListener("seeked",f); r();};
+                         V3.addEventListener("seeked", f); setTimeout(r, 1200); });
+  const c = $("mk-canvas");
+  c.width = V3.videoWidth || 854; c.height = V3.videoHeight || 480;
+  c.getContext("2d").drawImage(V3, 0, 0, c.width, c.height);
+  try{
+    const blob = await new Promise(r=> c.toBlob(r, "image/png"));
+    await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+    flash(btn, "copied");
+  }catch(e){
+    // clipboard images need a secure context; localhost is one, but fall back
+    const a = document.createElement("a");
+    a.href = c.toDataURL("image/png");
+    a.download = `mark-${tc(m.t).replace(":","")}.png`;
+    a.click(); flash(btn, "saved");
+  }
+  V3.currentTime = was;
+}
+function flash(btn, word){
+  const old = btn.textContent; btn.textContent = word;
+  setTimeout(()=> btn.textContent = old, 900);
+}
+function addMark(t, t2){
+  MARKS.push({id: "m" + Math.round(t*1000) + (t2?"-"+Math.round(t2*1000):""),
+              t: +t.toFixed(2), t2: t2 == null ? null : +t2.toFixed(2), note: ""});
+  mkCur = MARKS[MARKS.length-1].id;
+  marksSave(); drawMarks();
+  const ta = document.querySelector(".mark.on textarea"); if(ta) ta.focus();
+}
+
 /* ---- render ---- */
 async function refreshProgress(){
   const d = await jget("../out/render-progress.json");
@@ -369,6 +500,10 @@ async function refreshDraft(){
 async function refresh(){
   const dash = await jget("../out/dashboard-data.json");
   if(dash) renderGates(dash);
+  // marks are read back HERE, not just written — without this they saved to
+  // disk correctly and vanished on the next reload. DASH first, so each row can
+  // name its shot.
+  if(!mkLoaded) await marksLoad(); else drawMarks();
   await Promise.all([refreshProgress(), refreshPoses(), refreshLabels(),
                      refreshJoins(), refreshDraft()]);
   pill($("served"), live ? "ok" : "", live ? "server connected" : "static view");
@@ -378,6 +513,30 @@ setInterval(()=>{
   pollJob("draft"); pollJob("master");
 }, 6000);
 pollJob("draft"); pollJob("master");
+$("mk-frame").onclick = ()=>{ V3.pause(); addMark(V3.currentTime); };
+$("mk-range").onclick = ()=>{
+  const b = $("mk-range");
+  if(mkStart == null){
+    mkStart = V3.currentTime;
+    b.textContent = "Mark range: set end";
+    $("mk-live").textContent = "start " + tc(mkStart);
+  }else{
+    const a = Math.min(mkStart, V3.currentTime), z = Math.max(mkStart, V3.currentTime);
+    mkStart = null; b.textContent = "Mark range: set start"; $("mk-live").textContent = "";
+    if(z - a > 0.05) addMark(a, z); 
+  }
+};
+$("mk-all").onclick = async (e)=>{
+  const rows = MARKS.slice().sort((a,b)=>a.t-b.t).map(promptFor);
+  await copyText(rows.length ? "draft.mp4 問題：\n" + rows.join("\n") : "nothing marked",
+                 e.target);
+};
+addEventListener("keydown", e=>{
+  if(e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+  if(e.key === "m"){ $("mk-frame").click(); e.preventDefault(); }
+  if(e.key === "M"){ $("mk-range").click(); e.preventDefault(); }
+});
+
 (async()=>{
   const p = await jget("../video-plan.json");
   if(p){ $("title").textContent = p.title || "video";
