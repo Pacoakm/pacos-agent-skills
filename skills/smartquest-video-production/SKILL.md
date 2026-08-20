@@ -368,6 +368,41 @@ against `durationSeconds`, and muxes the subtitles in as a soft track. The dashb
 render card does the same with a Start button and a live log, and the Gate 3 card plays the
 result with the captions toggleable.
 
+### How shots join is declared, not hand-built
+
+Scenes render separately and concatenate, so **every join is a hard cut unless the plan says
+otherwise**. Say which in `video-plan.json`, on the shot being joined TO:
+
+```json
+{"id": "S13", "join": "cut"}                              the picture must be continuous
+{"id": "S11", "join": "dissolve"}                         picture into picture
+{"id": "S12", "join": "dissolve", "joinSeconds": 0.4}
+```
+
+**`cut` (the default) still means the scene code carries the continuity.** Shot A must end on
+shot B's opening camera and stage — that is what `exit_to` is for, and what `check_joins.py`
+measures. Use it wherever two shots share a figure: the point of a matched cut there is that the
+object never appears to jump.
+
+**`dissolve` means the scene code does not have to.** `tools/transitions.py` fades the incoming
+shot's own first frame up over the outgoing shot's tail, so the picture arrives at exactly the
+frame the next scene starts from. `render.py` runs it after stitching; it is not a manual step.
+
+Three things about it that are not negotiable:
+
+- **It never moves the timeline.** A normal cross-dissolve overlaps two clips and the film comes
+  out short by the length of every transition. Everything downstream is keyed to plan time — the
+  subtitle sidecar, the beat review, every timecode in a note — so the tool measures the duration
+  before and after and refuses to write a file whose length changed.
+- **It does not go through black.** Two white scenes dissolve white to white. A dip to black is a
+  different, louder transition: it reads as a chapter break, not a join.
+- **`joinSeconds`, not frames.** Six frames is 0.1 s in the 60 fps master and a frame and a half
+  in the 15 fps draft — too short to see, and too short to measure.
+
+**Do not hand-write `FadeOut(Group(*self.mobjects))` at a section break any more.** That was the
+old way; with a declared dissolve it fades twice, and it spends the shot's own seconds on a
+transition the edit does for free.
+
 ### Coming back from Gate 3 notes — re-render the shot, not the film
 
 When the user asks for a picture change, **render only the scenes it touches**:
@@ -706,6 +741,8 @@ instruction, and only from a draft the user has approved.
 - `tools/install.py` — puts the browser tools into a project. Run at the start of Gate 1.
 - `tools/render.py` — draft and master renders, stitching, subtitle muxing.
 - `tools/serve.py` — the local server the pages need (save-back, Range, long jobs).
+- `tools/transitions.py` — applies the joins the plan declares. Never changes the duration.
+- `tools/verify.py` — the final quality gate, as a job with a log.
 - `scripts/check_camera.py` — rejects degenerate 3D camera angles before rendering.
 - `scripts/check_framing.py` — projects 3D camera keyframes through a real `ThreeDCamera`:
   frame fill, off-screen elements, caption-band intrusions, and the angle a shot will actually

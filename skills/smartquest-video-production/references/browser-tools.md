@@ -95,6 +95,12 @@ every file that exists counts as done — never borrow the other quality's.
 and cut data are written by the render itself, so they are current without
 anyone remembering to run anything.
 
+## The final quality gate
+
+`verify_master.py` decodes every frame, so it runs as a **job** with a log rather
+than a request that hangs. The card runs it on `picture-subbed.mp4`, and on
+`final.mp4` with `--require-audio` once the narration is muxed.
+
 ## The checks, and what each one exists because of
 
 | Check | Catches | Written by |
@@ -139,6 +145,13 @@ bottleneck moves from CPU to writing 1920x1080 partial movie files.
 started from a terminal and one started from the dashboard both report honestly.
 A pid file left behind by a dead job read as "running" — and a recycled pid
 reads as running while being something else entirely.
+
+After stitching, `transitions.py` applies whatever joins the plan declares.
+`join: "dissolve"` on a shot dissolves the previous one into it, picture into
+picture, without going through black and **without moving the timeline** — it
+compares the duration before and after and refuses to write a file that got
+shorter. `join: "cut"`, the default, means the scene code carries the continuity
+itself.
 
 The stitch checks the total against `durationSeconds` and says so if it is off —
 a scene that renders one frame long is invisible until the whole thing is 0.2 s
