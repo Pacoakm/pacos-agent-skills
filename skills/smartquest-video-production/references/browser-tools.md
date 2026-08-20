@@ -69,9 +69,19 @@ back to downloading a PNG.
 
 **Draft render / Master render** — two separate cards, each with Start, Stop and
 a live log tail. Renders run detached: closing the browser does not stop them.
-The draft card shows a progress bar built from the mp4 files themselves, because
-manim prints nothing until a scene finishes and a piped run buffers until it
-ends.
+
+Progress is **asked of the server** (`POST /progress/<quality>`), which scans the
+mp4 files each time. It is not read from a cached file: the first version was,
+and that file only existed when somebody had run the tool by hand, so a render
+started from a terminal showed nothing at all — and the master card, which had
+no refresh button, showed nothing ever. The files themselves are the only honest
+signal anyway, because manim prints nothing until a scene finishes and a piped
+run buffers until it ends.
+
+Each quality keeps its **own** start marker, `out/.render-start-<quality>`. They
+shared one at first, so starting a master reset what the draft card measured
+from and eighteen finished draft scenes read as zero. With no marker of its own,
+every file that exists counts as done — never borrow the other quality's.
 
 **Camera poses / Cuts / Labels** — the checks, with a Run button each. The label
 and cut data are written by the render itself, so they are current without

@@ -283,7 +283,8 @@ def main() -> int:
     flag, folder = P.quality(a.quality, root)
     env = manim_env()
     started = time.time()
-    (P.out_dir(root) / ".render-start").write_text("", encoding="utf-8")
+    # per quality: a master run must not reset what the draft card measures
+    (P.out_dir(root) / f".render-start-{a.quality}").write_text("", encoding="utf-8")
 
     # Claim the job file whatever started this run. The dashboard decides
     # "running" from it, so a render launched from a terminal used to show as

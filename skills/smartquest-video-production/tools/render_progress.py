@@ -23,7 +23,12 @@ SRC = ROOT / "src"
 BAR = 46
 
 
-MARKER = ROOT / "out" / ".render-start"
+def _marker():
+    q = "master" if "--master" in sys.argv else "draft"
+    return ROOT / "out" / f".render-start-{q}"
+
+
+MARKER = _marker()
 
 
 def src_mtime():

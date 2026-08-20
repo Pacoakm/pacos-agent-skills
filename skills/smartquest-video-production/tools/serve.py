@@ -25,6 +25,7 @@ import re
 import signal
 import subprocess
 import sys
+import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -182,6 +183,41 @@ class Handler(SimpleHTTPRequestHandler):
             return {"error": str(e)}
         return {"stopped": name}
 
+    def progress(self, quality, project):
+        """Render progress, computed HERE rather than read from a stale file.
+
+        The page used to fetch `out/render-progress.json`, which only existed
+        because someone had run the tool by hand — so a render started any other
+        way showed no progress at all, and the master card had no way to refresh
+        even that. Scanning the mp4 files costs a few stats; do it per request.
+        """
+        sys.path.insert(0, str(project / "tools"))
+        import importlib
+        import project as _P
+        importlib.reload(_P)
+        plan = _P.plan(project)
+        # `since` is when THIS quality last started. With no marker, every file
+        # that exists counts as done — falling back to a marker the other
+        # quality wrote made a finished draft read as 0/18.
+        marker = project / "out" / f".render-start-{quality}"
+        since = marker.stat().st_mtime if marker.exists() else 0
+        rows, done = [], []
+        for sh in plan["shots"]:
+            f = _P.scene_file(sh["manimScene"], quality, project)
+            t = f.stat().st_mtime if f.exists() else 0
+            fresh = t > since
+            rows.append({"id": sh["id"], "scene": sh["manimScene"], "fresh": fresh})
+            if fresh:
+                done.append(t)
+        n, total = len(done), len(rows)
+        per = (max(done) - since) / n if n and n < total and since else None
+        return {"quality": quality, "done": n, "total": total,
+                "elapsed": round(time.time() - since, 1) if since else None,
+                "per_scene": round(per, 1) if per else None,
+                "eta": round(per * (total - n), 1) if per else None,
+                "current": next((r["scene"] for r in rows if not r["fresh"]), None),
+                "scenes": rows}
+
     def _project_from_path(self):
         parts = [p for p in self.path.split("/") if p]
         for i in range(len(parts), -1, -1):
@@ -193,7 +229,7 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         """POST /run/<check>, /start/<job>, /stop/<job>."""
         raw = self.path.split("?")[0].rstrip("/")
-        for verb in ("/start/", "/stop/", "/job/"):
+        for verb in ("/start/", "/stop/", "/job/", "/progress/"):
             if verb in raw:
                 head, name = raw.rsplit(verb, 1)
                 project = Path(self.directory).joinpath(
@@ -202,7 +238,7 @@ class Handler(SimpleHTTPRequestHandler):
                     self.send_error(404, "no project at " + head)
                     return
                 fn = {"/start/": self.job_start, "/stop/": self.job_stop,
-                      "/job/": self.job_status}[verb]
+                      "/job/": self.job_status, "/progress/": self.progress}[verb]
                 self._json(fn(name, project))
                 return
         name = raw.rsplit("/", 1)[-1]

@@ -433,22 +433,40 @@ function addMark(t, t2){
   const ta = document.querySelector(".mark.on textarea"); if(ta) ta.focus();
 }
 
-/* ---- render ---- */
-async function refreshProgress(){
-  const d = await jget("../out/render-progress.json");
-  if(!d){ pill($("p-pill"), "", "no data"); return; }
+/* ---- render ---------------------------------------------------------------
+   Progress is asked of the server, not read from a file someone had to
+   regenerate by hand. The old way meant a render started from a terminal — or
+   the master, which had no refresh button at all — showed nothing. */
+const mm = s => s == null ? "—" : `${Math.floor(s/60)}m${String(Math.round(s%60)).padStart(2,"0")}s`;
+
+async function refreshQuality(q, ids){
+  let d = null;
+  try{
+    const r = await fetch(`${HERE}/progress/${q}`, {method:"POST"});
+    if(r.ok){ d = await r.json(); live = true; }
+  }catch(e){ /* no server: fall back to whatever a tool last wrote */ }
+  if(!d) d = await jget(`../out/render-progress${q === "master" ? "-master" : ""}.json`);
+  if(!d){ pill($(ids.pill), "", "no data"); return; }
   const pc = Math.round(100 * d.done / d.total);
-  pill($("p-pill"), d.done === d.total ? "ok" : "warn", `${d.done}/${d.total}  ${pc}%`);
-  $("p-bar").style.width = pc + "%";
-  const mm = s => s == null ? "—" : `${Math.floor(s/60)}m${String(Math.round(s%60)).padStart(2,"0")}s`;
-  $("p-tab").innerHTML =
-      `<tr><td class="k">elapsed</td><td class="v">${mm(d.elapsed)}</td></tr>`
-    + `<tr><td class="k">per scene</td><td class="v">${d.per_scene ?? "—"}s</td></tr>`
-    + `<tr><td class="k">eta</td><td class="v">${mm(d.eta)}</td></tr>`
-    + `<tr><td class="k">rendering</td><td class="v">${d.current || "—"}</td></tr>`;
-  $("p-chips").innerHTML = d.scenes.map(s=>
+  pill($(ids.pill), d.done === d.total ? "ok" : (d.done ? "warn" : ""),
+       `${d.done}/${d.total}  ${pc}%`);
+  $(ids.bar).style.width = pc + "%";
+  // elapsed and eta only mean something while it is running; after a finished
+  // run they just count how long ago it was
+  const done = d.done === d.total;
+  if(ids.tab) $(ids.tab).innerHTML = done
+    ? `<tr><td class="k">all scenes rendered</td><td class="v">${d.total}</td></tr>`
+    : `<tr><td class="k">elapsed</td><td class="v">${mm(d.elapsed)}</td></tr>`
+      + `<tr><td class="k">per scene</td><td class="v">${d.per_scene ?? "—"}s</td></tr>`
+      + `<tr><td class="k">eta</td><td class="v">${mm(d.eta)}</td></tr>`
+      + `<tr><td class="k">rendering</td><td class="v">${d.current || "—"}</td></tr>`;
+  $(ids.chips).innerHTML = d.scenes.map(s=>
     `<span class="chip ${s.fresh?"done":""}">${s.id}</span>`).join("");
 }
+const refreshProgress = ()=> refreshQuality("draft",
+  {pill:"p-pill", bar:"p-bar", tab:"p-tab", chips:"p-chips"});
+const refreshMaster = ()=> refreshQuality("master",
+  {pill:"m-pill", bar:"m-bar", tab:"m-tab", chips:"m-chips"});
 
 /* ---- poses ---- */
 async function refreshPoses(){
@@ -487,15 +505,8 @@ async function refreshJoins(){
        bad.length ? `${bad.length} join(s) pop` : `${d.length} joins clean`);
 }
 async function refreshDraft(){
-  const d = await jget("../out/render-progress.json");
-  pill($("d-pill"), "", d && d.done === d.total ? "scenes ready" : "scenes incomplete");
-  const m = await jget("../out/render-progress-master.json");
-  if(!m){ pill($("m-pill"), "", "not started"); return; }
-  const pc = Math.round(100 * m.done / m.total);
-  pill($("m-pill"), m.done === m.total ? "ok" : "warn", `${m.done}/${m.total}  ${pc}%`);
-  $("m-bar").style.width = pc + "%";
-  $("m-chips").innerHTML = m.scenes.map(s=>
-    `<span class="chip ${s.fresh?"done":""}">${s.id}</span>`).join("");
+  pill($("d-pill"), "", (await jget("../out/dashboard-data.json"))?.draft
+       ? "draft stitched" : "no draft yet");
 }
 async function refresh(){
   const dash = await jget("../out/dashboard-data.json");
@@ -504,12 +515,12 @@ async function refresh(){
   // disk correctly and vanished on the next reload. DASH first, so each row can
   // name its shot.
   if(!mkLoaded) await marksLoad(); else drawMarks();
-  await Promise.all([refreshProgress(), refreshPoses(), refreshLabels(),
-                     refreshJoins(), refreshDraft()]);
+  await Promise.all([refreshProgress(), refreshMaster(), refreshPoses(),
+                     refreshLabels(), refreshJoins(), refreshDraft()]);
   pill($("served"), live ? "ok" : "", live ? "server connected" : "static view");
 }
 setInterval(()=>{
-  if($("p-auto").checked){ refreshProgress(); }
+  if($("p-auto").checked){ refreshProgress(); refreshMaster(); }
   pollJob("draft"); pollJob("master");
 }, 6000);
 pollJob("draft"); pollJob("master");
