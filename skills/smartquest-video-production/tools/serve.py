@@ -134,7 +134,28 @@ class Handler(SimpleHTTPRequestHandler):
         base.mkdir(parents=True, exist_ok=True)
         return base, base / f"{name}.log", base / f"{name}.pid"
 
-    def job_start(self, name, project):
+    def render_scene(self, spec, project):
+        """Render ONE scene (or a few), as a job the draft card already shows.
+
+        The scene name comes from the request, so it is checked against the
+        plan rather than trusted: only a class this project actually declares
+        can reach the command line.
+        """
+        quality, _, scenes = spec.partition("+")
+        if quality not in ("draft", "master"):
+            return {"error": "unknown quality " + quality}
+        sys.path.insert(0, str(project / "tools"))
+        import importlib
+        import project as _P
+        importlib.reload(_P)
+        known = {sh["manimScene"] for sh in _P.plan(project)["shots"]}
+        want = [x for x in scenes.split(",") if x]
+        bad = [x for x in want if x not in known]
+        if not want or bad:
+            return {"error": "not scenes of this lesson: " + ", ".join(bad or ["(none given)"])}
+        return self.job_start(quality, project, extra=["--scenes", ",".join(want)])
+
+    def job_start(self, name, project, extra=None):
         argv = JOBS.get(name)
         if argv is None:
             return {"error": "unknown job " + name}
@@ -150,7 +171,8 @@ class Handler(SimpleHTTPRequestHandler):
         env["SQ_PROJECT"] = str(project)
         fh = open(log, "w")
         p = subprocess.Popen([sys.executable,
-                              str(project / "tools" / argv[0]), *argv[1:]],
+                              str(project / "tools" / argv[0]), *argv[1:],
+                              *(extra or [])],
                              cwd=str(project), env=env, stdout=fh,
                              stderr=subprocess.STDOUT, start_new_session=True)
         pidf.write_text(str(p.pid))
@@ -209,6 +231,7 @@ class Handler(SimpleHTTPRequestHandler):
             rows.append({"id": sh["id"], "scene": sh["manimScene"], "fresh": fresh})
             if fresh:
                 done.append(t)
+        stages = self._stages(project, quality, plan) if quality == "master" else None
         n, total = len(done), len(rows)
         per = (max(done) - since) / n if n and n < total and since else None
         return {"quality": quality, "done": n, "total": total,
@@ -216,7 +239,59 @@ class Handler(SimpleHTTPRequestHandler):
                 "per_scene": round(per, 1) if per else None,
                 "eta": round(per * (total - n), 1) if per else None,
                 "current": next((r["scene"] for r in rows if not r["fresh"]), None),
-                "scenes": rows}
+                "scenes": rows, "stages": stages}
+
+    @staticmethod
+    def _ffmpeg_progress(f):
+        """Percent out of ffmpeg's own -progress file, not a guess."""
+        try:
+            txt = f.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            return None
+        out = {}
+        for line in txt.strip().splitlines():
+            if "=" in line:
+                k, v = line.split("=", 1)
+                out[k.strip()] = v.strip()
+        us = out.get("out_time_us") or out.get("out_time_ms")
+        if us is None:
+            return None
+        try:
+            secs = int(us) / (1e6 if "out_time_us" in out else 1e3)
+        except ValueError:
+            return None
+        return {"seconds": round(secs, 1), "done": out.get("progress") == "end",
+                "speed": out.get("speed")}
+
+    def _stages(self, project, quality, plan):
+        """The three things that happen after the scenes are rendered."""
+        out = project / "out"
+        jobs = out / "jobs"
+        try:
+            cur = json.loads((jobs / f"{quality}-stage.json").read_text("utf-8"))
+        except (OSError, ValueError):
+            cur = {}
+        def where(p, label):
+            f = out / p
+            return {"name": label, "file": p,
+                    "done": f.exists(),
+                    "mb": round(f.stat().st_size / 1e6, 1) if f.exists() else None}
+        caps = list((project / "media" / "videos" / "captions")
+                    .rglob("CaptionTrack.mov")) if (project / "media" / "videos"
+                                                    / "captions").exists() else []
+        enc = self._ffmpeg_progress(jobs / "overlay.progress")
+        total = plan.get("durationSeconds") or 0
+        return {
+            "current": cur.get("stage"),
+            "picture": where("picture.mp4", "concat -> picture.mp4"),
+            "captions": {"name": "caption track", "done": bool(caps),
+                         "mb": round(caps[0].stat().st_size / 1e6, 1) if caps else None},
+            "subbed": {**where("picture-subbed.mp4", "overlay -> picture-subbed.mp4"),
+                       "encoded": enc["seconds"] if enc else None,
+                       "of": total,
+                       "pct": round(100 * enc["seconds"] / total) if enc and total else None,
+                       "speed": enc.get("speed") if enc else None},
+        }
 
     def _project_from_path(self):
         parts = [p for p in self.path.split("/") if p]
@@ -229,7 +304,7 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         """POST /run/<check>, /start/<job>, /stop/<job>."""
         raw = self.path.split("?")[0].rstrip("/")
-        for verb in ("/start/", "/stop/", "/job/", "/progress/"):
+        for verb in ("/start/", "/stop/", "/job/", "/progress/", "/render/"):
             if verb in raw:
                 head, name = raw.rsplit(verb, 1)
                 project = Path(self.directory).joinpath(
@@ -238,7 +313,8 @@ class Handler(SimpleHTTPRequestHandler):
                     self.send_error(404, "no project at " + head)
                     return
                 fn = {"/start/": self.job_start, "/stop/": self.job_stop,
-                      "/job/": self.job_status, "/progress/": self.progress}[verb]
+                      "/job/": self.job_status, "/progress/": self.progress,
+                      "/render/": self.render_scene}[verb]
                 self._json(fn(name, project))
                 return
         name = raw.rsplit("/", 1)[-1]

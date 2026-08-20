@@ -7,7 +7,7 @@ timestamps by hand.
 
     python3 tools/build_review.py                 # shot starts + beats
     python3 tools/build_review.py --subs          # every subtitle cue too
-    python3 tools/build_review.py --video out/master.mp4
+    python3 tools/build_review.py --video out/picture-subbed.mp4
 
 Then serve it (the notes are PUT back to tools/review-notes.json):
 

@@ -65,6 +65,21 @@
   .tabs{display:flex;gap:4px;margin-bottom:8px}
   .tabs button.on{border-color:var(--accent);color:var(--accent)}
   video{width:100%;border-radius:6px;background:#000;display:block}
+  .stage{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12px}
+  .stage .dot{width:9px;height:9px;border-radius:50%;background:#2a3245;flex:0 0 auto}
+  .stage.run .dot{background:var(--amber)}
+  .stage.ok .dot{background:var(--ok)}
+  .stage .nm{flex:1 1 auto;color:var(--muted)}
+  .stage.run .nm,.stage.ok .nm{color:var(--ink)}
+  .stage .v{color:var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stage .mini{width:120px;height:6px;border-radius:3px;background:#0a0d13;
+               border:1px solid var(--edge);overflow:hidden;flex:0 0 auto}
+  .stage .mini i{display:block;height:100%;background:var(--amber)}
+  .scenestrip{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
+  .scenestrip button{padding:3px 8px;font-size:11px}
+  .scenestrip button.on{border-color:var(--accent);color:var(--accent)}
+  .scenestrip button.stale::after{content:"·";margin-left:4px;color:var(--amber)}
+  .scenestrip button.full{border-color:var(--muted);color:var(--ink)}
   .marks{margin-top:10px}
   .mark{display:flex;gap:8px;align-items:flex-start;padding:7px 8px;border:1px solid var(--edge);
         border-radius:7px;margin-bottom:6px;background:#0d1017}
@@ -112,8 +127,11 @@
   <h2><span class="gate">GATE 3</span> Draft <span class="pill" id="g3-pill">—</span></h2>
   <p class="sub">The silent picture with its subtitles as a <b>soft track</b> — toggle them
      in the player. Burned-in captions belong to the master only.</p>
+  <div class="scenestrip" id="g3-scenes"></div>
+  <div class="note" id="g3-which"></div>
   <video id="g3-vid" controls preload="metadata" crossorigin="anonymous"></video>
   <div class="markbar">
+    <button id="g3-rerender" style="display:none">Re-render this scene</button>
     <button id="mk-frame">Mark this frame</button>
     <button id="mk-range">Mark range: set start</button>
     <span class="live" id="mk-live"></span>
@@ -150,10 +168,12 @@
       <span class="pill" id="master-state">idle</span></h2>
   <p class="sub" id="m-sub">1080p60 with the bilingual caption track burned on.
      Hours, not minutes — start it when you are done reviewing.
-     Result: <code>out/master.mp4</code></p>
+     Four steps: scenes, concat, caption track, then the one real encode.
+     Result: <code>out/picture-subbed.mp4</code></p>
   <div class="bar"><i id="m-bar" style="width:0"></i></div>
   <table id="m-tab"></table>
   <div class="chips" id="m-chips"></div>
+  <div id="m-stages"></div>
   <div class="row">
     <button data-start="master">Start master render</button>
     <button data-stop="master">Stop</button>
@@ -311,6 +331,16 @@ function renderGates(d){
   pill($("g2-pill"), d.storyboard.length ? "ok" : "",
        `${d.storyboard.length} panel(s)`);
 
+  // one button per shot: watch that scene's own file instead of scrubbing the
+  // whole draft, and re-render just it when the picture needs a change
+  const strip = $("g3-scenes");
+  strip.innerHTML = `<button class="full on" data-clip="">full draft</button>`
+    + d.timeline.map(s=>
+        `<button data-clip="${s.clip || ""}" data-scene="${s.scene}" data-id="${s.id}"`
+        + `${s.clip ? "" : " disabled"} class="${s.stale ? "stale" : ""}"`
+        + ` title="${s.start}–${s.end}s${s.stale ? "  · older than src/" : ""}">${s.id}</button>`).join("");
+  strip.querySelectorAll("button").forEach(b=> b.onclick = ()=> pickClip(b, d));
+
   const v = $("g3-vid");
   if(d.draft){
     v.innerHTML = d.vtt
@@ -322,6 +352,43 @@ function renderGates(d){
                                      : "no subtitle sidecar found";
   }else pill($("g3-pill"), "", "not rendered");
 }
+
+/* ---- one scene at a time ---- */
+let CLIP = null;                        // null = the whole draft
+function pickClip(btn, d){
+  const strip = $("g3-scenes");
+  strip.querySelectorAll("button").forEach(x=> x.classList.remove("on"));
+  btn.classList.add("on");
+  const v = $("g3-vid");
+  CLIP = btn.dataset.clip ? {src: btn.dataset.clip, scene: btn.dataset.scene,
+                             id: btn.dataset.id} : null;
+  const keep = v.currentTime;
+  if(CLIP){
+    v.src = CLIP.src;
+    const s = d.timeline.find(t => t.scene === CLIP.scene);
+    $("g3-which").innerHTML = `<b>${CLIP.id}</b> ${CLIP.scene} · plan ${s.start}–${s.end}s`
+      + (s.stale ? ` · <span style="color:var(--amber)">older than src/ — re-render it</span>` : "")
+      + ` · timecodes below are relative to this clip`;
+    $("g3-rerender").style.display = "";
+    $("g3-rerender").textContent = `Re-render ${CLIP.id}`;
+  }else{
+    v.src = d.draft;
+    v.innerHTML = d.vtt ? `<track default kind="subtitles" srclang="zh" src="${d.vtt}">` : "";
+    $("g3-which").textContent = "";
+    $("g3-rerender").style.display = "none";
+    if(keep) v.currentTime = keep;
+  }
+}
+$("g3-rerender").onclick = async (e)=>{
+  if(!CLIP) return;
+  e.target.disabled = true;
+  try{
+    const r = await fetch(`${HERE}/render/draft+${CLIP.scene}`, {method:"POST"});
+    const j = await r.json();
+    $("draft-log").textContent = j.error || `re-rendering ${CLIP.id}…`;
+    live = true; pollJob("draft");
+  }finally{ setTimeout(()=> e.target.disabled = false, 1500); }
+};
 
 /* ---- marking the draft --------------------------------------------------
    Reporting a fault used to mean three separate chores: screenshot the frame,
@@ -426,6 +493,10 @@ function flash(btn, word){
   setTimeout(()=> btn.textContent = old, 900);
 }
 function addMark(t, t2){
+  if(CLIP){                       // clip time -> plan time, so prompts still line up
+    const s = (DASH.timeline || []).find(x => x.scene === CLIP.scene);
+    if(s){ t += s.start; if(t2 != null) t2 += s.start; }
+  }
   MARKS.push({id: "m" + Math.round(t*1000) + (t2?"-"+Math.round(t2*1000):""),
               t: +t.toFixed(2), t2: t2 == null ? null : +t2.toFixed(2), note: ""});
   mkCur = MARKS[MARKS.length-1].id;
@@ -462,11 +533,41 @@ async function refreshQuality(q, ids){
       + `<tr><td class="k">rendering</td><td class="v">${d.current || "—"}</td></tr>`;
   $(ids.chips).innerHTML = d.scenes.map(s=>
     `<span class="chip ${s.fresh?"done":""}">${s.id}</span>`).join("");
+  if(ids.stages) drawStages(d);
+}
+
+/* The scene bar reaching 18/18 is only the first of four things. Concat is
+   instant, the caption track is a render of its own, and the overlay is the one
+   real encode — twenty minutes where the old card showed nothing at all. */
+function drawStages(d){
+  const st = d.stages;
+  if(!st){ $("m-stages").innerHTML = ""; return; }
+  const cur = st.current;
+  const row = (key, name, done, right, pct) =>
+    `<div class="stage ${done ? "ok" : (cur === key ? "run" : "")}">`
+    + `<span class="dot"></span><span class="nm">${name}</span>`
+    + (pct != null && !done
+       ? `<span class="mini"><i style="width:${pct}%"></i></span>` : "")
+    + `<span class="v">${right || (done ? "done" : (cur === key ? "running" : "—"))}</span></div>`;
+  const scenesDone = d.done === d.total;
+  $("m-stages").innerHTML =
+      row("scenes", "1. scenes", scenesDone, `${d.done}/${d.total}`,
+          Math.round(100 * d.done / d.total))
+    + row("picture", "2. " + st.picture.name, st.picture.done,
+          st.picture.mb ? st.picture.mb + " MB" : null)
+    + row("captions", "3. " + st.captions.name, st.captions.done,
+          st.captions.mb ? st.captions.mb + " MB" : null)
+    + row("subbed", "4. " + st.subbed.name, st.subbed.done,
+          st.subbed.done ? (st.subbed.mb + " MB")
+          : (st.subbed.pct != null
+             ? `${st.subbed.encoded}s / ${st.subbed.of}s` + (st.subbed.speed ? ` · ${st.subbed.speed}` : "")
+             : null),
+          st.subbed.pct);
 }
 const refreshProgress = ()=> refreshQuality("draft",
   {pill:"p-pill", bar:"p-bar", tab:"p-tab", chips:"p-chips"});
 const refreshMaster = ()=> refreshQuality("master",
-  {pill:"m-pill", bar:"m-bar", tab:"m-tab", chips:"m-chips"});
+  {pill:"m-pill", bar:"m-bar", tab:"m-tab", chips:"m-chips", stages:"m-stages"});
 
 /* ---- poses ---- */
 async function refreshPoses(){
@@ -554,7 +655,7 @@ addEventListener("keydown", e=>{
          document.title = (p.title || "video") + " — production";
          $("m-sub").innerHTML = `${p.width}x${p.height} at ${p.fps}fps`
            + (p.captions?.burnedIn ? ", with the caption track burned on" : "")
-           + `. Hours, not minutes. Result: <code>out/master.mp4</code>`; }
+           + `. Hours, not minutes. Result: <code>out/picture-subbed.mp4</code>`; }
 })();
 refresh();
 </script>
