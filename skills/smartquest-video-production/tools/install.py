@@ -16,6 +16,8 @@ What is generic and gets copied:
     build_dashboard.py    gathers gates 1-3 into out/dashboard-data.json
     build_review.py       beat contact sheet -> tools/review.html
     check_joins.py        what changes at every cut
+    verify.py             the final quality gate, as a job with a log
+    transitions.py        applies the joins the plan declares
     dashboard.html        the page every gate is reviewed from
     review-template.html  the beat review page
 
@@ -42,6 +44,7 @@ HERE = Path(__file__).resolve().parent
 GENERIC = ["project.py", "render.py", "serve.py", "render_progress.py",
            "concat_draft.py", "build_dashboard.py", "build_review.py",
            "check_joins.py", "check_poses.py", "beats.py",
+           "verify.py", "transitions.py",
            "dashboard.html", "review-template.html", "picker-template.html"]
 # dropped in once, then the lesson's own — never overwritten
 SEEDS = {"extract_3d.py": "extract_3d.template.py"}

@@ -80,9 +80,19 @@
   .scenestrip button.on{border-color:var(--accent);color:var(--accent)}
   .scenestrip button.stale::after{content:"·";margin-left:4px;color:var(--amber)}
   .scenestrip button.full{border-color:var(--muted);color:var(--ink)}
+  .g3{display:flex;gap:14px;align-items:flex-start}
+  .g3 .left{flex:1 1 62%;min-width:0}
+  .g3 .right{flex:1 1 38%;min-width:280px;max-height:560px;overflow-y:auto;
+             border-left:1px solid var(--edge);padding-left:14px}
+  .g3 .right h3{font-size:11px;text-transform:uppercase;letter-spacing:.09em;
+                color:var(--muted);margin:0 0 6px;font-weight:600}
+  .g3 .right h3.sp{margin-top:16px}
+  @media (max-width:1100px){ .g3{flex-direction:column} .g3 .right{border-left:0;padding-left:0} }
   .marks{margin-top:10px}
-  .mark{display:flex;gap:8px;align-items:flex-start;padding:7px 8px;border:1px solid var(--edge);
-        border-radius:7px;margin-bottom:6px;background:#0d1017}
+  .mark{display:grid;grid-template-columns:auto auto 1fr;gap:4px 8px;padding:7px 8px;
+        border:1px solid var(--edge);border-radius:7px;margin-bottom:6px;background:#0d1017}
+  .mark textarea{grid-column:1 / -1}
+  .mark .acts{grid-column:1 / -1;justify-content:flex-end}
   .mark.on{border-color:var(--accent)}
   .mark .tc{font-variant-numeric:tabular-nums;color:var(--accent);white-space:nowrap;
             cursor:pointer;font-size:12px;padding-top:3px}
@@ -127,21 +137,28 @@
   <h2><span class="gate">GATE 3</span> Draft <span class="pill" id="g3-pill">—</span></h2>
   <p class="sub">The silent picture with its subtitles as a <b>soft track</b> — toggle them
      in the player. Burned-in captions belong to the master only.</p>
-  <div class="scenestrip" id="g3-scenes"></div>
-  <div class="note" id="g3-which"></div>
-  <video id="g3-vid" controls preload="metadata" crossorigin="anonymous"></video>
-  <div class="markbar">
-    <button id="g3-rerender" style="display:none">Re-render this scene</button>
-    <button id="mk-frame">Mark this frame</button>
-    <button id="mk-range">Mark range: set start</button>
-    <span class="live" id="mk-live"></span>
-    <span style="flex:1 1 auto"></span>
-    <button id="mk-all">Copy all prompts</button>
-    <a class="tool alt" id="g3-dl" href="#">download draft.mp4</a>
-    <a class="tool alt" href="review.html">beat review</a>
-    <span class="pill" id="g3-info"></span>
+  <div class="g3">
+    <div class="left">
+      <div class="note" id="g3-which"></div>
+      <video id="g3-vid" controls preload="metadata" crossorigin="anonymous"></video>
+      <div class="markbar">
+        <button id="mk-frame">Mark this frame</button>
+        <button id="mk-range">Mark range: set start</button>
+        <span class="live" id="mk-live"></span>
+        <span style="flex:1 1 auto"></span>
+        <a class="tool alt" id="g3-dl" href="#">download</a>
+        <a class="tool alt" href="review.html">beat review</a>
+        <span class="pill" id="g3-info"></span>
+      </div>
+    </div>
+    <div class="right">
+      <h3>Watch one shot</h3>
+      <div class="scenestrip" id="g3-scenes"></div>
+      <div class="row"><button id="g3-rerender" style="display:none">Re-render this scene</button></div>
+      <h3 class="sp">Marks <button id="mk-all" style="float:right;font-size:11px;padding:2px 7px">Copy all prompts</button></h3>
+      <div class="marks" id="mk-list"></div>
+    </div>
   </div>
-  <div class="marks" id="mk-list"></div>
   <canvas id="mk-canvas" style="display:none"></canvas>
 </section>
 
@@ -179,6 +196,20 @@
     <button data-stop="master">Stop</button>
   </div>
   <pre id="master-log">not started</pre>
+</section>
+
+<section class="wide">
+  <h2>Final quality gate <span class="pill" id="v-pill">—</span>
+      <span class="pill" id="verify-state">idle</span></h2>
+  <p class="sub">Measures rather than assumes: duration, dimensions, frame rate, frame
+     count, codec, black frames, shot-boundary continuity, per-scene frame counts,
+     subtitle rate. It decodes every frame, so it runs as a job with a log.</p>
+  <div class="row">
+    <button data-start="verify">Run on picture-subbed.mp4</button>
+    <button data-stop="verify">Stop</button>
+    <span class="pill">final.mp4 with audio is checked the same way, once it exists</span>
+  </div>
+  <pre id="verify-log">not run</pre>
 </section>
 
 <section>
@@ -253,6 +284,13 @@ async function job(verb, name){
     live = true;
   }catch(e){ $(name + "-log").textContent = "server not reachable: " + e.message; }
   pollJob(name);
+}
+async function pollVerify(){
+  const running = await pollJob("verify");
+  const log = $("verify-log").textContent;
+  const m = log.match(/\n(PASS|FAIL) in/);
+  pill($("v-pill"), running ? "warn" : (m ? (m[1] === "PASS" ? "ok" : "bad") : ""),
+       running ? "running" : (m ? m[1] : "not run"));
 }
 async function pollJob(name){
   try{
@@ -518,9 +556,14 @@ async function refreshQuality(q, ids){
   }catch(e){ /* no server: fall back to whatever a tool last wrote */ }
   if(!d) d = await jget(`../out/render-progress${q === "master" ? "-master" : ""}.json`);
   if(!d){ pill($(ids.pill), "", "no data"); return; }
-  const pc = Math.round(100 * d.done / d.total);
-  pill($(ids.pill), d.done === d.total ? "ok" : (d.done ? "warn" : ""),
-       `${d.done}/${d.total}  ${pc}%`);
+  // while a run is going, report ITS scenes — a two-scene re-render showing
+  // 2/18 reads as sixteen still to come
+  const r = d.run;
+  const num = r ? r.done : d.done, den = r ? r.total : d.total;
+  const pc = Math.round(100 * num / den);
+  pill($(ids.pill), num === den ? "ok" : (num ? "warn" : ""),
+       `${num}/${den}  ${pc}%` + (r ? `  · ${r.scenes.length === 1
+          ? r.scenes[0] : r.scenes.length + " scenes"}` : ""));
   $(ids.bar).style.width = pc + "%";
   // elapsed and eta only mean something while it is running; after a finished
   // run they just count how long ago it was
@@ -531,8 +574,11 @@ async function refreshQuality(q, ids){
       + `<tr><td class="k">per scene</td><td class="v">${d.per_scene ?? "—"}s</td></tr>`
       + `<tr><td class="k">eta</td><td class="v">${mm(d.eta)}</td></tr>`
       + `<tr><td class="k">rendering</td><td class="v">${d.current || "—"}</td></tr>`;
+  const inRun = r ? new Set(r.scenes) : null;
   $(ids.chips).innerHTML = d.scenes.map(s=>
-    `<span class="chip ${s.fresh?"done":""}">${s.id}</span>`).join("");
+    `<span class="chip ${s.fresh?"done":""}"`
+    + (inRun && !inRun.has(s.scene) ? ' style="opacity:.35"' : "")
+    + `>${s.id}</span>`).join("");
   if(ids.stages) drawStages(d);
 }
 
@@ -622,9 +668,9 @@ async function refresh(){
 }
 setInterval(()=>{
   if($("p-auto").checked){ refreshProgress(); refreshMaster(); }
-  pollJob("draft"); pollJob("master");
+  pollJob("draft"); pollJob("master"); pollVerify();
 }, 6000);
-pollJob("draft"); pollJob("master");
+pollJob("draft"); pollJob("master"); pollVerify();
 $("mk-frame").onclick = ()=>{ V3.pause(); addMark(V3.currentTime); };
 $("mk-range").onclick = ()=>{
   const b = $("mk-range");

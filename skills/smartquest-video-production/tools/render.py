@@ -335,7 +335,8 @@ def main() -> int:
     jobs = a.jobs or auto
     tasks = [(P.scene_modules(root).get(s, "?"), s) for s in todo]
     QUAL[0] = a.quality
-    stage(root, a.quality, "scenes", total=len(todo))
+    # name the scenes THIS run is doing, so a one-scene re-render reports 1/1
+    stage(root, a.quality, "scenes", total=len(todo), scenes=todo)
     if jobs > 1 and len(tasks) > 1:
         log(f"[tex] warming the LaTeX cache before the workers start")
         warm_tex(root, tasks, env)
@@ -368,6 +369,19 @@ def main() -> int:
     out = stitch(root, a.quality, dest, plan)
     if out is None:
         return 1
+    # declared dissolves, applied to the stitched cut. Scenes are not asked to
+    # match at a join the plan says is a dissolve.
+    if any((sh.get("join") or "cut").lower() != "cut" for sh in plan["shots"]):
+        stage(root, a.quality, "transitions")
+        log("[transitions]")
+        t = subprocess.run([sys.executable, str(root / "tools" / "transitions.py"),
+                            "--video", f"out/{out.name}"],
+                           cwd=str(root), capture_output=True, text=True)
+        for line in (t.stdout or t.stderr).strip().splitlines():
+            log("  " + line.strip())
+        if t.returncode:
+            log("  transitions failed — the cut is stitched but unjoined")
+
     if a.quality == "master" and not a.no_captions and \
             plan.get("captions", {}).get("burnedIn"):
         out = burn_captions(root, out, plan, env)
