@@ -46,8 +46,33 @@ picture note is checked against the shot rather than by scrubbing the whole
 film. A shot older than `src/` is dotted, and **Re-render this scene** beside the
 player rebuilds just it — seconds instead of tens of minutes. The scene name is
 checked against the plan before it reaches a command line, so only a class this
-lesson declares can be rendered. A mark made on a clip converts to plan time, so
-the prompt reads the same whichever you were watching.
+lesson declares can be rendered. Your place in the film survives the swap: the
+strip converts it, so switching to a clip lands where you already were.
+
+**A shot with marks on it is coloured** — rose instead of the default, with the
+count in a badge, and the same badge on **full draft** for the total. Unmarked
+shots are left alone, so the strip answers "which scenes have notes on them"
+before you open anything. It repaints the moment a mark is added or deleted, not
+on the next reload.
+
+### Two clocks
+
+Marks are stored on the **plan clock** — the whole draft — so a prompt reads the
+same whichever way you were watching. The player runs on the clock of the file
+it has loaded, and a single scene's mp4 **starts at 0**. Every seek therefore has
+to be converted, in both directions:
+
+* marking a frame inside a clip adds the shot's start, so `S13` at 8s is stored
+  as 338s;
+* jumping to a mark, or grabbing its frame, subtracts it again.
+
+Getting the second half wrong is the bug that used to make **Copy frame** copy
+the wrong picture: the mark's plan timecode was fed to a clip that was only 30
+seconds long, `currentTime` clamped to the last frame, and the PNG was the end
+of the shot every time. Anything that seeks goes through `seekMark()`, which
+converts — and, if the mark belongs to a shot the player is not showing, loads
+that shot's own file first (or the full draft when the strip has no clip for
+it).
 
 **Marking a fault** is the point of that player. Reporting one used to be three
 chores — screenshot the frame, read the timecode off the scrubber, write a
@@ -73,7 +98,13 @@ same ETag guard as the poses, and are **read back on load** — writing them and
 forgetting to read them is a bug that looks exactly like not saving at all. The
 frame is grabbed by drawing the `<video>` to a canvas, so the page seeks there
 first and returns to where you were; if the clipboard refuses the image it falls
-back to downloading a PNG.
+back to downloading a PNG. It waits for the *pixels*, not just the seek —
+`seeked` promises the position only, and drawing on it copies the frame you came
+from. The return only happens when the grab did not have to change files.
+
+The draft's subtitle track stays with the draft. It is written on the plan
+clock, so on a one-scene file it would caption whatever line happens to sit at
+that second of the film.
 
 **Draft render / Master render** — two separate cards, each with Start, Stop and
 a live log tail. Renders run detached: closing the browser does not stop them.

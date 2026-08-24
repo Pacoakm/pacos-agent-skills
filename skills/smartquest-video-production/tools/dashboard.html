@@ -78,8 +78,15 @@
   .scenestrip{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
   .scenestrip button{padding:3px 8px;font-size:11px}
   .scenestrip button.on{border-color:var(--accent);color:var(--accent)}
-  .scenestrip button.stale::after{content:"·";margin-left:4px;color:var(--amber)}
+  .scenestrip button.stale::before{content:"·";margin-right:4px;color:var(--amber)}
   .scenestrip button.full{border-color:var(--muted);color:var(--ink)}
+  /* a shot someone has marked reads differently from one nobody has looked at */
+  .scenestrip button[data-marks]{border-color:var(--warn);color:var(--warn)}
+  .scenestrip button[data-marks].on{border-color:var(--warn);color:var(--warn);
+        box-shadow:inset 0 0 0 1px var(--warn)}
+  .scenestrip button[data-marks]::after{content:attr(data-marks);margin-left:5px;
+        background:var(--warn);color:#0B0E14;border-radius:8px;padding:0 4px;
+        font-size:9px;font-weight:700;vertical-align:1px}
   .g3{display:flex;gap:14px;align-items:flex-start}
   .g3 .left{flex:1 1 62%;min-width:0}
   .g3 .right{flex:1 1 38%;min-width:280px;max-height:560px;overflow-y:auto;
@@ -378,6 +385,7 @@ function renderGates(d){
         + `${s.clip ? "" : " disabled"} class="${s.stale ? "stale" : ""}"`
         + ` title="${s.start}–${s.end}s${s.stale ? "  · older than src/" : ""}">${s.id}</button>`).join("");
   strip.querySelectorAll("button").forEach(b=> b.onclick = ()=> pickClip(b, d));
+  paintMarkedScenes();       // the strip was just rebuilt — colour it again
 
   const v = $("g3-vid");
   if(d.draft){
@@ -391,30 +399,50 @@ function renderGates(d){
   }else pill($("g3-pill"), "", "not rendered");
 }
 
-/* ---- one scene at a time ---- */
+/* ---- one scene at a time -------------------------------------------------
+   TWO CLOCKS are in play. Marks are stored on the PLAN clock — the whole
+   draft, so a prompt reads the same whichever way you were watching. The
+   player runs on the clock of whatever file is loaded, and a single scene's
+   mp4 starts at 0. Every seek therefore has to be converted; seeking to a raw
+   plan timecode inside a clip lands tens of seconds away, or past its end. */
 let CLIP = null;                        // null = the whole draft
-function pickClip(btn, d){
+const clipShot = ()=> (CLIP && (DASH?.timeline || []).find(x => x.scene === CLIP.scene)) || null;
+const planOf   = t => { const s = clipShot(); return s ? t + s.start : t; };
+const localOf  = t => { const s = clipShot(); return s ? t - s.start : t; };
+const planNow  = ()=> planOf(V3.currentTime);
+// is this plan time inside the file the player has loaded?
+const holds = t => { const s = clipShot(); return !s || (t >= s.start && t < s.end); };
+function seekWhenReady(v, t){
+  const go = ()=>{ v.removeEventListener("loadedmetadata", go);
+                   try{ v.currentTime = Math.max(0, t); }catch(e){} };
+  if(v.readyState >= 1) go(); else v.addEventListener("loadedmetadata", go);
+}
+function pickClip(btn, d, at){
   const strip = $("g3-scenes");
   strip.querySelectorAll("button").forEach(x=> x.classList.remove("on"));
   btn.classList.add("on");
   const v = $("g3-vid");
+  const keep = at != null ? at : planNow();   // plan clock, so the place survives
   CLIP = btn.dataset.clip ? {src: btn.dataset.clip, scene: btn.dataset.scene,
                              id: btn.dataset.id} : null;
-  const keep = v.currentTime;
   if(CLIP){
+    // the subtitle sidecar is written on the plan clock: on a one-scene file it
+    // would caption the wrong lines, so it stays with the full draft
+    v.innerHTML = "";
     v.src = CLIP.src;
-    const s = d.timeline.find(t => t.scene === CLIP.scene);
+    const s = clipShot() || d.timeline.find(t => t.scene === CLIP.scene);
     $("g3-which").innerHTML = `<b>${CLIP.id}</b> ${CLIP.scene} · plan ${s.start}–${s.end}s`
       + (s.stale ? ` · <span style="color:var(--amber)">older than src/ — re-render it</span>` : "")
-      + ` · timecodes below are relative to this clip`;
+      + ` · the player runs from 0, marks are still written on the draft clock`;
     $("g3-rerender").style.display = "";
     $("g3-rerender").textContent = `Re-render ${CLIP.id}`;
+    seekWhenReady(v, keep >= s.start && keep < s.end ? keep - s.start : 0);
   }else{
     v.src = d.draft;
     v.innerHTML = d.vtt ? `<track default kind="subtitles" srclang="zh" src="${d.vtt}">` : "";
     $("g3-which").textContent = "";
     $("g3-rerender").style.display = "none";
-    if(keep) v.currentTime = keep;
+    if(keep) seekWhenReady(v, keep);
   }
 }
 $("g3-rerender").onclick = async (e)=>{
@@ -467,8 +495,52 @@ function promptFor(m){
   const where = s ? `${s.id} (${s.scene})` : "?";
   return `${when}  ${where}  ${m.note || "(no note)"}`;
 }
+/* land the player on a mark whatever is loaded: its own clip if the strip
+   offers one, otherwise the full draft, then the CONVERTED timecode */
+async function seekMark(m){
+  if(!holds(m.t)){
+    const s = shotAt(m.t), strip = $("g3-scenes");
+    const btn = (s && [...strip.querySelectorAll("button[data-scene]")]
+                       .find(b => b.dataset.scene === s.scene && b.dataset.clip))
+              || strip.querySelector("button.full");
+    if(btn) pickClip(btn, DASH, m.t);
+  }
+  const want = localOf(m.t);
+  if(V3.readyState >= 2 && Math.abs(V3.currentTime - want) < 0.02) return;
+  await new Promise(r=>{
+    let done = false;
+    const fin = ()=>{ if(done) return; done = true;
+                      V3.removeEventListener("seeked", fin); r(); };
+    V3.addEventListener("seeked", fin);
+    seekWhenReady(V3, want);
+    setTimeout(fin, 1500);
+  });
+}
+// "seeked" promises the position, not the pixels — grabbing immediately can
+// copy the frame you were on before
+function frameReady(){
+  if(!V3.requestVideoFrameCallback) return new Promise(r=> setTimeout(r, 150));
+  return new Promise(r=>{ let done = false;
+    V3.requestVideoFrameCallback(()=>{ done = true; r(); });
+    setTimeout(()=>{ if(!done) r(); }, 500); });
+}
+/* a shot carrying marks is coloured in the strip, with how many — so a second
+   pass shows at a glance which scenes still have notes on them */
+function paintMarkedScenes(){
+  const strip = $("g3-scenes"); if(!strip) return;
+  const n = {};
+  MARKS.forEach(m=>{ const s = shotAt(m.t); if(s) n[s.id] = (n[s.id] || 0) + 1; });
+  strip.querySelectorAll("button[data-id]").forEach(b=>{
+    if(n[b.dataset.id]) b.dataset.marks = n[b.dataset.id];
+    else delete b.dataset.marks;
+  });
+  const full = strip.querySelector("button.full");
+  if(full){ if(MARKS.length) full.dataset.marks = MARKS.length;
+            else delete full.dataset.marks; }
+}
 function drawMarks(){
   const box = $("mk-list");
+  paintMarkedScenes();
   if(!MARKS.length){ box.innerHTML =
     `<p class="sub">nothing marked. Play the draft, hit <b>Mark this frame</b> when
      something is wrong, type what it is, then copy the prompt.</p>`; return; }
@@ -485,7 +557,7 @@ function drawMarks(){
       + (m.t2 == null ? `<button data-a="frame">Copy frame</button>` : "")
       + `<button data-a="prompt">Copy prompt</button>`
       + `<button data-a="del">×</button></span>`;
-    d.querySelector(".tc").onclick = ()=>{ V3.currentTime = m.t; mkCur = m.id; drawMarks(); };
+    d.querySelector(".tc").onclick = ()=>{ mkCur = m.id; drawMarks(); seekMark(m); };
     const ta = d.querySelector("textarea");
     ta.oninput = ()=>{ m.note = ta.value.trim(); marksSave(); };
     d.querySelectorAll("[data-a]").forEach(b=> b.onclick = async ()=>{
@@ -505,11 +577,13 @@ async function copyText(text, btn){
   catch(e){ flash(btn, "blocked"); }
 }
 async function copyFrame(m, btn){
-  // the frame has to be ON SCREEN to be grabbed, so seek there first
-  const was = V3.currentTime;
-  V3.currentTime = m.t;
-  await new Promise(r=>{ const f=()=>{V3.removeEventListener("seeked",f); r();};
-                         V3.addEventListener("seeked", f); setTimeout(r, 1200); });
+  // the frame has to be ON SCREEN to be grabbed, so seek there first — through
+  // seekMark, which converts the plan timecode to the loaded file's clock and
+  // loads the mark's own scene if the player is showing a different one
+  const src0 = V3.currentSrc, was = V3.currentTime;
+  V3.pause();
+  await seekMark(m);
+  await frameReady();
   const c = $("mk-canvas");
   c.width = V3.videoWidth || 854; c.height = V3.videoHeight || 480;
   c.getContext("2d").drawImage(V3, 0, 0, c.width, c.height);
@@ -524,17 +598,13 @@ async function copyFrame(m, btn){
     a.download = `mark-${tc(m.t).replace(":","")}.png`;
     a.click(); flash(btn, "saved");
   }
-  V3.currentTime = was;
+  if(V3.currentSrc === src0) V3.currentTime = was;   // same file: put it back
 }
 function flash(btn, word){
   const old = btn.textContent; btn.textContent = word;
   setTimeout(()=> btn.textContent = old, 900);
 }
-function addMark(t, t2){
-  if(CLIP){                       // clip time -> plan time, so prompts still line up
-    const s = (DASH.timeline || []).find(x => x.scene === CLIP.scene);
-    if(s){ t += s.start; if(t2 != null) t2 += s.start; }
-  }
+function addMark(t, t2){          // PLAN time — the callers convert, once
   MARKS.push({id: "m" + Math.round(t*1000) + (t2?"-"+Math.round(t2*1000):""),
               t: +t.toFixed(2), t2: t2 == null ? null : +t2.toFixed(2), note: ""});
   mkCur = MARKS[MARKS.length-1].id;
@@ -671,15 +741,16 @@ setInterval(()=>{
   pollJob("draft"); pollJob("master"); pollVerify();
 }, 6000);
 pollJob("draft"); pollJob("master"); pollVerify();
-$("mk-frame").onclick = ()=>{ V3.pause(); addMark(V3.currentTime); };
+$("mk-frame").onclick = ()=>{ V3.pause(); addMark(planNow()); };
 $("mk-range").onclick = ()=>{
   const b = $("mk-range");
   if(mkStart == null){
-    mkStart = V3.currentTime;
+    mkStart = planNow();          // plan clock, so a range survives a clip swap
     b.textContent = "Mark range: set end";
     $("mk-live").textContent = "start " + tc(mkStart);
   }else{
-    const a = Math.min(mkStart, V3.currentTime), z = Math.max(mkStart, V3.currentTime);
+    const now = planNow();
+    const a = Math.min(mkStart, now), z = Math.max(mkStart, now);
     mkStart = null; b.textContent = "Mark range: set start"; $("mk-live").textContent = "";
     if(z - a > 0.05) addMark(a, z); 
   }
