@@ -416,7 +416,8 @@ A scene is seconds to a couple of minutes; the whole draft is tens of minutes, a
 of it is re-rendering shots nobody changed. Watch the result as **that scene's own mp4** —
 the Gate 3 card has a button per shot, and a **Re-render this scene** button beside the player,
 so the loop is: watch the shot, fix it, re-render the shot, watch it again. Marks made on a
-clip still carry the plan timecode, so notes read the same either way.
+clip still carry the plan timecode, so notes read the same either way — and a shot with marks
+on it is coloured in the strip, with the count, so the second pass knows where to look.
 
 Restitch when you are ready to show the whole thing:
 
