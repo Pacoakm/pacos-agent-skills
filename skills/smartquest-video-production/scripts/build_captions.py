@@ -270,6 +270,8 @@ def check_layout(plan: dict, cues: list[dict]) -> tuple[list[str], list[str]]:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         theme = importlib.import_module("smartquest_theme")
         importlib.reload(theme)          # pick up the pixel dimensions just set
+        if str(plan.get("theme", "dark")).lower() == "light":
+            theme.use_light()
     except Exception as exc:             # noqa: BLE001 — any import failure is the same answer
         return ([f"layout not measured — could not import the theme ({exc.__class__.__name__}: "
                  f"{exc}). The character limits still ran; render one cue and look."], [])
@@ -314,7 +316,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import numpy as np
 from manim import *
-from smartquest_theme import sync_frame, Stage, fit_caption
+{theme_setup}from smartquest_theme import sync_frame, Stage, fit_caption
 
 sync_frame()
 
@@ -396,7 +398,14 @@ def main() -> int:
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    # A light-theme lesson needs a light-theme caption track. Without this the
+    # track keeps the module's dark CAPTION_INK (#F2F5FC) and burns near-white
+    # type onto a near-white frame — legible in neither theme, and invisible
+    # only in the one that ships.
+    theme_setup = ("import smartquest_theme as sq\nsq.use_light()\n"
+                   if str(plan.get("theme", "dark")).lower() == "light" else "")
     scene = SCENE_TEMPLATE.format(
+        theme_setup=theme_setup,
         plan_name=plan_path.name, w=plan["width"], h=plan["height"], fps=plan["fps"],
         cues=[(c["start"], c["end"], c["text"], (c.get("en") or "").strip() or None,
                c.get("terms") or {}) for c in cues],
