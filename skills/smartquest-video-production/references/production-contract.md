@@ -140,8 +140,8 @@ Check these; do not assume them.
 8. `register` is `"math"` or `"verbal"` — the shot speaks one of them, never both. A figure is
    welcome in either.
    - `"math"` — equations, formulae, ratios, derivations. `onScreenText`'s **non-mathematical**
-     entries (title, labels, term cards) total ≤ 12 字 (Latin word = 2 字), and none is a
-     sentence. Mathematics and DSE reasons are exempt and uncounted.
+     entries (title, labels, term cards) are kept as short as the idea allows — no fixed 字 cap
+     (Latin word = 2 字) — and none is a sentence. Mathematics and DSE reasons are exempt and uncounted.
    - `"verbal"` — one enumerated list of steps or conditions: ≤ 5 items, each ≤ 20 字 and one
      line, and **no displayed equation** anywhere in the shot. Inline symbols inside an item
      (`⊥`, `∠`, `AD`) do not count and do not make it a formula.

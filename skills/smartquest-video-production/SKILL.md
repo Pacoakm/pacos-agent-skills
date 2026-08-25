@@ -125,7 +125,7 @@ defect; text beside a *figure* is not.
 | Carries | equations, formulae, ratios, derivations | an enumerated list of steps or conditions |
 | Figure | yes | **yes** — and it should react as each item lands |
 | Never | an explanatory sentence | a displayed equation |
-| Budget | non-mathematical text ≤ 12 字 | ≤ 5 items, each ≤ 20 字 |
+| Budget | non-mathematical text: as few 字 as the idea needs, no fixed cap | ≤ 5 items, each ≤ 20 字 |
 
 Most lessons need both registers; they just take separate shots, with the figure carrying across.
 Words are for what genuinely cannot be said in mathematics — chiefly an **enumerated procedure**,
@@ -146,7 +146,7 @@ This is not the prose ban being relaxed. Banned prose is *your* explanation of t
 the question is the **object of study**, and it is the exact text the student has to parse in the
 exam hall. A student who watches a solution to a question they cannot see is watching a
 mechanism with no problem attached to it, and reading the English question under time pressure is
-half of what the paper actually tests. So the question band is exempt from the ≤ 12 字 budget and
+half of what the paper actually tests. So the question band is exempt from the concision budget and
 from the one-register rule — see `references/on-screen-language.md`, "The question band".
 
 **The stem never leaves.** Parts (a) and (b) may each take their own screen, but the main
@@ -275,8 +275,8 @@ be read without opening files:
 - **The full script** — every shot in order, as a table: shot ID, timecode, allotted seconds, the
   exact 書面語 subtitle text **and its English line**, 字數, and the pacing verdict against both
   the reading budget (`字數 ≤ 秒數 × 4.0`) and the breathing budget (`stillSeconds ≥ 秒數 × 0.25`).
-- **What is on the picture** — per shot, the `onScreenText` list and its 字數 against the ≤ 12 字
-  limit, so the split between picture and narration is visible before anything is drawn. Any
+- **What is on the picture** — per shot, the `onScreenText` list and its 字數, with a line on why
+  each entry earns its place, so the split between picture and narration is visible before anything is drawn. Any
   sentence you moved off the frame: say where it went, and what mathematics replaced it.
 - **The question, if the lesson works one** — the stem verbatim in English, the parts, which
   shots carry which part, and the seconds the stem gets to be read before anything else moves.
@@ -325,8 +325,9 @@ colour meaning stay constant, does each shot's end state match the next shot's s
 
 **This is where on-screen prose gets caught.** Check each panel against its `register`:
 
-- **`math` panels** — count the non-mathematical characters. Over 12 字, or any complete
-  sentence, means redesign the panel, not shrink the type.
+- **`math` panels** — count the non-mathematical characters. There is no hard cap, but any
+  complete sentence, or any word the figure could have shown as a mark, a colour or a movement,
+  means redesign the panel, not shrink the type.
 - **`verbal` panels** — one enumerated list, ≤ 5 items. A figure alongside it is good; a
   **displayed equation** alongside it means split the shot in two.
 - **Both** — no loose explanatory sentence anywhere, and nothing written in words that the
@@ -709,7 +710,7 @@ instruction, and only from a draft the user has approved.
     current part under it, and only the part changing between shots. A solution shown against a
     question the student cannot read teaches a mechanism with no problem attached, and skips the
     part of the exam that is reading the English. Build it with `Stage.question()`; the band is
-    exempt from the ≤ 12 字 budget and from rule 15, and from nothing else.
+    exempt from the concision budget and from rule 15, and from nothing else.
 24. **Never let a draft go out without its subtitle track.** `out/draft.mp4` carries the cues as
     a **soft** `mov_text` stream — never burned in at draft. Burned type at 854×480 is judged on
     a resolution the master does not have, a typo then costs a re-encode, and the reviewer loses

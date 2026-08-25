@@ -33,7 +33,7 @@ bans is text beside *displayed mathematics*.
 | Figure | yes — the figure the mathematics describes | yes — the figure the steps act on |
 | Also allowed | figure labels, term cards, DSE reasons | figure labels, term cards, inline symbols (`⊥`, `∠`, `AD`) |
 | Never | an explanatory sentence | a displayed equation |
-| Budget | non-mathematical text ≤ 12 字 | ≤ 5 items, each ≤ 20 字 and one line |
+| Budget | non-mathematical text: as few 字 as the idea needs, no fixed cap | ≤ 5 items, each ≤ 20 字 and one line |
 
 Both registers are welcome in the same *lesson* — most lessons need both. They just take separate
 shots. When a beat needs the list and the equation, that is two shots, and the figure carries
@@ -83,7 +83,7 @@ the palette on the part of the frame that needs it least.
 
 ### It is exempt from the budget, and from nothing else
 
-The stem does not count against the ≤ 12 字 non-mathematical budget, and it may sit over a
+The stem does not count against the non-mathematical concision budget, and it may sit over a
 `math` shot or a `verbal` one. Everything else still applies inside the content area: no loose
 explanatory prose of your own, no sentence that a mark on the figure could have made, one
 register below the band.
@@ -143,7 +143,7 @@ Per shot, counting only text on the picture — not captions, and not the questi
 
 ```
 解釋性文字 = 0 字
-非數學文字（title + labels + term cards）≤ 12 字   # 拉丁詞當 2 字
+非數學文字（title + labels + term cards）愈少愈好，無硬性上限   # 拉丁詞當 2 字
 數學 = 無上限
 ```
 
@@ -497,8 +497,8 @@ On-screen non-mathematical text drops from about 30 字 to 8.
 
 At the storyboard, per panel:
 
-- Count the non-mathematical characters. Over 12 字, or any complete sentence → redesign the
-  panel, do not shrink the type.
+- Count the non-mathematical characters. No hard cap, but a complete sentence — or a count that
+  keeps climbing — → redesign the panel, do not shrink the type.
 - For every sentence you removed, name where it went: subtitle, narration, or an animated beat.
 - For every term card, name the shot where it was bound to its colour.
 - Ask of each remaining word: *would the frame still teach this if I deleted it?* If yes, delete
