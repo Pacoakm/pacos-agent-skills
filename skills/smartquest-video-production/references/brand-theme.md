@@ -204,27 +204,80 @@ the title card. It is a signature, not a decoration; repeating it cheapens it.
 | Role | Face | Size | Note |
 |---|---|---|---|
 | Mathematics, point labels, DSE reasons | **Computer Modern** via `MathTex`/`Tex` | — | Manim's stock template, `TEX_MAIN` |
-| On-frame Chinese | **Songti TC** | 22–32 | 明體; its stroke modulation sits with Computer Modern |
+| ~~On-frame Chinese~~ | — | — | **There is none.** The picture is English; 中文 lives on the caption track (rule 29) |
+| Unicode maths symbol | translated to TeX | as its host | ∠ △ ⊥ ° ① ⇌ θ Ω … — `_texify()` swaps them for `\angle`, `\perp`, `\textcircled{1}` before the line compiles |
 | Display titles | **Computer Modern** via `Tex` | — | same face as everything else on the frame |
 | **Captions only** | **PingFang HK Bold** | fixed | sans on purpose — the caption track must read as a layer over the lesson, not part of it |
+| **Concept terms** | same face, **bold** (`WEIGHT_TERM`) | as its host | `term()` for a card, `body(..., terms=[...])` inline — see below |
 
 **The frame carries exactly two faces: Computer Modern, and PingFang for the captions.** DM Sans
 is gone — a brand display face on the title made the top of the frame a different document from
 the mathematics under it. `FONT_DISPLAY` and `DISPLAY_MIN` survive only as deprecated aliases so
 older scenes still import.
 
-`title()` routes by **script, not character set**: anything containing a CJK character goes to
-Songti TC, everything else to `Tex`. A title like `1 · centroid` is mostly Latin and belongs in
-TeX, so testing for non-ASCII would send it the wrong way. The `·` compiles fine in Manim's stock
-template.
+And now the picture is a **single** face, because the picture is English (hard rule 29): Songti TC
+no longer sets anything on it. `title()`, `body()`, `label()`, `term()` and `question_text()`
+**raise** on a CJK character instead of routing it to a Chinese face — the fix is to move the
+sentence to the caption track or say it in mathematics, not to pick a font. Songti stays only as
+the fallback for a stray Unicode maths symbol (∠ △ ⊥ ° ′), and even those are better written as
+LaTeX — `label(r"$\angle BAD$")` — so they come out of Computer Modern too.
+
+`title()` sets everything through `Tex`. A title like `1 · centroid` is mostly Latin and always
+was TeX's; the `·` compiles fine in Manim's stock template.
 
 **Latin on the figure goes through TeX, not Pango.** `label()` sends a single symbol to `MathTex`
 and a word to `Tex`, so the `A` labelling a vertex is the *same glyph* as the `A` inside
 `\angle BAD` beside it. That is what rule 17 asks for, and a Pango `A` next to a TeX `A` visibly
 is not the same letter. Chinese has no Computer Modern, so it falls through to Songti TC.
 
+### A Unicode symbol on the frame is translated, not set
+
+Now that the picture is entirely TeX, a symbol typed as a Unicode character is a **hard LaTeX
+error** rather than a font substitution — the stock template has no glyph for `∠` or `①`, and the
+render dies with *"Unicode character not set up for use with LaTeX"*. That would make the list
+shots in `on-screen-language.md`, which are written with exactly those characters, impossible to
+type.
+
+So `title()`, `body()`, `label()` and the question band run every string through `_texify()`
+first:
+
+| Written | Set as | |
+|---|---|---|
+| `①②③④⑤` | `\textcircled{\scriptsize N}` | the list markers |
+| `∠ △ ⊥ ∥ ≅ ° ′ ″` | `\angle`, `\triangle`, `\perp`, … | geometry |
+| `≈ ≤ ≥ ≠ ± × ÷ ∵ ∴ → ⇒ ⇌ ∞` | the matching command | relations, and Chemistry's equilibrium arrow |
+| `α β γ θ λ μ π ρ σ φ ω Δ Σ Ω` | the matching command | Physics and Chemistry labels |
+| `— – · ’ ‘ “ ” …` | themselves | punctuation compiles as-is (measured) |
+| anything else non-ASCII | **raises**, naming the character | add it to `_TEX_SYMBOL`, or write the LaTeX |
+
+Only **outside** `$...$`. Inside a maths span the author is already writing LaTeX, so a Unicode
+symbol there raises instead — splicing `$\angle$` into an open span would close it.
+
+`body()` builds its English line in Computer Modern too, wrapped in `\mbox` so LaTeX cannot break
+it at its own page width (the trap the question band documents below). That means an over-long
+line runs off the frame instead of wrapping, so `body()` measures itself and **raises** — split it
+into two list items or cut the words, never shrink it. Its `terms` are set bold and coloured by
+building the line as separate `Tex` arguments, one per run.
+
 Use **PingFang HK, not PingFang SC** for captions — SC sets 全形 punctuation centred, which reads
-as Mainland typesetting to a Hong Kong student.
+as Mainland typesetting to a Hong Kong student. The caption track is the one place 中文 is set at
+all.
+
+### Weight belongs to the concept term, and to nothing else
+
+**Every English DSE term on the picture is bold** — the term card, a term inside a 中文 line, a
+term on the recap page (hard rule 26). `term()` builds the card; `body(..., terms=[...])` bolds
+and colours a term inline. Computer Modern's `\textbf` and Pango's `BOLD` for Songti are both far
+enough from the text weight to read at 480p draft resolution.
+
+The frame has no other signal left for it. Colour means *reference* — a hue names a thing in the
+figure and may not be spent on emphasis (rule 17) — and size is set by role. Weight is what
+remains, and the term is what needs it: it is usually the only Latin word in a frame of Chinese
+and mathematics, and it is the word the DSE answer sheet wants written.
+
+Bold is therefore **not** available for a result, a step, a number or a whole line. Those are
+marked by colour, by stillness, or by `emphasise()` — one signal per beat. A frame with three
+bold things has three terms on it, which is too many terms.
 
 ### Never call `Text()` directly
 
@@ -235,8 +288,8 @@ to make two letters touch. That is the "英文字距不一樣" defect, and it is
 renderer, not of the face: every candidate Latin font drifts the same way. See
 `manim-traps.md` #22 for the measurements.
 
-So: `title()`, `body()`, `label()`, `question_text()`, `caption_text()`, `step()`, or `_text()` —
-never a bare `Text(...)`. A single stray `Text()` in a scene is visible as one word spaced differently from
+So: `title()`, `body()`, `label()`, `term()`, `question_text()`, `caption_text()`, `step()`, or
+`_text()` — never a bare `Text(...)`. A single stray `Text()` in a scene is visible as one word spaced differently from
 the identical word elsewhere in the same video.
 
 ### Mathematics is Computer Modern
@@ -492,6 +545,27 @@ Two traps live in that helper, both of which render without an error:
   drawn outlines, so `arrange()` still opens the leading under a line with no descender. The
   lines are stacked by their tops at a fixed step instead.
 
+### The solution, and the page it ends on
+
+A worked example is solved in motion and then handed over as one still page (hard rules 27 and
+28). Two helpers build them, and both take the lines in the order a marker reads them.
+
+| | |
+|---|---|
+| `derivation(general, *lines, reason=...)` | the live solve. `general` is the **required first argument** — the formula in symbols, no numbers — and each line is a submobject, so each gets its own beat and its own figure event |
+| `solution_page(stage, lines)` | the closing page. Every line at once at `SIZE_SOLUTION` 26, a DSE reason under any line that has one, centred in the content area, held ≥ `REST_RECAP` (4.0 s) |
+| Over the area | `solution_page()` **raises** — keep the lines a marker awards, or give each half of a split part its own page. Never shrink the type |
+
+Both set their lines in one `align*` environment, so **TeX** hangs `= 14` under the `=` above it
+the way a marker writes it. An explicit `&` in a line is honoured; otherwise the alignment mark
+goes before the line's first relation.
+
+Doing that by measurement instead does not work, and the failure is quiet: in ManimCE 0.20 a
+`MathTex` built from ONE string comes back as a single submobject carrying the whole line, no
+matter what is passed to `substrings_to_isolate` — so there is no `=` submobject whose position
+could be read. Passing the lines as **separate arguments** is what splits them, which is the same
+mechanism that makes per-beat reveal possible. See `manim-traps.md` #40.
+
 ### Type is scaled to the frame
 
 Manim font sizes are absolute scene units, and `frame_height` stays 8 in both aspects while
@@ -499,7 +573,8 @@ Manim font sizes are absolute scene units, and `frame_height` stays 8 in both as
 **47.5%** at 9:16 — portrait type comes out about three times too big.
 
 `TYPE_SCALE` corrects this, with a ×2 readability boost for portrait because a short is watched
-on a small screen. It is applied inside `title()`, `body()`, `label()`, `mtex()` and `step()`,
+on a small screen. It is applied inside `title()`, `body()`, `label()`, `term()`, `mtex()`,
+`step()`, `derivation()` and `solution_page()`,
 so scene code just names a size. Captions pass `scale=False` — they are fitted to the frame
 width instead, and taking the scale as well would make them tiny.
 
@@ -570,8 +645,35 @@ spends reading time the pacing budget already allocated, and drifts it away from
 
 ## Title and end cards
 
-- **Title card** — topic in `title()`, `brand_rule()` beneath, subject and paper in `label()`.
-  Under 4 s. It is not a channel intro.
+- **Title card** — **the locked opening frame of every lesson** (hard rule 30). Build it with
+  `title_card()`; do not lay one out by hand.
+
+```python
+card = sq.title_card(st, "Arithmetic and Geometric Sequences",
+                     "DSE Maths", "Compulsory Part", "6.1")
+self.play(Write(card[0]))                                   # the topic
+self.play(GrowFromCenter(card[1]), FadeIn(card[2], shift=UP * 0.15))
+```
+
+```
+              Arithmetic and Geometric Sequences        ← title(), INK, SIZE_TITLE 52
+                     ▬▬▬▬▬▬▬▬▬▬▬▬▬▬                     ← brand_rule(), half the widest line
+              DSE Maths · Compulsory Part · 6.1         ← MUTED, SIZE_TITLE_SUB 32
+```
+
+  | | Locked |
+  |---|---|
+  | Topic | `title()`, `INK`, `SIZE_TITLE` — the syllabus topic in English, no lesson number, no 「今日我們講」 |
+  | Rule | `brand_rule()`, **half the widest line**, the one place in the whole video the gradient appears |
+  | Subject line | `MUTED`, `SIZE_TITLE_SUB` (0.62 of the title — measured off the approved card), the parts joined with ` · ` |
+  | Its parts | subject, then paper or part, then the syllabus code: `DSE Maths · Compulsory Part · 6.1`. **Required** — `title_card()` raises without them, because it is the first thing a DSE student checks |
+  | Gaps | `0.45` above and below the rule, equal |
+  | Position | optically centred — 4.4% of the frame height above true centre, clamped clear of the caption band in portrait |
+  | Length | 3–4 s. It is a title card, not a channel intro: no logo animation, no music sting |
+
+  The **ratios** are what is locked, not the pixel numbers, so the card holds together whether
+  the topic is one word or six. Three separate submobjects come back, so the topic, the rule and
+  the subject line each land on their own beat.
 - **End card** — the one takeaway sentence, plus the next-video pointer if there is one. No logo
   animation, no music sting. The last thing on screen should be the thing to remember.
 

@@ -1,5 +1,10 @@
 # Narration and subtitles
 
+**This is the only place 中文 appears.** The picture — every title, label, term card,
+list item, DSE reason and the question — is English (hard rule 29). The caption track is
+the exemption, and it is unchanged: 繁體中文書面語 on top, English underneath, with the
+teacher narrating in Cantonese over all of it.
+
 ## Who is watching
 
 Hong Kong secondary students preparing for **English-language** DSE papers, taught in Cantonese.

@@ -49,6 +49,10 @@ the implementation.
   "height": 1080,
   "aspect": "16:9",
   "theme": "dark",                 // or "light" — asked at Gate 1, never assumed
+  "titleCard": {
+    "topic": "Arithmetic and Geometric Sequences",
+    "subtitle": ["DSE Maths", "Compulsory Part", "6.1"]
+  },
   "learningObjective": "...",
   "misconception": "...",
   "ahaShotId": "S05",
@@ -77,23 +81,55 @@ the implementation.
       "b": "(b) The equation of the straight line $L$ is $3x - 4y - 37 = 0$. It is found that $\\Gamma$ and $L$ do not intersect."
     }
   },
+  "examples": [
+    {
+      "id": "EX1",
+      "rung": "mirror",
+      "concept": "general term of an A.S.",
+      "copyLine": "the concept frame with n = 3, a = 10, d = 2 put in",
+      "shots": ["S07", "S08"],
+      "solutionPageShot": "S08",
+      "solutionLines": [
+        ["T(n) = a + (n-1)d", "\\text{(general term of an A.S.)}"],
+        ["T(3) = 10 + (3-1)(2)"],
+        ["= 14"]
+      ]
+    },
+    {"id": "EX2", "rung": "one-step", "newMove": "solve for n instead of T(n)",
+     "shots": ["S09"], "solutionPageShot": "S09", "solutionLines": ["..."]}
+  ],
   "shots": [
     {
       "id": "S01",
       "start": 0.0,
+      "end": 3.5,
+      "manimScene": "S01Title",
+      "titleCard": true,
+      "purpose": "Name the lesson and its syllabus point",
+      "visual": "topic · brand rule · DSE Maths · Compulsory Part · 6.1",
+      "motion": "topic writes, rule grows, subject line fades up",
+      "transitionIn": "Cold open",
+      "transitionOut": "Cut",
+      "onScreenText": ["Arithmetic and Geometric Sequences",
+                       "DSE Maths · Compulsory Part · 6.1"],
+      "stillSeconds": 3.5
+    },
+    {
+      "id": "S02",
+      "start": 3.5,
       "end": 22.0,
-      "manimScene": "S01Hook",
+      "manimScene": "S02Hook",
       "purpose": "...",
       "visual": "...",
       "motion": "...",
-      "transitionIn": "Cold open",
+      "transitionIn": "Cut",
       "transitionOut": "...",
       "knowledgePoint": "...",
       "register": "math",
       "questionPart": "a-i",
       "onScreenText": ["1 · centroid", "median", "AO : OM = 2 : 1", "A", "B", "C", "O", "M"],
-      "movedToNarration": ["較長一段連着頂點 → AO : OM = 2 : 1 on the frame",
-                           "永遠在 triangle 內 → S06, vertex is dragged"],
+      "movedToNarration": ["the longer part touches the vertex → AO : OM = 2 : 1 on the frame",
+                           "always inside the triangle → S06, vertex is dragged"],
       "givens": ["AB = 12", "∠ABD = 72°"],
       "beats": [
         {"at": 6.0, "line": "\\angle CAD = 60^\\circ",
@@ -106,7 +142,10 @@ the implementation.
          "en": "Draw two radii from the centre O to form two isosceles triangles.",
          "terms": {"isosceles triangle": "等腰三角形", "SAS": ""}}
       ],
-      "ponder": {"prompt": "求 \u2220BAD", "holdSeconds": 3.5},
+      "ponder": {"prompt": "Find \u2220BAD", "holdSeconds": 3.5},
+      "exampleId": "EX1",
+      "solutionPage": false,
+      "titleCard": false,
       "stillSeconds": 6.0,
       "storyboardFrame": "storyboard/frames/S01.png"
     }
@@ -140,9 +179,9 @@ Check these; do not assume them.
 8. `register` is `"math"` or `"verbal"` — the shot speaks one of them, never both. A figure is
    welcome in either.
    - `"math"` — equations, formulae, ratios, derivations. `onScreenText`'s **non-mathematical**
-     entries (title, labels, term cards) are kept as short as the idea allows — no fixed 字 cap
-     (Latin word = 2 字) — and none is a sentence. Mathematics and DSE reasons are exempt and uncounted.
-   - `"verbal"` — one enumerated list of steps or conditions: ≤ 5 items, each ≤ 20 字 and one
+     entries (title, labels, term cards) are kept as short as the idea allows — no fixed word cap
+     — and none is a sentence. Mathematics and DSE reasons are exempt and uncounted.
+   - `"verbal"` — one enumerated list of steps or conditions: ≤ 5 items, each ≤ 8 words and one
      line, and **no displayed equation** anywhere in the shot. Inline symbols inside an item
      (`⊥`, `∠`, `AD`) do not count and do not make it a formula.
 
@@ -169,6 +208,34 @@ Check these; do not assume them.
 13. `out/draft.mp4` has a subtitle stream. It is built by muxing `out/subtitles.srt` into
     `out/draft-picture.mp4` as **soft** `mov_text` — never burned in — and `ffprobe
     -select_streams s` confirms it before the draft is shown at the Gate 3 stop.
+
+14. **Every example is on the ladder, and the first one is the mirror.** Each entry in
+    `examples` has a `rung` of `"mirror"`, `"one-step"` or `"exam"`. The first example after a
+    concept is `"mirror"` and carries a `copyLine` — one sentence naming what the student copies
+    from the concept frame to solve it. Later examples carry `newMove`, the single thing added.
+    A lesson whose first example is not a mirror needs a reason in `brief.md`.
+    See `references/lesson-patterns.md`, pattern 7.
+15. **A solution's first line is general.** The first entry of every `solutionLines`, and the first
+    line the animated solve writes, is the formula in symbols with none of the question's numbers
+    in it. The substitution is the second line. Built with `derivation()`, whose first argument is
+    the general form. See rule 27.
+16. **Every example ends on its page.** Exactly one shot per example has `"solutionPage": true`,
+    it is the example's last shot, its `stillSeconds` covers the whole shot, and the shot is at
+    least `REST_RECAP` (4.0 s) long. That shot has no `beats` — nothing moves on it. The lines it
+    renders are the example's `solutionLines` array, built with `solution_page()`.
+    See rule 28.
+17. **Every string on the picture is English.** Every entry of every shot's `onScreenText`, the
+    `question` block, and each example's `solutionLines` carry no CJK character. The **only**
+    field in the plan that may hold 中文 is `subtitles[].text` (and the notes in
+    `movedToNarration`, which describe what left the frame). Grep the plan for CJK outside the
+    subtitle cues before the Gate 2 render — the theme raises at build time, but catching it in
+    the plan is a minute instead of a render. See rule 29.
+18. **Shot 1 is the title card.** `shots[0]` has `"titleCard": true`, is 3.0–4.0 s long, has no
+    `beats`, no `questionPart` and no `ponder`, and its `stillSeconds` covers the whole shot. It
+    is built with `title_card()` from `titleCard.topic` and `titleCard.subtitle` — which are
+    required in the plan — and its `onScreenText` is exactly those two lines. It is the one shot
+    exempt from invariant 8's register rule: a title card speaks neither register. No other shot
+    sets `titleCard`. The hook is `shots[1]`. See rule 30.
 
 Invariant 10 is the one that bites. Scenes render independently, so a mismatch produces a jump
 cut that is invisible at draft resolution and obvious in the master.

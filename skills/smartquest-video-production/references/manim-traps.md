@@ -605,3 +605,25 @@ measures the caption layout. **Any generator that emits a manim scene has to car
 theme through** — the scene it writes cannot inherit it from the lesson that owns it.
 And when a lesson is light-themed, check one BURNED frame before the master encode:
 soft subs on the draft prove nothing about the track that ships.
+
+## 40. `substrings_to_isolate` no longer splits a `MathTex` into submobjects
+
+In ManimCE 0.20 a `MathTex` built from a single string comes back with **one** submobject whose
+`tex_string` is the whole line, whatever is handed to `substrings_to_isolate`:
+
+```python
+m = sq.mtex(r"T(3) = 10 + (3-1)(2)", substrings_to_isolate=["="])
+len(m.submobjects)                    # 1
+m.submobjects[0].tex_string           # 'T(3) = 10 + (3-1)(2)'  — not split
+```
+
+Nothing raises. `set_color_by_tex()` still works, because it colours through the SVG id map
+rather than through the submobject list, so `mtex_ref()` is unaffected and the trap stays hidden
+until something tries to read a *position* out of a part — which is exactly what hanging one
+line's `=` under another's needs. The symptom is silent: every continuation line renders flush
+left, and it reads as a forgotten indent rather than as a failed measurement.
+
+**Fix:** pass the pieces as **separate arguments** — `MathTex("A", "=", "B")` does give three
+submobjects — and let TeX do any alignment, with `tex_environment="align*"` and `&` before each
+line's relation. `derivation()` and `solution_page()` are built this way, which is also what
+makes each line an independently animatable submobject for rule 18.

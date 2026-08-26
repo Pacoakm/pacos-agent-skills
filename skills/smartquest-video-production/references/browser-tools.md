@@ -34,12 +34,39 @@ shot timeline. The aha shot is highlighted. This is what the user reads before
 approving the teaching.
 
 **Gate 2** — the storyboard panels, from `storyboard/frames/`, each with its
-visual and time range; click one for full size. Do not build PNG contact sheets
-for the user any more — the panels are here.
+visual and time range. Do not build PNG contact sheets for the user any more —
+the panels are here.
+
+Clicking a panel opens it **in place**, full size, over the page:
+
+| | |
+|---|---|
+| **← / →**, or the arrows either side | the previous / next shot, in plan order, wrapping at the ends |
+| **click the image** | 1:1, so type, hairlines and halo can be judged at real size; click again to fit |
+| **Esc**, the ×, or the backdrop | close, back to exactly where you were on the page |
+| Under the image | shot id, time range, `n / N`, and that panel's `visual` and `motion` |
+
+It is a viewer rather than a link on purpose. Gate 2 is mostly a **comparison** —
+does `S05` end on what `S06` opens with (contract invariant 10), does a colour
+mean the same thing in both — and that needs the two panels one keypress apart.
+Opening the PNG in a tab loses the shot id, the neighbours and the way back, so
+the check that matters most is the one it makes hardest. While the viewer is
+open it owns the keyboard, so `m` cannot mark a frame of a video nobody is
+watching.
 
 **Gate 3** — the draft plays in the page with its **soft** subtitle track (the
 builder converts the SRT sidecar to WebVTT, because a `<track>` will not take
 SRT). Toggle the captions in the player.
+
+**The line above the player names the shot you are inside**, live, as it plays:
+shot id, scene class, its plan range, how far into it you are, a small progress
+bar, and its knowledge point. The matching button in the scene strip lights up
+at the same moment.
+
+Without it, reviewing the full draft means doing arithmetic against the plan
+while the video runs — the note you want to write is "S07 is a beat late", and
+what the scrubber gives you is "0:58". It reads off the **plan clock**, so it is
+right whether the full draft or a single scene's file is loaded.
 
 A **button per shot** above the player switches it to that scene's own mp4, so a
 picture note is checked against the shot rather than by scrubbing the whole

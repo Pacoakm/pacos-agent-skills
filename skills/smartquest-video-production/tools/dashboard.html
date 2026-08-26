@@ -111,6 +111,55 @@
   .mark .acts button{padding:3px 7px;font-size:11px}
   .markbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
   .markbar .live{color:var(--amber);font-size:11px;font-variant-numeric:tabular-nums}
+
+  /* ---- the shot the player is inside, right now -------------------------
+     Watching the full draft, the one thing you always want and never have is
+     WHICH SHOT this is. Reading it off the scrubber means doing arithmetic
+     against the plan while the video runs, so it is printed instead. */
+  .nowline{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;
+           min-height:20px;flex-wrap:wrap}
+  .nowline .tag{font-size:9px;font-weight:700;letter-spacing:.08em;padding:1px 5px;
+                border-radius:8px;background:var(--accent);color:#0B0E14}
+  .nowline b{color:var(--accent)}
+  .nowline .sc{color:var(--muted)}
+  .nowline .t{color:var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .nowline .pb{flex:0 0 90px;height:5px;border-radius:3px;background:#0a0d13;
+               border:1px solid var(--edge);overflow:hidden}
+  .nowline .pb i{display:block;height:100%;background:var(--accent)}
+  .nowline .what{color:var(--muted);flex:1 1 200px;min-width:0;overflow:hidden;
+                 text-overflow:ellipsis;white-space:nowrap}
+  .scenestrip button.now{background:#141b2b;box-shadow:inset 0 0 0 1px var(--accent)}
+
+  /* ---- storyboard lightbox ---------------------------------------------
+     A panel opened in a new tab is a dead end: the browser shows one PNG with
+     no shot id, no neighbours and no way back except the back button. Compare
+     is the whole job at Gate 2 — does S05 end where S06 opens — so the panels
+     open in place, with arrows. */
+  #lb{position:fixed;inset:0;z-index:60;background:rgba(6,8,12,.95);
+      display:flex;align-items:center;justify-content:center}
+  #lb[hidden]{display:none}
+  .lb-stage{flex:1 1 auto;height:100vh;display:flex;align-items:center;
+            justify-content:center;overflow:auto;padding:46px 8px 86px}
+  #lb-img{max-width:94vw;max-height:calc(100vh - 132px);display:block;background:#000;
+          border-radius:6px;cursor:zoom-in}
+  #lb-img.zoom{max-width:none;max-height:none;cursor:zoom-out}
+  .lb-nav{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:64px;
+          font-size:26px;line-height:1;padding:0;border-radius:8px;
+          background:#0d1017;border:1px solid var(--edge);color:var(--ink);cursor:pointer}
+  .lb-nav:hover{border-color:var(--accent);color:var(--accent)}
+  .lb-nav.prev{left:10px} .lb-nav.next{right:10px}
+  .lb-x{position:fixed;top:10px;right:12px;width:32px;height:32px;font-size:18px;
+        line-height:1;padding:0;border-radius:8px;background:#0d1017;
+        border:1px solid var(--edge);color:var(--ink);cursor:pointer}
+  .lb-cap{position:fixed;left:0;right:0;bottom:0;padding:9px 58px;font-size:12px;
+          background:linear-gradient(to top,rgba(6,8,12,.98),rgba(6,8,12,.75));
+          border-top:1px solid var(--edge)}
+  .lb-cap b{color:var(--accent)}
+  .lb-cap .t{color:var(--line);font-variant-numeric:tabular-nums;margin-left:8px}
+  .lb-cap .n{float:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .lb-cap .l{color:var(--muted);margin-top:3px;max-height:34px;overflow:hidden}
+  .lb-cap .l.m{color:var(--line)}
+  .lb-hint{position:fixed;top:14px;left:14px;font-size:11px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -135,18 +184,21 @@
 <section class="wide">
   <h2><span class="gate">GATE 2</span> Storyboard <span class="pill" id="g2-pill">—</span></h2>
   <p class="sub">One real Manim still per shot, with its visual, motion and transition.
-     Click a panel to see it full size. Never a hand-drawn mock — the panel has to be
-     the frame.</p>
+     Click a panel to open it full size in place — <b>←</b> / <b>→</b> step through the
+     shots in order, click the image again for 1:1, <b>Esc</b> closes. Never a hand-drawn
+     mock — the panel has to be the frame.</p>
   <div class="sb" id="g2-sb"></div>
 </section>
 
 <section class="wide">
   <h2><span class="gate">GATE 3</span> Draft <span class="pill" id="g3-pill">—</span></h2>
   <p class="sub">The silent picture with its subtitles as a <b>soft track</b> — toggle them
-     in the player. Burned-in captions belong to the master only.</p>
+     in the player. Burned-in captions belong to the master only. While it plays, the line
+     above the video names the shot you are inside and the strip highlights it.</p>
   <div class="g3">
     <div class="left">
       <div class="note" id="g3-which"></div>
+      <div class="nowline" id="g3-now"></div>
       <video id="g3-vid" controls preload="metadata" crossorigin="anonymous"></video>
       <div class="markbar">
         <button id="mk-frame">Mark this frame</button>
@@ -255,6 +307,15 @@
 </section>
 
 </main>
+
+<div id="lb" hidden>
+  <div class="lb-hint">← → to step · click the image for 1:1 · Esc to close</div>
+  <button class="lb-x" id="lb-x" title="close (Esc)">&times;</button>
+  <button class="lb-nav prev" id="lb-prev" title="previous panel (←)">&lsaquo;</button>
+  <div class="lb-stage" id="lb-stage"><img id="lb-img" alt=""></div>
+  <button class="lb-nav next" id="lb-next" title="next panel (→)">&rsaquo;</button>
+  <div class="lb-cap" id="lb-cap"></div>
+</div>
 <script>
 const $ = id => document.getElementById(id);
 const HERE = location.pathname.replace(/\/tools\/[^/]*$/, "");
@@ -368,8 +429,9 @@ function renderGates(d){
   pill($("g1-pill"), d.brief && d.script ? "ok" : "warn",
        `${d.timeline.length} shots · ${d.brief?"brief":"no brief"} · ${d.script?"script":"no script"}`);
 
-  $("g2-sb").innerHTML = d.storyboard.map(s=>
-    `<figure><img loading="lazy" src="${s.src}" onclick="window.open(this.src)">`
+  LB = d.storyboard || [];
+  $("g2-sb").innerHTML = LB.map((s,i)=>
+    `<figure><img loading="lazy" src="${s.src}" data-lb="${i}" alt="${esc(s.id)}">`
     + `<figcaption><span class="id">${s.id} · ${s.start}–${s.end}s</span><br>`
     + `${esc((s.visual||"").slice(0,110))}</figcaption></figure>`).join("")
     || `<p class="sub">no panels yet — render them at Gate 2</p>`;
@@ -386,6 +448,7 @@ function renderGates(d){
         + ` title="${s.start}–${s.end}s${s.stale ? "  · older than src/" : ""}">${s.id}</button>`).join("");
   strip.querySelectorAll("button").forEach(b=> b.onclick = ()=> pickClip(b, d));
   paintMarkedScenes();       // the strip was just rebuilt — colour it again
+  paintNow();                // and say which shot the player is sitting in
 
   const v = $("g3-vid");
   if(d.draft){
@@ -397,6 +460,78 @@ function renderGates(d){
     $("g3-info").textContent = d.vtt ? "subtitles: pick the track in the player"
                                      : "no subtitle sidecar found";
   }else pill($("g3-pill"), "", "not rendered");
+}
+
+/* ---- the storyboard lightbox ---------------------------------------------
+   Opening a panel in a new tab loses everything that made it a storyboard: the
+   shot id, the neighbours, the way back. Gate 2 is mostly a COMPARISON — does
+   S05 end on what S06 opens with (contract invariant 10) — and that needs the
+   two panels one keypress apart, not two browser tabs. */
+let LB = [], LBI = 0;
+function lbPaint(){
+  const s = LB[LBI]; if(!s) return;
+  const img = $("lb-img");
+  img.classList.remove("zoom");            // every panel opens fitted
+  img.src = s.src;
+  $("lb-cap").innerHTML =
+      `<b>${esc(s.id)}</b> <span class="t">${s.start}–${s.end}s</span>`
+    + `<span class="n">${LBI + 1} / ${LB.length}</span>`
+    + (s.visual ? `<div class="l">${esc(s.visual)}</div>` : "")
+    + (s.motion ? `<div class="l m">motion: ${esc(s.motion)}</div>` : "");
+  const nav = LB.length > 1 ? "" : "none";
+  $("lb-prev").style.display = nav; $("lb-next").style.display = nav;
+}
+function lbOpen(i){
+  if(!LB.length) return;
+  LBI = Math.max(0, Math.min(LB.length - 1, i));
+  $("lb").hidden = false;
+  lbPaint();
+}
+function lbGo(step){
+  if(!LB.length) return;
+  LBI = (LBI + step + LB.length) % LB.length;      // wraps, so it never dead-ends
+  lbPaint();
+}
+const lbOpenNow = ()=> !$("lb").hidden;
+function lbClose(){ $("lb").hidden = true; $("lb-img").src = ""; }
+$("g2-sb").addEventListener("click", e=>{
+  const i = e.target.dataset && e.target.dataset.lb;
+  if(i != null) lbOpen(+i);
+});
+$("lb-prev").onclick = e=>{ e.stopPropagation(); lbGo(-1); };
+$("lb-next").onclick = e=>{ e.stopPropagation(); lbGo(1); };
+$("lb-x").onclick = lbClose;
+/* click the image = 1:1, so type and hairlines can be judged at real size;
+   click anywhere else on the backdrop = close */
+$("lb-img").onclick = e=> e.target.classList.toggle("zoom");
+/* close only on the backdrop itself — a click on the caption or the arrows is
+   not a click on "outside" */
+$("lb").onclick = e=>{ if(e.target.id === "lb" || e.target.id === "lb-stage") lbClose(); };
+
+/* ---- which shot is on screen, right now ----------------------------------
+   Printed live under the player and highlighted in the strip. It runs off the
+   PLAN clock (planNow()), so it is correct whether the full draft or a single
+   scene's file is loaded. */
+function paintNow(){
+  const el = $("g3-now"); if(!el) return;
+  const strip = $("g3-scenes");
+  const s = (DASH && DASH.timeline) ? shotAt(planNow()) : null;
+  if(strip){
+    strip.querySelectorAll("button.now").forEach(b=> b.classList.remove("now"));
+    if(s){
+      const b = strip.querySelector(`button[data-id="${s.id}"]`);
+      if(b) b.classList.add("now");
+    }
+  }
+  if(!s){ el.innerHTML = ""; return; }
+  const into = Math.max(0, planNow() - s.start);
+  const len = Math.max(0.001, s.end - s.start);
+  el.innerHTML = `<span class="tag">NOW</span><b>${esc(s.id)}</b>`
+    + `<span class="sc">${esc(s.scene || "")}</span>`
+    + `<span class="t">${s.start.toFixed(1)}–${s.end.toFixed(1)}s · `
+    + `${into.toFixed(1)}s in</span>`
+    + `<span class="pb"><i style="width:${Math.min(100, 100 * into / len).toFixed(1)}%"></i></span>`
+    + `<span class="what">${esc(s.knowledgePoint || s.purpose || "")}</span>`;
 }
 
 /* ---- one scene at a time -------------------------------------------------
@@ -444,6 +579,7 @@ function pickClip(btn, d, at){
     $("g3-rerender").style.display = "none";
     if(keep) seekWhenReady(v, keep);
   }
+  paintNow();
 }
 $("g3-rerender").onclick = async (e)=>{
   if(!CLIP) return;
@@ -461,6 +597,8 @@ $("g3-rerender").onclick = async (e)=>{
    read the timecode off the scrubber, then write a prompt naming the shot.
    Mark it here instead and the page does all three. */
 const V3 = $("g3-vid");        // the element, not a getter — it exists by now
+["timeupdate","seeked","seeking","loadedmetadata","play","pause"]
+  .forEach(ev=> V3.addEventListener(ev, paintNow));
 const MARKS_FILE = "draft-marks.json";
 let MARKS = [], mkEtag = null, mkStart = null, mkCur = null, mkLoaded = false;
 
@@ -762,6 +900,14 @@ $("mk-all").onclick = async (e)=>{
 };
 addEventListener("keydown", e=>{
   if(e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+  // the lightbox owns the keyboard while it is open — otherwise "m" would mark
+  // a frame of a video nobody is looking at
+  if(lbOpenNow()){
+    if(e.key === "ArrowLeft"){ lbGo(-1); e.preventDefault(); }
+    else if(e.key === "ArrowRight"){ lbGo(1); e.preventDefault(); }
+    else if(e.key === "Escape"){ lbClose(); e.preventDefault(); }
+    return;
+  }
   if(e.key === "m"){ $("mk-frame").click(); e.preventDefault(); }
   if(e.key === "M"){ $("mk-range").click(); e.preventDefault(); }
 });

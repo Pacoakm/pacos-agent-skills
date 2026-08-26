@@ -60,6 +60,7 @@ blocks, dim something to 30% or clear it.
 | **The aha moment** | **1.8 s** |
 | The end of a section, before the next begins | 1.2 s |
 | **A ponder beat** — the student is handed the problem | **3.0 s** (`REST_PONDER`) |
+| **The full-solution page** at the end of a worked example | **4.0 s** (`REST_RECAP`) |
 
 `REST_AHA` in the theme is 1.8 s. It is the longest still moment in the video, deliberately.
 Do not trim it to make a duration fit — trim elsewhere.
@@ -76,11 +77,14 @@ One knowledge point per section. A section is: **set up → show → explain →
 
 | Section | Long form (5+ min) | Short (60 s) |
 |---|---|---|
+| **Title card** | **3–4 s** | **2–3 s** |
 | Hook / the question | 20–30 s | 5–8 s |
 | Prior knowledge recap | 20–40 s | skip |
 | One knowledge point | 45–90 s each | 30–40 s (one only) |
 | The aha | 60–90 s | 15–20 s |
-| Worked example | 60–120 s | skip or 10 s |
+| Worked example — mirror | 40–70 s | 10 s, if any |
+| Worked example — one step up | 60–120 s | skip |
+| The full-solution page | 4–8 s per example | skip |
 | Takeaway | 20–30 s | 5–8 s |
 
 A 5-minute lesson holds about **three** knowledge points. Four is already crowded. If the topic
@@ -134,6 +138,10 @@ At Gate 3, watch the draft and answer these. If any answer is no, fix the plan, 
 - Could the teacher speak the script comfortably over this, without rushing?
 - On a worked example: is the question readable in every shot of it, and was the stem given time
   to be read before anything else moved?
+- Was the **first** example solvable by substitution alone, and does each later one add exactly
+  one thing?
+- Does each example end on its **full-solution page**, held long enough to copy, with the general
+  formula as its first line?
 - Does the draft actually carry its soft subtitle track — `ffprobe -select_streams s` — and do the
   cues sit where the plan says?
 

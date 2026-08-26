@@ -9,16 +9,16 @@ Two rules, in this order.
 
 ## Why
 
-**On rule 1.** A concept that has a mathematical form and is written out in Chinese instead has
-been translated *away* from the thing the student is being examined on. The DSE paper is in
+**On rule 1.** A concept that has a mathematical form and is written out as a sentence instead
+has been translated *away* from the thing the student is being examined on. The DSE paper is in
 English and in symbols: a student who has watched an explanation carried by `AO : OM = 2 : 1` has
-practised reading the notation they will be marked on; one who watched 「較長一段連着頂點」 has
-not. Motion is the second half of this — a property that holds under variation is *shown by
+practised reading the notation they will be marked on; one who watched
+`the longer part touches the vertex` has not. Motion is the second half of this — a property that holds under variation is *shown by
 varying it*, which no textbook can do and no sentence needs to claim.
 
 **On rule 2.** Mathematics and prose are read differently — one is scanned as structure, the
 other as a line. Putting both on one frame makes the student switch modes mid-shot, and neither
-gets read properly. This is the defect that reads as 「混雜」: an equation and a Chinese sentence
+gets read properly. This is the defect that reads as 「混雜」: an equation and a prose sentence
 sharing a margin, each spoiling the other.
 
 Note what rule 2 does **not** say. It does not ban text beside a figure — a list of steps
@@ -39,6 +39,35 @@ Both registers are welcome in the same *lesson* — most lessons need both. They
 shots. When a beat needs the list and the equation, that is two shots, and the figure carries
 across between them.
 
+## The picture is in English
+
+**Every string the student sees on the frame is English.** Title, figure label, term card, list
+item, DSE reason, question, recap page — all of it, in the English the paper uses. The **caption
+track is the only place 中文 appears**, and it is unchanged: 繁體中文書面語 on top, English
+underneath, with the teacher speaking Cantonese over the whole video.
+
+| | |
+|---|---|
+| **The picture** | English only. `title()`, `body()`, `label()`, `term()` and `question_text()` **raise** on a CJK character |
+| **The caption track** | bilingual, 中文 first — `caption_text()`, `build_captions.py`, `subtitles.srt`. Unchanged |
+| **The narration** | Cantonese, with the subject terms said in English. Unchanged |
+
+Three reasons, in order of weight:
+
+1. **The exam is in English.** The words on the frame are the words the student has to parse
+   under time pressure in the exam hall. A Chinese gloss beside a term drills a word the paper
+   will never show them, and quietly lets them off the reading that is half of what is tested.
+2. **A term has to be met in the form it will be written.** The marker wants
+   `alternate segment theorem` on the answer sheet, not 「弦切角定理」. Rule 26 puts that term on
+   the frame in bold; translating it beside itself undoes the point.
+3. **Two scripts in one frame is the register problem again.** Chinese and Latin are read
+   differently and set in different faces, so a mixed frame makes the eye switch twice — the same
+   defect as mixing an equation with a sentence, in different clothes.
+
+This does **not** touch what the student hears or reads at the bottom of the screen. Everything
+the old 中文 body lines used to say still gets said — in Cantonese by the teacher, and in 中文 on
+the caption line. It just leaves the picture.
+
 ## What may appear on the frame
 
 | Kind | Allowed | Example |
@@ -47,14 +76,17 @@ across between them.
 | **The figure** | in either register | △ABC with its medians |
 | **Mathematics** | unlimited — in the mathematical register | `AO : OM = 2 : 1`, `\vec{v}_1` |
 | **Figure labels** | point names, short object names — either register | `A`, `B`, `C`, `O`, `M`, `P` |
-| **Term cards** | the English DSE term alone, bound to a colour | `median`, `inscribed angle` |
+| **Term cards** | the English DSE term alone, **bold**, bound to a colour | `median`, `inscribed angle` |
 | **DSE reasons** | the marker's exact wording, with the step it justifies | `ext. ∠ of △` |
-| **A step list** | in the verbal register, with or without a figure | `① 先找出兩個平面的交線。` |
+| **A step list** | in the verbal register, with or without a figure | `① Find the line of intersection.` |
 | **The question** | in full, in English, on every shot of a worked example — see below | `Denote the locus of $P$ by $\Gamma$.` |
+| **The solution page** | every step of a worked example at once, on its closing shot — see below | `T(n) = a + (n-1)d` … `= 14` |
 | **Loose explanatory prose** | **never, in either register** | ~~較長一段連着頂點~~, ~~永遠在 triangle 內~~ |
 
-A term card is the term and nothing else. `median` is a term card; 「三條 median 的交點」 is a
-sentence wearing a term as a hat, and it goes to the subtitle.
+A term card is the term and nothing else. `median` is a term card;
+`the point where the three medians meet` is a sentence wearing a term as a hat, and it goes to
+the subtitle. It is set **bold** — see "A concept
+term is bold" below.
 
 "Loose prose" means a sentence that is not an item in an enumerated list. The list earns its place
 because its *structure* teaches — see below. A stray sentence has no structure to earn it.
@@ -135,25 +167,110 @@ a step that names a quantity draws that quantity onto the figure at the same ins
 steps that could have been printed on paper has failed the marking-scheme test below — the
 question band does not exempt it.
 
+The frame is two halves and they are wired together:
+
+| Side | Carries | Moves |
+|---|---|---|
+| **Figure side** | the graph, the diagram, the axes — whatever the question is about | the mark this step produces: an arc drawn, a point plotted, a curve redrawn as a parameter changes, a length dimensioned |
+| **Derivation side** | the lines of the solution | one line per beat, entering at `T_REVEAL` |
+| **Between them** | referent colour | the quantity named on the right takes its colour on the left **in the same instant** — `mtex_ref()` for the symbols, `bind_term()` for the pulse |
+
+Spend animation here rather than anywhere else in the lesson. A parameter that visibly moves the
+curve, a value that arrives on the formula from the point it was measured at, a substitution that
+lands in the slot its symbol occupied — these are the beats where a video beats a worked solution
+on paper, and they cost nothing but sequencing. What they must not become is decoration: every
+motion is a step of the solution, and colour still names a referent, never emphasis.
+
+### A solution opens on the formula, not on the numbers
+
+**The first line of a solution carries no data from the question.**
+
+```
+T(n) = a + (n-1)d        ← the formula, as the exam requires it to be written
+T(3) = 10 + (3-1)(2)     ← the question's numbers — and now which slot each one fills is visible
+     = 14                ← the answer
+```
+
+A solution that opens on `T(3) = 10 + 2(3-1)` answers this question and no other. The student
+watches numbers land in slots with no way to see which slot is which, so nothing transfers to the
+next question, and the general line — usually the one the marking scheme awards the method mark
+for — never appears at all. `derivation()` takes the general form as its **required first
+argument** so the rule is hard to skip:
+
+```python
+d = sq.derivation(r"T(n) = a + (n-1)d",
+                  r"T(3) = 10 + (3-1)(2)",
+                  r"= 14",
+                  reason=r"\text{(general term of an A.S.)}")
+self.play(Write(d[0]))                      # the formula, alone, on its own beat
+self.play(Write(d[1]), Create(mark_at_3))   # the numbers, with the figure event
+```
+
+Give the general line its own beat. It is the line that transfers, and dropping it in silently
+under the substitution wastes it. The rule holds for every formula the solution reaches for later,
+not only the opening one — a fraction pulled out of the air with the numbers already inside it is
+the same defect three lines down. See rule 27.
+
+### The example closes on one full-solution page
+
+The last shot of a worked example is a **still frame carrying every step at once**, in the order a
+marker reads them: general formula, substitution, answer, with each DSE reason under the line it
+justifies, and every `=` hung under the one above it.
+
+This is not a repeat of what was just animated, and it is not the marking-scheme failure below. The
+animated solve teaches the reasoning one beat at a time — but it never exists as a whole, because
+by the last step the first line left the frame half a minute ago. The page is the only frame on
+which the solution is an object the student can read top to bottom, check their own attempt
+against, and copy.
+
+```python
+page = sq.solution_page(st, [
+    (r"T(n) = a + (n-1)d", r"\text{(general term of an A.S.)}"),
+    r"T(3) = 10 + (3-1)(2)",
+    r"= 14",
+])
+self.play(FadeIn(page, shift=UP * 0.2))
+self.wait(sq.REST_RECAP)          # 4.0 s, and nothing moves on it
+```
+
+| | |
+|---|---|
+| **Holds** | ≥ `REST_RECAP` (4.0 s) — it is read top to bottom and copied, not glanced at |
+| **Carries** | every line that earns a mark, its reasons, and the answer marked as the answer |
+| **Keeps** | the question band, so the page is readable against what was asked |
+| **May drop** | the figure, if the steps need the width — by this shot the figure has done its work |
+| **Never** | animates; shrinks to fit; or omits the general formula it opened on |
+
+`solution_page()` **raises** rather than scaling. Two legitimate answers, same as the question
+band: keep the lines a DSE marker awards and drop the algebra in between, or — if the part was
+already split across two screens — give each half its own page.
+
 ## The budget
 
 Per shot, counting only text on the picture — not captions, and not the question band.
 
+Everything counted here is English — the picture carries no 中文 at all (above).
+
 **Mathematical register:**
 
 ```
-解釋性文字 = 0 字
-非數學文字（title + labels + term cards）愈少愈好，無硬性上限   # 拉丁詞當 2 字
-數學 = 無上限
+explanatory prose            = 0 words
+non-mathematical text        = as few words as the idea needs, no fixed cap
+  (title + labels + term cards)
+mathematics and DSE reasons  = uncounted
 ```
 
 **Verbal register:**
 
 ```
-列表項目 ≤ 5，每項 ≤ 20 字，一行
-顯示式方程 = 0
-行內符號（⊥ ∠ AD 2:1）不計，且鼓勵使用
+list items          ≤ 5, each ≤ 8 words and ONE line
+displayed equations = 0
+inline symbols (⊥ ∠ AD 2:1) uncounted, and encouraged
 ```
+
+`body()` measures the line it builds and **raises** if it is wider than the frame, because an
+`\mbox`-protected line cannot wrap — it just runs off the edge. That error means two items, or
+fewer words, never smaller type.
 
 If a shot in the mathematical register needs a sentence to make sense, the sentence goes to the
 subtitle and the **frame needs a better picture**, not smaller type.
@@ -168,8 +285,8 @@ gone, so they never see the *shape* of the procedure — how many steps there ar
 are in, what is still coming. A list persists and shows all of that at once.
 
 **Keep the figure.** A list of steps next to the diagram those steps act on is better than either
-alone: the student reads 「先找出兩個平面的交線」 and the intersection line highlights on the
-figure at the same moment. That pairing is the point of the register, not a compromise.
+alone: the student reads `Find the line of intersection` and that line highlights on the figure at
+the same moment. That pairing is the point of the register, not a compromise.
 
 What the list may **not** share the frame with is a displayed equation. If the beat needs both,
 it is two shots, and the figure carries across.
@@ -179,8 +296,8 @@ it is two shots, and the figure carries across.
 | | |
 |---|---|
 | Items | ≤ 5. Beyond that it is a reference card, not a teaching beat |
-| Each item | ≤ 20 字, one line, no sub-clauses |
-| Inline symbols | encouraged — `⊥`, `∠`, `AD`, `2 : 1`. A symbol inside a sentence is not a displayed formula |
+| Each item | English, ≤ 8 words, one line, no sub-clauses — `body()` raises on a line too wide to fit |
+| Inline symbols | encouraged — `⊥`, `∠`, `AD`, `2 : 1`. A symbol inside a sentence is not a displayed formula. Type the Unicode character; the theme translates it to TeX (`brand-theme.md`) |
 | Displayed mathematics | **none** — if the shot needs an equation, split the shot |
 | Figure | **yes**, and it should react — see below |
 | Entrance | items appear **one at a time**, each on the narration beat that explains it (rule 18) |
@@ -196,9 +313,12 @@ static halves into one explanation:
 
 | As this item appears | The figure does |
 |---|---|
-| ① 先找出兩個平面的交線。 | the intersection line lights up in the item's colour |
-| ② 每個平面各取一條線，都要 ⊥ 交線。 | the two lines draw in, each with its right-angle mark |
-| ③ 兩條線要在交線上的同一點相交。 | the point `P` appears where they meet, and pulses |
+| ① Find the line of intersection. | the intersection line lights up in the item's colour |
+| ② Draw a line in each plane, ⊥ to it. | the two lines draw in, each with its right-angle mark |
+| ③ They must meet at the same point. | the point `P` appears where they meet, and pulses |
+
+Short because they are English now, and English is wider per idea than 中文 — which is a feature:
+an item that will not fit in eight words is usually two steps, or narration.
 
 Colour is the join: give the item and the thing it names the same colour, exactly as `bind_term()`
 does for a single term. Keep the completed list on screen to the end of the shot, and dim earlier
@@ -214,22 +334,27 @@ Do not reach for a list to escape the prose ban. Two checks:
    are prose, and they belong in the narration.
 
 And before writing any of it, apply rule 1: *could this item be a mark on the figure instead of a
-sentence?* 「這兩段相等」 is tick marks, not a list item, even inside a list.
+sentence?* `These two segments are equal` is tick marks, not a list item, even inside a list.
 
 ## Translating prose into mathematics
 
 This is the actual work. Each of these replaces a sentence with something the frame can show.
 
+The sentences below are the ones you were about to set on the picture. They are barred twice
+over now — as prose, and, if you were going to write them in 中文, as Chinese on the frame. Each
+one is still **spoken**, in Cantonese, and still appears on the caption line. It just leaves the
+picture, and what replaces it teaches better.
+
 | Instead of the sentence | Put on the frame |
 |---|---|
-| 「較長一段連着頂點」 | the point `O`, the point `M`, and `AO : OM = 2 : 1` |
-| 「這兩段相等」 | equal-length tick marks — `ticks()` |
-| 「這條線是 median」 | tick marks on the bisected side + a `median` term card in the line's colour |
-| 「這兩個角相等」 | the same arc marker and the same colour on both angles |
-| 「永遠在 triangle 內」 | animate it — drag a vertex, let the student watch the point stay inside |
-| 「因為是 isosceles triangle」 | the DSE reason itself: `base ∠s, isos. △` |
-| 「面積變成原來的三倍」 | `\det = 3` beside the parallelogram, as the area animates |
-| 「隨着 x 增大」 | an arrow on the axis, or a `ValueTracker` readout that the student watches move |
+| "The longer part touches the vertex." | the point `O`, the point `M`, and `AO : OM = 2 : 1` |
+| "These two segments are equal." | equal-length tick marks — `ticks()` |
+| "This line is a median." | tick marks on the bisected side + a bold `median` term card in the line's colour |
+| "These two angles are equal." | the same arc marker and the same colour on both angles |
+| "The centroid is always inside the triangle." | animate it — drag a vertex, let the student watch the point stay inside |
+| "Because it is an isosceles triangle." | the DSE reason itself: `base ∠s, isos. △` |
+| "The area becomes three times as large." | `\det = 3` beside the parallelogram, as the area animates |
+| "As x increases…" | an arrow on the axis, or a `ValueTracker` readout that the student watches move |
 
 Note the fifth row. **A property that holds under variation is stated by varying it**, not by
 asserting it in words. That is what animation is for, and it is the one thing a static textbook
@@ -442,6 +567,32 @@ without ever saying 「請看左邊」.
 When the derivation returns to a quantity marked several beats ago, re-bind rather than assume it
 is remembered: `bind_term(arc_CAD, line_token)` for one pulse.
 
+## A concept term is bold
+
+**Every English DSE term on the picture is set bold**, wherever it appears: the term card, a term
+inside a 中文 line, a term on the recap page.
+
+```python
+card = sq.term("median", color=AUX)                      # the term card — bold
+line = sq.body("同一弧上的 inscribed angle 相等。",
+               terms=["inscribed angle"])                # bold AND coloured inline
+```
+
+The reason is that the frame has no other signal left. Colour already means *reference* — a hue
+names a thing in the figure and may not be spent on emphasis (rule 17) — so weight is what
+remains. And the term needs a signal: it is usually the only Latin word in a frame of Chinese and
+mathematics, and it is the one word the student is examined on *naming*, since the DSE answer
+sheet wants `alternate segment theorem`, not 「弦切角定理」.
+
+| | |
+|---|---|
+| **Bold** | the DSE subject term — `median`, `inscribed angle`, `limiting reactant`, `resultant force` |
+| **Not bold** | a result, a step, a number, a whole line, a point label, an answer. Those are marked by colour, by stillness, or by `emphasise()` — one signal per beat |
+| **Still required** | the referent colour, bound once with `bind_term()`. Weight says *this is the term*; colour says *it is that thing* |
+
+Bold is not emphasis. A frame with three bold things has three terms on it, which is a frame with
+too many terms.
+
 ## Binding a colour to a term
 
 The student has to learn that the purple lines *are* the medians. Say it once, visually, then
@@ -455,7 +606,7 @@ never write it again:
 
 ```python
 meds = VGroup(*medians).set_color(AUX)
-card = label("median", color=AUX).next_to(stage.figure_box(), RIGHT)
+card = term("median", color=AUX).next_to(stage.figure_box(), RIGHT)   # term() = bold
 self.play(*bind_term(meds, card))       # two synchronised pulses
 ```
 
@@ -468,11 +619,11 @@ in a caption-heavy one: the colour is now carrying the definition.
 **Before** (five separate pieces of prose competing with the figure):
 
 ```
-title:  1 · centroid：三條 median
-right:  三條 median 的交點
+title:  1 · centroid — the three medians
+right:  the point where the three medians meet
         2 : 1
-        較長一段連着頂點
-        永遠在 triangle 內
+        the longer part touches the vertex
+        always inside the triangle
 ```
 
 **After**:
@@ -482,25 +633,28 @@ title:  1 · centroid
 figure: △ABC, medians in purple, centroid O marked,
         midpoint M labelled on the side AO crosses,
         tick marks on each bisected side
-right:  median            ← term card, purple, bound by a double flash
+right:  median            ← term card, purple and BOLD, bound by a double flash
         AO : OM = 2 : 1   ← O and M are on the figure, so this reads itself
 ```
 
-`較長一段連着頂點` disappears from the frame entirely — `AO : OM = 2 : 1` says it, because `A` is
-a vertex and the student can see which segment is longer. `永遠在 triangle 內` disappears too, and
-becomes a beat where a vertex is dragged and the point visibly stays inside. Both sentences are
-still *spoken*, and both still appear as subtitles. They just leave the picture.
+`the longer part touches the vertex` disappears from the frame entirely — `AO : OM = 2 : 1` says
+it, because `A` is a vertex and the student can see which segment is longer. `always inside the
+triangle` disappears too, and becomes a beat where a vertex is dragged and the point visibly stays
+inside. Both sentences are still *spoken* in Cantonese, and both still appear on the caption line.
+They just leave the picture.
 
-On-screen non-mathematical text drops from about 30 字 to 8.
+On-screen non-mathematical text drops from 21 words to 1.
 
 ## Checks
 
 At the storyboard, per panel:
 
-- Count the non-mathematical characters. No hard cap, but a complete sentence — or a count that
-  keeps climbing — → redesign the panel, do not shrink the type.
+- Is every string on the panel English? One 中文 character is a defect, not a style choice.
+- Count the non-mathematical words. No hard cap, but a complete sentence — or a count that keeps
+  climbing — → redesign the panel, do not shrink the type.
 - For every sentence you removed, name where it went: subtitle, narration, or an animated beat.
-- For every term card, name the shot where it was bound to its colour.
+- For every term card, name the shot where it was bound to its colour, and confirm it is bold
+  (`term()`, not `label()`).
 - Ask of each remaining word: *would the frame still teach this if I deleted it?* If yes, delete
   it.
 
@@ -511,6 +665,11 @@ On a worked-example panel, additionally:
 - Is the **part** on screen the part this shot answers, and only that one?
 - Does the panel show any derived quantity the question did not give and this shot has not yet
   derived?
+- Is the **first line** of the solution the general formula, with none of the question's numbers
+  in it?
+- Does the example end on a **full-solution page** — every step, still, held ≥ `REST_RECAP`?
+- On the solving shots: does each beat move something on the figure side as well as the derivation
+  side, and do the two share a colour at that instant?
 
 ## What this is not
 

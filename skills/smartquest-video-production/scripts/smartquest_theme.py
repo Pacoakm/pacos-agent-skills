@@ -87,10 +87,30 @@ PALETTE = dict(bg=BG, ink=INK, muted=MUTED, line=LINE, given=GIVEN,
 # Songti TC, a 宋体/明體 whose stroke modulation matches CM's. PingFang was the
 # light theme's face and is now reserved for captions, which keeps the caption
 # track visibly a separate layer laid over the lesson.
-FONT_TEXT = "Songti TC"     # 繁中 serif for on-frame Chinese
+# THE PICTURE IS IN ENGLISH. Every string on the frame — title, label, term
+# card, list item, question, DSE reason — is the English the paper uses, and the
+# 中文 lives on the caption track and nowhere else (hard rule 29). title(),
+# body(), label(), term() and question_text() RAISE on a CJK character rather
+# than setting it, because a Chinese line on the picture is a design decision
+# that has to be reversed, not a font problem to be solved at render time.
+#
+# Songti TC therefore no longer sets anything on the picture. It stays as the
+# fallback for the handful of Unicode maths symbols (∠ △ ⊥ ° ′) that TeX has no
+# text-mode command for — write those as LaTeX (`$\angle BAD$`) and they go
+# through Computer Modern like everything else.
+FONT_TEXT = "Songti TC"     # symbol fallback only — never a sentence
 WEIGHT_TEXT = NORMAL        # Songti has no Medium; NORMAL is the design weight
 FONT_CAPTION = "PingFang HK"   # captions only — sans, so the track reads apart
 WEIGHT_CAPTION = BOLD
+# A concept term is set BOLD wherever it appears on the picture — the term card,
+# a term inside a 中文 body line, a term in the recap. The term is what the
+# student is examined on naming, and it is usually the only English word in a
+# frame of Chinese and mathematics, so it has to be findable at a glance rather
+# than hunted for. Colour already carries reference (rule 17) and cannot double
+# as emphasis, so weight is what is left. Computer Modern has a real bold and
+# Pango synthesises one for Songti; both read at 480p draft resolution.
+# See on-screen-language.md, "A concept term is bold".
+WEIGHT_TERM = BOLD
 # DM Sans is gone. Titles are Computer Modern like everything else on the frame,
 # so the whole lesson is set in one face and only the caption track differs.
 # SmartQuest identity is now carried by the colour set and brand_rule().
@@ -113,6 +133,9 @@ config.tex_template = TEX_MAIN   # a default, but NOT something to rely on:
 
 
 SIZE_TITLE = 52
+# The line under the brand rule on the title card: subject, paper and syllabus
+# code. Measured off the locked card at 0.62 of the title, which is body size.
+SIZE_TITLE_SUB = 32
 SIZE_HEADING = 38
 SIZE_BODY = 32
 # A figure label is read at a glance while the student is looking at the
@@ -164,6 +187,12 @@ SIZE_MIN = 22
 # answered right now. See on-screen-language.md, "The question band".
 SIZE_QUESTION = 24
 SIZE_QUESTION_PART = 26
+
+# The full-solution page that closes a worked example holds every step at once,
+# and those steps are being RE-read rather than met for the first time — so it
+# is the one block that sets below heading size. It is not a licence to shrink a
+# live derivation: solution_page() raises rather than scaling any further.
+SIZE_SOLUTION = 26
 
 
 # ---------------------------------------------------------------- layout ----
@@ -427,29 +456,179 @@ def _text(string, size, **kw):
 _HAS_CJK = re.compile(r"[\u3000-\u303F\u3400-\u4DBF\u4E00-\u9FFF\uFF00-\uFFEF]")
 
 
+# ---- Unicode symbols on an English frame -----------------------------------
+# Now that every string on the picture is set in TeX (rule 29), a symbol typed
+# as a Unicode character is a HARD LaTeX error, not a font substitution: the
+# stock template has no glyph for ∠ or ①, and the render dies with "Unicode
+# character not set up for use with LaTeX". The list shots in
+# on-screen-language.md are written with exactly these characters, so they are
+# translated here rather than banned — an author writes `⊥` and gets `\perp`.
+#
+# Punctuation is NOT in this table: —, –, ·, ’, “, ”, … and ‘ all compile
+# as-is in Manim's stock template (measured), so they pass through untouched.
+_TEX_SYMBOL = {
+    # enumerated list markers — on-screen-language.md's ①②③
+    "①": r"\textcircled{\scriptsize 1}", "②": r"\textcircled{\scriptsize 2}",
+    "③": r"\textcircled{\scriptsize 3}", "④": r"\textcircled{\scriptsize 4}",
+    "⑤": r"\textcircled{\scriptsize 5}",
+    # geometry
+    "∠": r"$\angle$", "△": r"$\triangle$", "⊥": r"$\perp$",
+    "∥": r"$\parallel$", "≅": r"$\cong$", "∼": r"$\sim$", "°": r"$^\circ$",
+    "′": r"$'$", "″": r"$''$",
+    # relations and operators
+    "≈": r"$\approx$", "≤": r"$\leq$", "≥": r"$\geq$", "≠": r"$\neq$",
+    "±": r"$\pm$", "×": r"$\times$", "÷": r"$\div$", "∵": r"$\because$",
+    "∴": r"$\therefore$", "→": r"$\to$", "⇒": r"$\Rightarrow$",
+    "⇌": r"$\rightleftharpoons$", "∞": r"$\infty$", "√": r"$\surd$",
+    "²": r"$^2$", "³": r"$^3$",
+    # Greek that turns up in Physics and Chemistry labels
+    "α": r"$\alpha$", "β": r"$\beta$", "γ": r"$\gamma$", "θ": r"$\theta$",
+    "λ": r"$\lambda$", "μ": r"$\mu$", "π": r"$\pi$", "ρ": r"$\rho$",
+    "σ": r"$\sigma$", "φ": r"$\phi$", "ω": r"$\omega$", "Δ": r"$\Delta$",
+    "Σ": r"$\Sigma$", "Ω": r"$\Omega$",
+}
+# Non-ASCII that Manim's stock template sets without help. Measured, not assumed.
+_TEX_OK = set("·—–’‘“”…°")
+
+
+_TEX_MATH_SPAN = re.compile(r"\$[^$]*\$")
+
+
+def _texify(text):
+    """Replace Unicode maths symbols with their TeX commands.
+
+    Only OUTSIDE `$...$`: inside a maths span the author is already writing
+    LaTeX, and a `$\\angle$` spliced into one would close it. A Unicode symbol
+    found inside a span therefore raises, and so does any character this table
+    has no entry for — a clear error here beats a LaTeX failure mid-render.
+    """
+    out, at = [], 0
+    for m in _TEX_MATH_SPAN.finditer(text):
+        out.append(_texify_run(text[at:m.start()], text))
+        span = m.group(0)
+        bad = sorted({c for c in span if ord(c) > 126})
+        if bad:
+            raise ValueError(
+                f"maths span {span!r} carries the Unicode symbol(s) {bad}. "
+                "Inside $...$ write the LaTeX command instead: "
+                r"`$\angle BAD$`, `$60^\circ$`, `$AB \perp CD$`.")
+        out.append(span)
+        at = m.end()
+    out.append(_texify_run(text[at:], text))
+    return "".join(out)
+
+
+def _texify_run(run, whole):
+    out = "".join(_TEX_SYMBOL.get(ch, ch) for ch in run)
+    stray = sorted({ch for ch in run if ord(ch) > 126
+                    and ch not in _TEX_OK and ch not in _TEX_SYMBOL})
+    if stray:
+        raise ValueError(
+            f"picture text carries {stray}, which LaTeX has no glyph for and "
+            f"which is not in _TEX_SYMBOL: {whole[:60]!r}. Write it as LaTeX "
+            r"instead — `$\perp$`, `$\angle BAD$`, `$^\circ$` — or add it to "
+            "the table in smartquest_theme.py if it is a symbol the DSE "
+            "actually uses.")
+    return out
+
+
+def _english_only(text, where):
+    """The picture is in English. Raise on 中文 rather than setting it.
+
+    The caption track is the exemption and the only one — `caption_text()` and
+    everything build_captions.py emits take 中文 exactly as before. See hard
+    rule 29.
+    """
+    if _HAS_CJK.search(text):
+        found = "".join(sorted(set(_HAS_CJK.findall(text))))[:12]
+        raise ValueError(
+            f"{where}: the picture is in English, and this string carries 中文 "
+            f"({found}…): {text[:60]!r}. The student sits an English paper, so "
+            "the words on the frame are the words they have to read in the exam "
+            "hall. Put the Chinese on the caption track, or — better — say it "
+            "in mathematics or by moving the figure. See hard rule 29.")
+    return text
+
+
 def title(text, color=INK, size=SIZE_TITLE):
     """Display type — Computer Modern, like the rest of the frame.
 
-    Routed by script, not by character set: anything with a CJK character goes
-    to Songti TC, everything else to Tex. A title such as "1 · centroid" is
-    mostly Latin and belongs in TeX, so the test is for CJK rather than for
-    non-ASCII.
+    English, like everything else on the picture: `1 · centroid`, not
+    `1 · 重心`. It raises on 中文 (rule 29) — a section title is the shortest
+    string in the video and the easiest one to leave in Chinese by habit.
     """
-    if _HAS_CJK.search(text):
-        return _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT,
-                     color=color)
-    return Tex(text, color=color, font_size=_pt(size), tex_template=TEX_MAIN)
+    _english_only(text, "title()")
+    return Tex(_texify(text), color=color, font_size=_pt(size),
+               tex_template=TEX_MAIN)
 
 
-def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX, scale=True):
-    """繁中書面語 body text. `terms` colours inline English subject terms.
+def body(text, color=INK, size=SIZE_BODY, terms=None, term_color=AUX,
+         scale=True, width=None):
+    """One line of English on the picture — a list item, a short statement.
 
-        body("同一弧上的 inscribed angle 相等。", terms=["inscribed angle"])
+        body("Angles in the same segment are equal.", terms=["segment"])
 
+    `terms` are the DSE subject terms inside it: each is set BOLD and in
+    `term_color`, exactly as a term card is (rule 26).
+
+    English only — it raises on 中文 (rule 29). This helper used to set 繁中
+    書面語 and is where most of it lived, so a scene that has not been converted
+    fails here, loudly, instead of rendering a Chinese frame.
+
+    Set in Computer Modern like the mathematics, not in Pango: an English word
+    in the figure's face has to be the same glyph as that word in the formula
+    beside it (rule 17). The line is wrapped in `\\mbox` so LaTeX cannot break
+    it at its own page width — which means a long line runs off the frame
+    instead of wrapping, so the width is checked here and **raises**. A body
+    line is one line; if it does not fit, it is two items, or it belongs in the
+    narration.
     """
-    t2c = {k: term_color for k in (terms or [])}
-    return _text(text, _pt(size) if scale else max(size, SIZE_MIN),
-                 font=FONT_TEXT, weight=WEIGHT_TEXT, color=color, t2c=t2c)
+    _english_only(text, "body()")
+    pieces, is_term = _term_pieces(text, terms)
+    args = [_texify(piece) for piece in pieces]
+    args[0] = r"\mbox{" + args[0]
+    args[-1] = args[-1] + "}"
+    t = Tex(*args, arg_separator="", color=color,
+            font_size=_pt(size) if scale else max(size, SIZE_MIN),
+            tex_template=TEX_MAIN)
+    for part, term_here in zip(t.submobjects, is_term):
+        if term_here:
+            part.set_color(term_color)
+    w = width if width is not None else config.frame_width * (1 - 2 * 0.045)
+    if t.width > w:
+        raise ValueError(
+            f"body() line is {t.width:.2f} units wide and the frame holds "
+            f"{w:.2f}: {text[:60]!r}. It cannot wrap — split it into two list "
+            "items, cut it to the words that teach, or move the sentence to the "
+            "narration. Do not shrink the type.")
+    return t
+
+
+def _term_pieces(text, terms):
+    """Split a line into (piece, is_term) runs, terms wrapped in \\textbf."""
+    marks = []
+    for t in sorted(terms or [], key=len, reverse=True):
+        start = 0
+        while True:
+            i = text.find(t, start)
+            if i < 0:
+                break
+            if not any(a < i + len(t) and i < b for a, b in marks):
+                marks.append((i, i + len(t)))
+            start = i + len(t)
+    marks.sort()
+    pieces, flags, at = [], [], 0
+    for a, b in marks:
+        if a > at:
+            pieces.append(text[at:a])
+            flags.append(False)
+        pieces.append(r"\textbf{" + text[a:b] + "}")   # _texify() runs later
+        flags.append(True)
+        at = b
+    if at < len(text) or not pieces:
+        pieces.append(text[at:])
+        flags.append(False)
+    return pieces, flags
 
 
 # ---- the question band -----------------------------------------------------
@@ -478,6 +657,7 @@ _Q_SAFETY = 1.03           # break this much early; the estimate runs \u00b11.5%
 
 def _q_box(line, size, color=None):
     """One unbreakable line of question text."""
+    line = _texify(line)      # a stem pasted from a paper may carry ∠, °, ⇌
     return Tex(r"\mbox{" + line + "}", color=color, font_size=_pt(size),
                tex_template=TEX_MAIN)
 
@@ -529,6 +709,8 @@ def _q_lines(text, width, size):
 
 
 def question_text(text, size=SIZE_QUESTION, color=MUTED, width=None):
+    # The paper is in English and so is the band — never a 中文 translation of
+    # a stem or a part (rule 23, and now rule 29 for the whole frame).
     """The DSE question \u2014 or one part of it \u2014 as a wrapped, left-aligned
     paragraph of the paper's own English.
 
@@ -571,10 +753,23 @@ def question_text(text, size=SIZE_QUESTION, color=MUTED, width=None):
 
 
 _LATIN_ONLY = re.compile(r"^[\x20-\x7E]+$")
+
+
+def _tex_safe(text):
+    """True if TeX can set this string as it stands.
+
+    ASCII, plus the typographic punctuation Manim's stock template handles
+    without help (`_TEX_OK`) — so `A — B` and `DSE Maths · 6.1` go through
+    Computer Modern like everything else rather than falling to the Pango
+    branch, which would set their Latin in a different face (rule 17).
+    """
+    return bool(text) and all(ch in _TEX_OK or 0x20 <= ord(ch) <= 0x7E
+                              for ch in text)
 _SYMBOLIC = re.compile(r"^[A-Za-z](['\u2032]|_\d)?$")   # A, B, P, A', v_1
 
 
-def label(text, color=INK, size=SIZE_LABEL, halo=True, halo_color=None):
+def label(text, color=INK, size=SIZE_LABEL, halo=True, halo_color=None,
+          bold=False):
     """A label on the figure. Haloed by default — see halo().
 
     Latin content is set in TeX, not Pango, so a point label is the SAME glyph
@@ -587,18 +782,50 @@ def label(text, color=INK, size=SIZE_LABEL, halo=True, halo_color=None):
     Haloing is on because a figure label is exactly the thing that ends up over
     a line. On the dark field the halo is the background colour, so on clear
     ground it is invisible and costs nothing.
+
+    `bold=True` sets it in the term weight. Do not pass it by hand to mark a
+    concept — call term(), which is the same thing under a name that says what
+    the weight means.
+
+    English only — it raises on 中文 (rule 29). A Unicode maths symbol (∠, △,
+    ⊥, °) is not Chinese and still renders, but write it as LaTeX —
+    `label(r"$\\angle BAD$")` — so it comes out of Computer Modern with the rest
+    of the frame instead of the symbol fallback.
     """
-    if _LATIN_ONLY.match(text):
-        if _SYMBOLIC.match(text):
-            t = MathTex(text, color=color, font_size=_pt(size),
-                        tex_template=TEX_MAIN)
+    _english_only(text, "label()")
+    tex = _texify(text)
+    if _tex_safe(tex):
+        if _SYMBOLIC.match(tex):
+            t = MathTex(rf"\mathbf{{{tex}}}" if bold else tex, color=color,
+                        font_size=_pt(size), tex_template=TEX_MAIN)
         else:
-            t = Tex(text, color=color, font_size=_pt(size),
-                    tex_template=TEX_MAIN)
+            t = Tex(rf"\textbf{{{tex}}}" if bold else tex, color=color,
+                    font_size=_pt(size), tex_template=TEX_MAIN)
     else:
-        t = _text(text, _pt(size), font=FONT_TEXT, weight=WEIGHT_TEXT,
-                  color=color)
+        t = _text(text, _pt(size), font=FONT_TEXT,
+                  weight=WEIGHT_TERM if bold else WEIGHT_TEXT, color=color)
     return halo_text(t, color=halo_color) if halo else t
+
+
+def term(text, color=AUX, size=SIZE_LABEL, halo=True):
+    """A term card: the English DSE term, alone, in its referent's colour, BOLD.
+
+        card = term("median", color=AUX).next_to(fc, RIGHT)
+        self.play(*bind_term(meds, card))
+
+    The card is the term and nothing else — 「三條 median 的交點」 is a sentence
+    wearing a term as a hat, and it goes to the subtitle. Bold is not emphasis
+    and it is not optional: it is how the examinable word is told apart from the
+    Chinese and the mathematics around it, on a frame where colour is already
+    spoken for (rule 26). Colour still has to be the referent's, bound once with
+    bind_term() — weight says "this is the term", colour says "it is that thing".
+
+    The card is the ENGLISH term, always — it raises on 中文 (rule 29). A term
+    glossed in Chinese beside itself is the one thing this card must never do:
+    the marker wants `alternate segment theorem` on the answer sheet.
+    """
+    _english_only(text, "term()")
+    return label(text, color=color, size=size, halo=halo, bold=True)
 
 
 def halo_text(mobject, color=None, ratio=None):
@@ -883,11 +1110,68 @@ def fit_caption(text, terms, max_width, en=None):
 
 
 def brand_rule(width=3.0, thickness=0.07):
-    """The signature indigo→purple bar. Use once per video, in the title card."""
+    """The signature indigo→purple bar. Use once per video, in the title card —
+    which means calling title_card() rather than this, in practice."""
     r = Rectangle(width=width, height=thickness, stroke_width=0)
     r.set_fill(color=[BRAND_FROM, BRAND_TO], opacity=1.0)
     r.set_sheen_direction(RIGHT)
     return r
+
+
+def title_card(stage, topic, *subtitle, gap=0.45, rule_ratio=0.5):
+    """THE title card — the locked opening frame of every SmartQuest lesson.
+
+        st = self.setup_stage()
+        card = sq.title_card(st, "Arithmetic and Geometric Sequences",
+                             "DSE Maths", "Compulsory Part", "6.1")
+        self.play(Write(card[0]))
+        self.play(GrowFromCenter(card[1]), FadeIn(card[2], shift=UP * 0.15))
+
+    Three things, stacked and centred in the content area:
+
+        topic          title(), INK, SIZE_TITLE
+        ───────        brand_rule(), half the topic's width — the one place in
+                       the video the gradient appears
+        subject line   MUTED, SIZE_TITLE_SUB, the parts joined with " · "
+
+    The subtitle parts are given in exam order — subject, paper or part, then
+    the syllabus code: `"DSE Maths", "Compulsory Part", "6.1"`. Blank ones are
+    dropped, so a lesson with no code still sets correctly.
+
+    The rule is HALF THE WIDEST LINE, not a fixed number, so the card holds its
+    proportions whether the topic is one word or six. On the approved card the
+    topic is the wider of the two and the rule comes out at half of it, which is
+    where the ratio was measured; a short topic falls back to half the subject
+    line so the bar never shrinks to a dash.
+
+    Returned as `[topic, rule, subtitle]` so each lands on its own beat. This
+    is shot 1 of every lesson (rule 30): the student is told what they are
+    watching before the hook asks them anything.
+    """
+    parts = [str(x).strip() for x in subtitle if str(x).strip()]
+    if not parts:
+        raise ValueError(
+            "title_card() needs the subject line — it is part of the locked "
+            'format, not decoration: title_card(st, "Centroid", "DSE Maths", '
+            '"Compulsory Part", "8.3"). Subject, then paper or part, then the '
+            "syllabus code. A card with no subject line does not say which "
+            "paper the lesson is for, which is the one thing a DSE student "
+            "checks before watching.")
+    t = title(topic)
+    sub = label(" · ".join(parts), color=MUTED, size=SIZE_TITLE_SUB, halo=False)
+    rule = brand_rule(width=max(1.6, max(t.width, sub.width) * rule_ratio))
+    grp = VGroup(t, rule, sub)
+    grp.arrange(DOWN, buff=gap)
+    # Optically centred, not geometrically: the block sits 4.4% of the frame
+    # height above true centre, which is where the approved card puts it and
+    # where a centred block has to be to LOOK centred. content_center would
+    # push it another 0.2 units up, because it is reserving a caption band this
+    # frame has nothing under.
+    grp.move_to(UP * stage.h * 0.044)
+    floor = stage.content_bottom + 0.2      # portrait: never onto the captions
+    if grp.get_bottom()[1] < floor:
+        grp.shift(UP * (floor - grp.get_bottom()[1]))
+    return grp
 
 
 def step(statement, reason=None, color=INK, size=SIZE_HEADING):
@@ -900,6 +1184,134 @@ def step(statement, reason=None, color=INK, size=SIZE_HEADING):
         return VGroup(m)
     r = mtex(reason, color=MUTED, size=int(size * 0.62))
     return VGroup(m, r).arrange(DOWN, buff=0.10, aligned_edge=LEFT)
+
+
+# ---- a solution, and the page it ends on -----------------------------------
+# Both are built from ONE MathTex in an `align*` environment, so TeX itself
+# hangs each line's relation under the one above it. Getting the same result by
+# measuring and shifting does not work: MathTex in ManimCE 0.20 returns the
+# whole line as a single submobject whatever is passed to
+# substrings_to_isolate, so there is no `=` to measure the position of. Passing
+# the lines as SEPARATE arguments is what splits them — one submobject per
+# line, which is also what lets each line be revealed on its own beat.
+_REL = ("=", "<", ">", r"\leq", r"\geq", r"\approx", r"\equiv")
+
+
+def _amp(line):
+    """Put TeX's alignment mark before the line's first relation."""
+    if "&" in line:
+        return line
+    for rel in sorted(_REL, key=len, reverse=True):
+        i = line.find(rel)
+        if i >= 0:
+            return line[:i] + "&" + line[i:]
+    return "&" + line
+
+
+def _aligned_block(sources, color=INK, size=SIZE_HEADING, gap="0.45em"):
+    """One MathTex holding every line, relations aligned, one submobject each."""
+    body = [_amp(src) for src in sources]
+    args = [b + rf" \\[{gap}]" for b in body[:-1]] + [body[-1]]
+    return MathTex(*args, tex_environment="align*", color=color,
+                   font_size=_pt(size), tex_template=TEX_MAIN)
+
+
+def derivation(general, *substituted, reason=None, color=INK,
+               size=SIZE_HEADING, gap="0.45em"):
+    """A solution block that OPENS ON THE GENERAL FORMULA, then substitutes.
+
+        derivation(r"T(n) = a + (n-1)d",
+                   r"T(3) = 10 + (3-1)(2)",
+                   r"= 14",
+                   reason=r"\\text{(general term of an A.S.)}")
+
+    `general` is required and carries no data from the question — it is the
+    formula as the student has to be able to write it in the exam, symbols only.
+    The numbers arrive on the NEXT line, so the student sees where each one
+    lands. A solution whose first line is already `T(3) = 10 + 2(3-1)` has
+    skipped the only line that transfers to another question — see rule 27.
+
+    Each line is a submobject, in order, so each gets its own beat in its own
+    play() with its own figure event (rule 18):
+
+        d = derivation(...)
+        self.play(Write(d[0]))                      # the formula, alone
+        self.play(Write(d[1]), Create(mark_at_3))   # the numbers + the figure
+
+    The lines are set in one `align*`, so `= 14` hangs under the `=` above it
+    the way a marker writes it. An explicit `&` in a line is respected; without
+    one the mark goes before the first relation.
+
+    `reason` is the DSE reason for the GENERAL line — that is the formula being
+    quoted — so it sits beside that line, not under the answer. It is the last
+    submobject when present.
+    """
+    block = _aligned_block([general, *substituted], color=color, size=size,
+                           gap=gap)
+    rows = VGroup(*block.submobjects)
+    if reason is not None:
+        r = mtex(reason, color=MUTED, size=int(size * 0.62))
+        r.next_to(rows[0], RIGHT, buff=0.35).align_to(rows[0], DOWN)
+        rows.add(r)
+    return rows
+
+
+def solution_page(stage, lines, size=SIZE_SOLUTION, gap="0.45em", width=None):
+    """Every step of the finished solution, on ONE frame, in marking order.
+
+        page = solution_page(st, [
+            (r"T(n) = a + (n-1)d", r"\\text{(general term)}"),
+            r"T(3) = 10 + (3-1)(2)",
+            r"= 14",
+        ])
+
+    The animated solve teaches the reasoning one beat at a time, but it never
+    exists as a whole: by the last step the first line left the frame half a
+    minute ago, and the student has no page to copy. This is that page — the
+    shot that closes every worked example, held still (rule 28).
+
+    `lines` are statements in order, relations aligned as in derivation(); an
+    item may be `(statement, reason)` to carry its DSE reason, which is set
+    underneath in grey exactly as step() does it. The first line is the general
+    formula, the same one the live derivation opened with.
+
+    Raises rather than shrinking. Too tall means the page is carrying working a
+    marker would not write: keep the lines that earn marks. If the part itself
+    was split across two screens, give each half its own page.
+    """
+    sources, reasons = [], []
+    for item in lines:
+        if isinstance(item, (tuple, list)):
+            sources.append(item[0])
+            reasons.append(item[1] if len(item) > 1 else None)
+        else:
+            sources.append(item)
+            reasons.append(None)
+
+    block = _aligned_block(sources, size=size, gap=gap)
+    rows = VGroup(*block.submobjects)
+    page = VGroup(*rows)
+    # A reason lands under its own line and pushes everything below it down.
+    # Only the Y moves, so TeX's relation alignment survives.
+    drop = 0.0
+    for row, why in zip(rows, reasons):
+        row.shift(DOWN * drop)
+        if why is None:
+            continue
+        r = mtex(why, color=MUTED, size=int(size * 0.62))
+        r.next_to(row, DOWN, buff=0.10).align_to(row, LEFT)
+        page.add(r)
+        drop += r.height + 0.10
+
+    w = width if width is not None else stage.w - 2 * stage.margin
+    if page.width > w or page.height > stage.content_height:
+        raise ValueError(
+            f"solution page is {page.width:.2f} x {page.height:.2f} units, and "
+            f"the content area is {w:.2f} x {stage.content_height:.2f}. Keep "
+            "the lines a DSE marker awards and drop the algebra in between; if "
+            "the part was already split across two screens, give each half its "
+            "own page. Do not shrink the type.")
+    return page.move_to(stage.content_center)
 
 
 def emphasise(mobject, color=RESULT):
@@ -1023,6 +1435,9 @@ REST_AHA = 1.8          # after the aha moment — never shorter
 REST_PONDER = 3.0       # a ponder beat: the student is handed the problem.
                         # Not a rest — work being handed over. The question and
                         # its data stay on screen; nothing else moves.
+REST_RECAP = 4.0        # the full-solution page at the end of a worked example.
+                        # Long enough to be read top to bottom and copied, which
+                        # is what it is for. Nothing moves on it. See rule 28.
 
 
 # Three depths, not two. The missing tier was structure: axes, grids and the
@@ -1117,7 +1532,10 @@ _DARK_KEYS = {
 
 # The helpers a scene calls without naming a colour. If any of them keeps a
 # dark default, its type renders near-white on the light field — silently.
-_MUST_RELIGHT = ("title", "body", "label", "mtex", "mtex_ref", "step")
+_MUST_RELIGHT = ("title", "body", "label", "term", "mtex", "mtex_ref",
+                 "step", "derivation")
+# title_card() takes no colour argument — it reads INK and MUTED at call time,
+# so it relights with the module and needs no entry above.
 
 
 def _relight_defaults(palette):

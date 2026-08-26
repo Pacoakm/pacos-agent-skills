@@ -1,6 +1,6 @@
 ---
 name: smartquest-video-production
-description: Produce SmartQuest DSE teaching videos — Manim-animated lessons for HKDSE Maths, Physics, Chemistry and Biology, with bilingual subtitles (繁體中文書面語 above, English below) that put the exam's subject terms on screen, a locked SmartQuest brand theme, and a picture-first workflow that hands a finished silent cut to a human narrator. Use for SmartQuest lessons, DSE explainers, concept animations, exam-technique videos, 16:9 long-form lessons, and 9:16 shorts. Animation and subtitles are built first; the teacher records to picture afterwards. Manim is the only animation engine; no Remotion, no HTML/CSS/JS, no TTS, no stock or generated live action.
+description: Produce SmartQuest DSE teaching videos — Manim-animated lessons for HKDSE Maths, Physics, Chemistry and Biology, whose picture is entirely in the paper's English and whose bilingual subtitles (繁體中文書面語 above, English below) are the only place 中文 appears, a locked SmartQuest brand theme, and a picture-first workflow that hands a finished silent cut to a human narrator. Use for SmartQuest lessons, DSE explainers, concept animations, exam-technique videos, 16:9 long-form lessons, and 9:16 shorts. Animation and subtitles are built first; the teacher records to picture afterwards. Manim is the only animation engine; no Remotion, no HTML/CSS/JS, no TTS, no stock or generated live action.
 ---
 
 # SmartQuest Video Production
@@ -88,10 +88,12 @@ actual re-render, not a description of what would change.
 | Animation engine | **Manim Community Edition.** No Remotion, HyperFrames, HTML/CSS/JS, After Effects. ManimGL only with permission — see rule 9 |
 | Narration | **A human teacher records it.** Never TTS. This skill writes the script, never the audio |
 | Order of work | **Picture first, voice second.** Animation and subtitles are finished, then the teacher records to picture |
+| **The first shot** | **The title card, always** — topic, brand rule, `subject · paper · code`. Built with `title_card()`, 3–4 s. The hook is shot 2. See rule 30 |
+| **On-screen language** | **English, everywhere on the picture** — titles, labels, term cards, list items, DSE reasons, the question. The caption track is the **only** place 中文 appears. See rule 29 |
 | Subtitles | **Bilingual, always** — 繁體中文**書面語** on top, **English** underneath at 0.78× the size. The 中文 line is written in Chinese; the subject terms live in the English line (see `references/narration-and-subtitles.md`) |
 | Long form | 1920×1080 · 16:9 · **60 fps** · 5 min or longer |
 | Shorts | 1080×1920 · 9:16 · 60 fps · about 60 s |
-| Typography | **Computer Modern throughout** in the 3Blue1Brown manner — mathematics, titles and Latin figure labels alike. Songti TC for on-frame Chinese, PingFang HK Bold for the caption track. Not a per-project decision |
+| Typography | **Computer Modern throughout** in the 3Blue1Brown manner — mathematics, titles, labels and every word on the picture. PingFang HK Bold for the caption track, which is the only other face. Not a per-project decision |
 | Identity | Carried by the **colour set**, `brand_rule()` and the sans caption track — never by a display face |
 | Audience | Hong Kong secondary students sitting the **English-language** DSE papers, taught in Cantonese |
 
@@ -108,10 +110,10 @@ the student is examined on.
 
 | On the frame | Not as a sentence |
 |---|---|
-| `AO : OM = 2 : 1` | ~~較長一段連着頂點~~ |
-| tick marks on two segments | ~~這兩段相等~~ |
-| a `median` term card, flashed with the purple lines | ~~這條紫色線是 median~~ |
-| a vertex dragged while the point stays inside | ~~centroid 永遠在 triangle 內~~ |
+| `AO : OM = 2 : 1` | ~~The longer part touches the vertex.~~ |
+| tick marks on two segments | ~~These two segments are equal.~~ |
+| a **bold** `median` term card, flashed with the purple lines | ~~This purple line is a median.~~ |
+| a vertex dragged while the point stays inside | ~~The centroid is always inside the triangle.~~ |
 
 The last row is the general form: **a property that holds under variation is shown by varying
 it** — the one thing a textbook cannot do.
@@ -125,13 +127,26 @@ defect; text beside a *figure* is not.
 | Carries | equations, formulae, ratios, derivations | an enumerated list of steps or conditions |
 | Figure | yes | **yes** — and it should react as each item lands |
 | Never | an explanatory sentence | a displayed equation |
-| Budget | non-mathematical text: as few 字 as the idea needs, no fixed cap | ≤ 5 items, each ≤ 20 字 |
+| Budget | non-mathematical text: as few words as the idea needs, no fixed cap | ≤ 5 items, each ≤ 8 words and one line |
 
 Most lessons need both registers; they just take separate shots, with the figure carrying across.
 Words are for what genuinely cannot be said in mathematics — chiefly an **enumerated procedure**,
 which narration cannot carry because a subtitle is linear and transient, so by step ③ the student
 has lost step ① and never sees the shape of the procedure. Reveal such a list one item at a time,
 and let each item act on the figure as it lands.
+
+**3. The picture is in English.** Every string the student sees on the frame is the English the
+paper uses — title, figure label, term card, list item, DSE reason, question. The **caption track
+is the only place 中文 appears**, and the teacher still speaks Cantonese over all of it.
+
+The student is sitting an English-language paper: the words on the frame are the words they have
+to read under time pressure in the exam hall, and a Chinese gloss on the picture teaches them to
+recognise a term they will never be shown again. It also puts two scripts and two faces in one
+frame, which is the register problem in rule 2 wearing different clothes.
+
+The theme enforces it — `title()`, `body()`, `label()`, `term()` and `question_text()` **raise**
+on a CJK character rather than setting it. That is deliberate: a Chinese line on the picture is a
+design decision to reverse, not a font problem to fix at render time. See rule 29.
 
 Full rules, the translation table and a worked before/after in
 `references/on-screen-language.md`.
@@ -174,8 +189,51 @@ finished algebra revealed next to a static diagram:
 - a screen of steps that could have been printed on paper has failed the marking-scheme test,
   question band or no question band
 
-Sequencing — the hook, the ponder beat before the answer, and how a part is split — is in
-`references/lesson-patterns.md`, pattern 6.
+**Examples climb, and the first one barely climbs at all.** The example that follows a
+concept is that concept with numbers put into it — same formula, same shape, nothing new to
+notice, solvable by substituting and evaluating. It is not a soft opening. It is the beat where
+the student finds out that the thing they just watched is a thing *they* can do, and an example
+that needs a second idea takes that away and gives back a demonstration of the teacher's skill.
+
+| Example | What it adds | The test |
+|---|---|---|
+| **1 — mirror** | nothing. The concept's own formula, the concept's own shape, the question's numbers substituted straight in | Could a student solve it by copying the concept frame and putting numbers where the letters were? If not, it is not the first example |
+| **2 — one step** | exactly one new move: a rearrangement, the unknown in a different place, a unit to convert, a second application | Can the student name the one thing that changed? |
+| **3 — exam** | the paper's own dressing — multi-part, a given that has to be extracted from prose, a distractor | Is it a real DSE part, or written like one? |
+
+Three is a ceiling, not a quota, and a short has room for the mirror alone. What is not allowed is
+opening at exam level, or stopping at the mirror.
+
+**The solve moves on both halves of the frame; the answer is one page.** These are two different
+jobs and the example needs both:
+
+| | |
+|---|---|
+| **While solving** | figure or graph on one side, derivation on the other, **moving together** — one step, its figure event, one `play()` (rule 18). Colour is the wire between the halves: a quantity named on the right lights the same colour on the left in the same instant (`mtex_ref()`, `bind_term()`) |
+| **After solving** | **one still page carrying every step**, in the order a marker reads them, general formula first, held ≥ `REST_RECAP` (4.0 s). Nothing on it moves |
+
+Neither substitutes for the other. The animation is where the reasoning is taught — but it never
+exists as a whole: by the last step the first has been off the frame for half a minute, and a
+student who wants to copy the solution has nothing to copy. The page is where the solution exists
+as an object. `solution_page()` builds it and **raises** rather than shrinking — too tall means
+the recap is carrying working a marker would not write.
+
+**A solution's first line is the general formula, with no numbers in it.**
+
+```
+T(n) = a + (n-1)d        ← the formula, as the exam requires it to be written
+T(3) = 10 + (3-1)(2)     ← now the question's numbers, and where each one goes is visible
+     = 14                ← the answer
+```
+
+Never open on `T(3) = 10 + 2(3-1)`. That line answers this question and nothing else: the student
+watches numbers appear in slots with no way to see which slot is which, so nothing transfers to
+the next question — and the general line is usually what the marking scheme awards the method mark
+for. `derivation()` takes the general form as its **required first argument** for exactly this
+reason. It holds for every formula the solution reaches for later too, not just the opening line.
+
+Sequencing — the hook, the ponder beat before the answer, how a part is split, the example ladder
+and the recap page — is in `references/lesson-patterns.md`, patterns 6 to 8.
 
 ## Ask only what is missing
 
@@ -216,8 +274,10 @@ Write `brief.md` covering, in this order:
 - **Known limitations** — cases the video does not cover. Say so on the record; never let the
   video imply completeness it does not have.
 - **The lesson patterns** — answer each explicitly, per `references/lesson-patterns.md`:
-  1. **The hook question** — what the student wants to know after the opening shot, in one
-     sentence. 「今日我們講 X」 is a table of contents, not a hook.
+  1. **The title card, then the hook question.** Shot 1 is the title card (rule 30): give its
+     topic line and its `subject · paper · code` parts, exactly as they will be set. Shot 2 is
+     the hook — what the student wants to know after it, in one sentence. 「今日我們講 X」 is a
+     table of contents, not a hook, and now it is also redundant: the card just said it.
   2. **Behaviour before name** — for each term, the beat where the student *sees* it before it is
      named. Never open a section with a definition.
   3. **The concrete case** — the real numbers worked before any general form. If the lesson only
@@ -230,6 +290,14 @@ Write `brief.md` covering, in this order:
   6. **The worked example** — if the lesson works one: the question text verbatim in English,
      which part goes on which screen, the reading time the stem is given, and where any part is
      split. Skip only if there is no worked example.
+  7. **The example ladder** — for each example, which rung it is on: mirror, one step, or exam.
+     The first example after a concept is the **mirror** — same formula, same shape, solved by
+     substitution — and say in one line what the student would have to copy to solve it. Name the
+     single new move each later example adds. A lesson whose first example already needs a second
+     idea is redesigned here, not in the storyboard.
+  8. **The solve and the page** — for each example: which quantity on the derivation side lights
+     which element on the figure side, and at which beat; and the **full-solution page** that
+     closes it, as the actual list of lines, with the general formula as line one.
 
 Verify every formula, constant, unit, and worked number independently before animating. Record
 the check in `brief.md`. A wrong number that reaches the render is the most expensive defect
@@ -275,12 +343,18 @@ be read without opening files:
 - **The full script** — every shot in order, as a table: shot ID, timecode, allotted seconds, the
   exact 書面語 subtitle text **and its English line**, 字數, and the pacing verdict against both
   the reading budget (`字數 ≤ 秒數 × 4.0`) and the breathing budget (`stillSeconds ≥ 秒數 × 0.25`).
-- **What is on the picture** — per shot, the `onScreenText` list and its 字數, with a line on why
+- **What is on the picture** — per shot, the `onScreenText` list, its word count, and confirmation
+  that every entry is English, with a line on why
   each entry earns its place, so the split between picture and narration is visible before anything is drawn. Any
   sentence you moved off the frame: say where it went, and what mathematics replaced it.
 - **The question, if the lesson works one** — the stem verbatim in English, the parts, which
   shots carry which part, and the seconds the stem gets to be read before anything else moves.
   Quote it; a mis-transcribed past-paper question is the same class of defect as a wrong number.
+- **The examples, in order** — each one's rung (mirror / one step / exam), what the first one asks
+  the student to do beyond substituting (the answer should be "nothing"), and the new move each
+  later one adds. Then, per example, the **full-solution page** written out line by line, with the
+  general formula as line one and the substitution as line two. This is the cheapest place to
+  catch an example that is too hard too early or a solution that opens on numbers.
 - **The timeline** — section structure, total duration, and the knowledge-point count.
 - **Open questions** — anything you decided by assumption rather than instruction.
 
@@ -296,7 +370,8 @@ shots again, and stop again.
 ## Gate 2 — Storyboard
 
 One frame per shot, **rendered as a Manim still from the real scene**. The panels are then shown
-in the dashboard's Gate 2 card — click one for full size — each with its shot ID, time range,
+in the dashboard's Gate 2 card — click one to open it full size in place, ← / → to step through
+the shots in order — each with its shot ID, time range,
 visual and motion. Rebuild the card with `python3 tools/build_dashboard.py` after rendering the
 stills. `scripts/build_storyboard.py` still produces PNG sheets when a file is wanted (to paste
 somewhere, or offline), but the browser is where the user reviews them.
@@ -337,7 +412,10 @@ colour meaning stay constant, does each shot's end state match the next shot's s
   rest of the panel still does. A panel showing a part without its stem fails here.
 
 For every sentence that is not there, name where it went (subtitle, narration, or an animated
-beat), and for every term card, name the shot that bound it to its colour. Then ask of each
+beat), and for every term card, name the shot that bound it to its colour and confirm it is
+set bold. Confirm every string on the panel is English — a 中文 label is the one defect a
+storyboard sheet makes obvious and a script review does not. On a worked example, confirm the panel sequence ends on the full-solution page and that
+its first line is the general formula. Then ask of each
 remaining word: *would this panel still teach without it?* If yes, delete it.
 See `references/on-screen-language.md`.
 
@@ -512,8 +590,10 @@ Say that the subtitles are a **soft track and may need turning on** — QuickTim
 show it under their subtitle menu, and a player that ignores soft tracks will show none. Point
 at `out/subtitles.srt` beside the video as the fallback, so the wording can still be read.
 
-Invite either an approval or a list of problems with timecodes. Set
-`"status": "draft-awaiting-approval"` and **stop**.
+Invite either an approval or a list of problems with timecodes — and point them at the
+dashboard's Gate 3 card rather than a bare player: it names the shot they are inside while it
+plays, and **Mark this frame** turns a note into a timecode, a shot ID and a prompt without
+anyone reading a scrubber. Set `"status": "draft-awaiting-approval"` and **stop**.
 
 On revisions: fix timing in `video-plan.json` first, then the scenes — never let the two
 disagree — then **re-render the affected scenes, rebuild `out/draft.mp4`, and send the new video
@@ -721,6 +801,45 @@ instruction, and only from a draft the user has approved.
     batch — including the ones that matched. A "deleted" beat survived that way into a render the
     user then reviewed, and the same bug was reported twice. Assert each replacement's match count,
     and re-grep the file afterwards for what should be gone.
+26. **Never set a concept term in the text weight.** Every English DSE term on the picture —
+    the term card, a term inside a 中文 line, a term on the recap page — is **bold**. Use
+    `term()` for the card and `body(..., terms=[...])` for a term inside a line; both apply
+    `WEIGHT_TERM`. The term is the one word on the frame the student is examined on *naming*, and
+    it is usually the only Latin word in a frame of Chinese and mathematics, so it has to be
+    findable at a glance. Colour cannot do that job — colour already means reference (rule 17),
+    and spending a hue on emphasis burns one that could have named an angle. Bold is for terms and
+    nothing else: never bold a result, a step, a number, or a whole line.
+27. **Never open a solution by substituting.** The first line of any solution is the **general
+    formula in symbols** — `T(n) = a + (n-1)d` — and the question's numbers arrive on the second
+    line — `T(3) = 10 + (3-1)(2)`. A solution that starts at the substituted line answers this
+    question only: the student sees numbers land in slots without seeing which slot is which, so
+    nothing transfers, and the method mark the general line earns is never shown. `derivation()`
+    takes the general form as its required first argument. This applies to every formula the
+    solution introduces, not only the opening one.
+28. **Never end a worked example without its full-solution page.** The last shot of every example
+    is one still frame carrying **every** step in marking order — general formula first, then the
+    substitution, then the answer, with each DSE reason under the line that earns it — held
+    ≥ `REST_RECAP` (4.0 s) with nothing moving on it. The animated solve teaches the reasoning but
+    never exists as a whole, so without this page the student has watched a solution they cannot
+    copy. Build it with `solution_page()`; when it raises, cut the working a marker would not
+    write, or give each half of a split part its own page. Never shrink the type.
+29. **Never put 中文 on the picture.** Every string the student sees on the frame is English —
+    title, figure label, term card, list item, DSE reason, question, recap page. The **caption
+    track is the only exemption**, and it stays bilingual exactly as before: 繁體中文書面語 on
+    top, English underneath. The teacher still narrates in Cantonese. The student sits an
+    English-language paper, so the frame has to drill the English they must read in the exam
+    hall; a Chinese gloss teaches a word the paper will never show them, and puts two scripts and
+    two faces in one frame. `title()`, `body()`, `label()`, `term()` and `question_text()` raise
+    on a CJK character — do not route around them with a bare `Text()` (rule 13).
+30. **Never open on anything but the title card.** Shot 1 of every lesson is the locked title
+    card — the topic, the brand rule, and `subject · paper · syllabus code` — built with
+    `title_card()` and running 3–4 s. Not the hook, not a cold open, not a figure that appears
+    before the student knows what they are watching. A DSE student picks a video by whether it
+    is their paper and their syllabus point, and a hook that arrives before that answer is
+    asking them to invest in a lesson they cannot yet place. The hook is shot **2**, and it is
+    still a question (`lesson-patterns.md`, pattern 4) — the card buys it the right to be one.
+    Lay the card out with `title_card()`, never by hand: the proportions are measured, not
+    chosen.
 
 ## Bundled resources
 
