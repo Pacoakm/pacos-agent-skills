@@ -593,6 +593,26 @@ sheet wants `alternate segment theorem`, not 「弦切角定理」.
 Bold is not emphasis. A frame with three bold things has three terms on it, which is a frame with
 too many terms.
 
+## The everyday opening keeps the picture empty
+
+A knowledge point opens on a situation the student has felt — someone runs into you on the
+street — and that opening is the easiest place in the lesson to break rule 15, because the
+temptation is to caption the picture with what is happening.
+
+Do not. **The picture shows the situation happening; the words are the narration's job.**
+
+| Beat | On the picture | In the caption (書面語) |
+|---|---|---|
+| The situation | the two figures, the street, the collision — moving | 「你在街上走，有人跑過來撞到你。」 |
+| Varying it | the same runner, visibly heavier, then visibly faster | 「如果撞到你的人很胖呢？」 |
+| The plain word | still nothing | 「你會感到很大的衝擊。」 |
+| The term | **`momentum`**, bold, bound to the runner with `bind_term()` | 「物理科把這個叫做動量。」 + the English line |
+| The symbols | `p = mv`, `m` in the runner's colour, `v` in the arrow's | — |
+
+The plain Chinese word — 「衝擊」 — is **never** on the picture. It is Chinese (rule 29), and the
+frame has a better use for that moment: showing the collision, and then the English word the
+student will have to write. See `lesson-patterns.md`, pattern 9.
+
 ## Binding a colour to a term
 
 The student has to learn that the purple lines *are* the medians. Say it once, visually, then

@@ -21,6 +21,11 @@ SmartQuest takes his standard and binds it to the syllabus. That sets the bar in
   worked past paper is not the thing being aimed at, even though it is what the market supplies.
 - **Every lesson is syllabus-bound and mark-aware.** DSE reasons on screen, the marker's exact
   wording, no beautiful digression that earns nothing.
+- **His craft, not his register.** 3Blue1Brown writes for curious adults who came looking. Ours
+  are band 2 and 3 students who have to pass a paper, and for whom the first unexplained word is
+  where they stop listening. Take the picture-first argument, the colour discipline, the pacing —
+  do not take the assumption that the viewer will sit through a hard opening. Every concept
+  starts on something the student has actually felt, in the plainest words available (rule 31).
 
 ### It has to work outside Maths
 
@@ -95,7 +100,7 @@ actual re-render, not a description of what would change.
 | Shorts | 1080×1920 · 9:16 · 60 fps · about 60 s |
 | Typography | **Computer Modern throughout** in the 3Blue1Brown manner — mathematics, titles, labels and every word on the picture. PingFang HK Bold for the caption track, which is the only other face. Not a per-project decision |
 | Identity | Carried by the **colour set**, `brand_rule()` and the sans caption track — never by a display face |
-| Audience | Hong Kong secondary students sitting the **English-language** DSE papers, taught in Cantonese |
+| Audience | Hong Kong secondary students sitting the **English-language** DSE papers, taught in Cantonese. **Band 2 and 3 — pitch every lesson at the weakest student you have ever taught**, not at the one who already likes the subject. See rule 31 |
 
 Only reach outside Manim when Manim genuinely cannot produce the shot — a screen recording, a
 photograph, a past-paper scan. Say so explicitly and keep it to named shots.
@@ -298,6 +303,12 @@ Write `brief.md` covering, in this order:
   8. **The solve and the page** — for each example: which quantity on the derivation side lights
      which element on the figure side, and at which beat; and the **full-solution page** that
      closes it, as the actual list of lines, with the general formula as line one.
+  9. **The everyday opening**, per knowledge point (rule 31, pattern 9): the situation the
+     student has felt, written as the sentence you would actually say; what you vary to make
+     them feel what it depends on; the **plain Chinese word** that names the feeling; and the
+     English term it bridges to. Then confirm the term appears **nowhere** before that shot.
+     Write the first three cues out in full — if any word in them would need explaining to a
+     band 3 student, the opening is not ready.
 
 Verify every formula, constant, unit, and worked number independently before animating. Record
 the check in `brief.md`. A wrong number that reaches the render is the most expensive defect
@@ -350,6 +361,9 @@ be read without opening files:
 - **The question, if the lesson works one** — the stem verbatim in English, the parts, which
   shots carry which part, and the seconds the stem gets to be read before anything else moves.
   Quote it; a mis-transcribed past-paper question is the same class of defect as a wrong number.
+- **The opening of each knowledge point** — the everyday situation, the plain word, and the term
+  it bridges to, with the first three cues quoted verbatim. This is the part of the lesson most
+  likely to be written for the wrong student, and the cheapest to fix here.
 - **The examples, in order** — each one's rung (mirror / one step / exam), what the first one asks
   the student to do beyond substituting (the answer should be "nothing"), and the new move each
   later one adds. Then, per example, the **full-solution page** written out line by line, with the
@@ -840,6 +854,17 @@ instruction, and only from a draft the user has approved.
     still a question (`lesson-patterns.md`, pattern 4) — the card buys it the right to be one.
     Lay the card out with `title_card()`, never by hand: the proportions are measured, not
     chosen.
+31. **Never open a concept with the concept.** Every knowledge point starts on an **everyday
+    situation the student has physically felt**, in stupid-simple language, and the technical
+    word arrives only after they have felt the thing: situation → vary it → the plain everyday
+    word → the bold English term → the symbols. Teaching momentum, that is *someone runs into
+    you on the street*, then *what if he is much heavier*, then the spoken
+    「你會覺得個衝擊大好多」 — and
+    **then** the `momentum` term card. The audience is band 2 and 3, not the student who already
+    likes the subject: for them an unexplained word is where they stop listening. Afterwards keep
+    the sentences to one clause, and let in **one new term per cue**, never before its bridge.
+    The plain Chinese word lives on the caption line and never on the picture (rule 29).
+    See `references/lesson-patterns.md`, pattern 9.
 
 ## Bundled resources
 

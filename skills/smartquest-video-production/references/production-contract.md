@@ -49,6 +49,17 @@ the implementation.
   "height": 1080,
   "aspect": "16:9",
   "theme": "dark",                 // or "light" — asked at Gate 1, never assumed
+  "everydayOpenings": [
+    {
+      "knowledgePoint": "momentum",
+      "shot": "S03",
+      "situation": "someone running on the street bangs into you",
+      "varies": ["he is much heavier", "he is running much faster"],
+      "plainWord": "衝擊",
+      "term": "momentum",
+      "termFirstShot": "S04"
+    }
+  ],
   "titleCard": {
     "topic": "Arithmetic and Geometric Sequences",
     "subtitle": ["DSE Maths", "Compulsory Part", "6.1"]
@@ -236,6 +247,12 @@ Check these; do not assume them.
     required in the plan — and its `onScreenText` is exactly those two lines. It is the one shot
     exempt from invariant 8's register rule: a title card speaks neither register. No other shot
     sets `titleCard`. The hook is `shots[1]`. See rule 30.
+19. **Every knowledge point opens on something the student has felt.** Each entry of
+    `everydayOpenings` names the `shot` that shows the situation, what it `varies` to make the
+    dependence felt, the `plainWord` (Chinese, caption only) and the `term` it bridges to, plus
+    the `termFirstShot` where that term first appears. `termFirstShot` comes **after** `shot`,
+    and the term appears nowhere earlier — not in an `onScreenText`, not in a `subtitles[].en`,
+    not in a section title. One entry per knowledge point. See rule 31.
 
 Invariant 10 is the one that bites. Scenes render independently, so a mismatch produces a jump
 cut that is invisible at draft resolution and obvious in the master.

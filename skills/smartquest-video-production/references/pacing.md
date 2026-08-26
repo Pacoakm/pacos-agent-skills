@@ -80,6 +80,7 @@ One knowledge point per section. A section is: **set up → show → explain →
 | **Title card** | **3–4 s** | **2–3 s** |
 | Hook / the question | 20–30 s | 5–8 s |
 | Prior knowledge recap | 20–40 s | skip |
+| — its everyday opening | 15–25 s of that | 5–10 s of that |
 | One knowledge point | 45–90 s each | 30–40 s (one only) |
 | The aha | 60–90 s | 15–20 s |
 | Worked example — mirror | 40–70 s | 10 s, if any |
@@ -132,6 +133,8 @@ Do not use more than one of these on the same beat.
 At Gate 3, watch the draft and answer these. If any answer is no, fix the plan, not the render.
 
 - Can a student who has never seen this read every line before it leaves?
+- Would the weakest student you have ever taught still be watching at 0:20 — and is there any
+  word before the bridge that they would have had to look up?
 - Is there a moment of stillness after each knowledge point?
 - Does anything move while something else is being read?
 - Does the aha moment have room, or does the next thing start too soon?

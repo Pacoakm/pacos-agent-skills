@@ -11,6 +11,52 @@ Hong Kong secondary students preparing for **English-language** DSE papers, taug
 They think about the subject in Cantonese but must read and answer in English. The subtitle
 style follows that reality exactly.
 
+## The language level
+
+**Write for the weakest student you have ever taught** (hard rule 31). Band 2 and 3, not the
+student who already likes the subject. For them an unexplained word is not a small cost — it is
+where they stop listening, and they do not come back three sentences later.
+
+That governs the wording of every cue, not just the opening ones:
+
+| | |
+|---|---|
+| One clause per cue | If it needs a comma to hold two thoughts, it is two cues. The 4 字/秒 budget is a ceiling, not a target |
+| Everyday word first | `撞到你` before `碰撞`, `推` before `施力`. Use the technical word when the technical word **is** the thing being taught — not to sound precise |
+| One new term per cue | Two new terms in one sentence is a sentence nobody finishes |
+| Never early | A term never appears — spoken, captioned or on the picture — before the shot that bridges to it, including in a cue that is "just setting up" |
+
+書面語 does not mean formal: 「有人跑過嚟撞到你」 is written Chinese and is also how a person
+talks. What the register bans is 口語 particles and 助詞, not everyday vocabulary.
+
+### The bridge: the plain word, then the term
+
+Every knowledge point opens on something the student has felt, and the term arrives last —
+situation, vary it, the **plain Chinese word** for the feeling, then the **English term**
+(pattern 9). The two languages carry different halves of that:
+
+```
+        你會感到很大的衝擊。                      ← the plain word, on the caption line
+   You feel a much bigger impact.                 ← the English line, still plain
+        ─── next cue ───
+        物理科把這個叫做動量。                    ← the Chinese name, per the rule below
+   In physics this is called momentum.            ← the English term — and `momentum`
+                                                     is on the PICTURE at this moment, bold
+```
+
+Spoken, that second cue is 「物理科叫呢個做 momentum」 — the Chinese line with the term said in
+English, exactly as every other cue works. The student hears the English word, reads it on the
+caption's second line, and sees it bold on the picture, all at the same instant.
+
+The plain word — 「衝擊」 — is **caption only**. It is Chinese, so it can never go on the picture
+(rule 29), and it should not: the picture's job at that moment is to show the collision, and one
+beat later to carry the English term the student is marked on.
+
+**Plain is not 口語.** The caption stays 書面語 — 「你在街上走，有人跑過來撞到你」 is written
+Chinese *and* is how a person talks. What changes for this audience is the **vocabulary**, not
+the register: everyday words, one clause, no 助詞. The teacher's spoken line is the colloquial
+one (「你行緊街，有個人跑過嚟撞到你」), and `narration-sheet.md` is where that form lives.
+
 ## Every cue is bilingual
 
 **繁體中文書面語 on top. English underneath, and smaller.**
@@ -295,3 +341,6 @@ timecode.
   `awaiting-teacher-recording`.
 - Never stretch or pitch-shift a returned recording to fit a stale timeline. Change the plan,
   re-render the affected scenes, re-verify.
+- Never use a subject term before the shot that bridges to it — not in a hook, not in a
+  "just setting up" cue, not in the title of a section. The bridge is the only place a term is
+  allowed to be new (rule 31).

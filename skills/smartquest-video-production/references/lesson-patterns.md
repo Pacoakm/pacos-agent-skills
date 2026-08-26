@@ -4,12 +4,16 @@ How a lesson is *sequenced*, as distinct from what is on the frame
 (`on-screen-language.md`), how long things take (`pacing.md`), or how they look
 (`brand-theme.md`).
 
-These are adapted from 3Blue1Brown's practice. A caveat worth keeping: he has published no style
-guide, so these are observations of the work rather than rules he stated. They are here because
-they survive the translation to a DSE lesson, not because they are anyone's authority.
+Patterns 1–8 are adapted from 3Blue1Brown's practice. A caveat worth keeping: he has published
+no style guide, so these are observations of the work rather than rules he stated. They are here
+because they survive the translation to a DSE lesson, not because they are anyone's authority.
 
-Answer patterns 1–5 in `brief.md` for every lesson, and patterns 6–8 as well whenever the
-lesson works an example. They are part of what the user approves at Gate 1.
+**Pattern 9 is not his, and it outranks all of them.** He writes for curious adults who came
+looking; we are teaching band 2 and 3 students who have to pass a paper. Where his register and
+pattern 9 disagree, pattern 9 wins.
+
+Answer patterns 1–5 and **9** in `brief.md` for every lesson, and patterns 6–8 as well whenever
+the lesson works an example. They are part of what the user approves at Gate 1.
 
 ---
 
@@ -51,6 +55,9 @@ nothing to attach to and must be memorised. A name given after is a handle for s
 have already seen — which is the difference between recall and understanding.
 
 `bind_term()` is the mechanism; this is the ordering rule that decides *when* to call it.
+
+Pattern 9 is the strong form of this: not just *behaviour* before the name, but **an everyday
+situation the student has physically felt** before the name.
 
 ## 3. Concrete before general
 
@@ -175,6 +182,75 @@ it raises, keep the lines a marker awards and drop the algebra in between.
 **The page opens on the general formula, and so does the live solve** — see
 `on-screen-language.md`, "A solution opens on the formula, not on the numbers".
 
+## 9. Teach the weakest student you have ever taught
+
+**The house standard, and the one that sets the level everything else is written at.**
+
+> You guys are all very smart people, but most of the students are band 2 or 3, not really smart
+> enough. Imagine teaching the weakest student you have ever faced.
+
+That student is not stupid and is not to be talked down to. They are someone for whom every
+unexplained word is a place to stop listening, and who has already decided that this subject is
+not for them. The lesson has about fifteen seconds to prove otherwise.
+
+Two things follow, and they are separate.
+
+### 9a. Start with something they have felt, in words their friends use
+
+**Every knowledge point opens on an everyday situation, in stupid-simple language, before a
+single technical word.** Not an analogy invented to be clever — a thing that has actually
+happened to them, on a street, in a queue, with a phone in their hand.
+
+The order is always the same, and the term arrives **last**:
+
+| Beat | What happens |
+|---|---|
+| **1 · The situation** | something they have felt, shown happening. Plain words, short sentences |
+| **2 · Vary it** | make it bigger, faster, heavier — so they feel *what it depends on* before anything is measured |
+| **3 · The plain word** | the everyday word for what they just felt — 「衝擊」, 「攤薄」, 「頂唔順」 — spoken, and on the caption line |
+| **4 · The term** | *that* is what the subject calls it: the bold English term card, bound to the thing on screen (`term()`, `bind_term()`) |
+| **5 · The symbols** | only now the formula, with each symbol tied back to a part of the situation |
+
+**Worked example — momentum**, which is where this rule came from:
+
+| Beat | The picture | The narration (Cantonese, plain) | On the frame |
+|---|---|---|---|
+| 1 | a street; someone runs into you | 「你行緊街，有個人跑過嚟撞到你。」 | nothing — the picture *is* the sentence |
+| 2 | the same runner, now much heavier | 「如果撞你嗰個好肥呢？」 | nothing |
+| 3 | the same runner, now much faster | 「如果佢跑得快好多呢？」 | nothing |
+| 4 | the impact flashes | 「你會覺得個衝擊大好多。」 | nothing — 「衝擊」 is on the **caption line** |
+| 5 | the term card lands and pulses with the runner | 「呢個『衝擊』，物理科叫 momentum。」 | **momentum** |
+| 6 | `p = mv`; `m` takes the runner's colour, `v` the arrow's | 「佢係咁計嘅。」 | `p = mv` |
+
+The narration column above is the **spoken** Cantonese. The caption's 中文 line is the same
+sentence in 書面語 — 「你在街上走，有人跑過來撞到你。」 — because plain means everyday vocabulary,
+not 口語 (`narration-and-subtitles.md`).
+
+Note beat 4. **「衝擊」 never goes on the picture** — it is Chinese, and the picture is English
+(rule 29). The plain word is spoken and captioned; the picture waits and then shows the English
+term. That is not a compromise: the student meets the idea in the language they think in and the
+word in the language they are marked in, half a second apart, which is exactly the split the
+whole caption track is built on.
+
+**The test:** could a student who has never opened the textbook follow the first fifteen seconds
+with no effort? If any word in there needs a definition, it is in the wrong place.
+
+### 9b. Then keep the language plain, and let the terms in one at a time
+
+After the bridge, use the term — that is what it was introduced for, and hiding it afterwards
+teaches nothing. What stays banned is everything *around* it:
+
+| | |
+|---|---|
+| Sentences | short, one clause, one idea. If a cue needs a comma to hold two thoughts, it is two cues |
+| Words | the everyday word wherever the technical one is not the thing being taught. `bang into` before `collide`, `push` before `applied force` |
+| New terms | **one per cue**, and never before its bridge. Two new terms in one sentence is a sentence nobody finishes |
+| Never | a term used casually before it is introduced — including in a cue that is "just setting up" |
+
+The examples follow the same rule: pattern 7's **mirror** example is the first one, and it exists
+so the student finds out they can do this. An opening example that needs cleverness has already
+lost the student this pattern was written for.
+
 ---
 
 ## Already elsewhere in this skill
@@ -188,6 +264,7 @@ The rest of what is worth borrowing is recorded where it is enforced, not here:
 | Almost no explanatory prose on the frame — the voice explains | hard rule 15, `on-screen-language.md` |
 | The picture is English; 中文 only on the caption track | hard rule 29, `on-screen-language.md` |
 | Shot 1 is the locked title card | hard rule 30, `brand-theme.md` |
+| The everyday opening, and plain language throughout | hard rule 31, `narration-and-subtitles.md` |
 | A concept term is bold wherever it appears | hard rule 26, `on-screen-language.md` |
 | A solution's first line is the general formula | hard rule 27, `on-screen-language.md` |
 | Transform rather than erase and redraw | motion grammar 2, `brand-theme.md` |
