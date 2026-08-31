@@ -96,6 +96,7 @@ actual re-render, not a description of what would change.
 | **The first shot** | **The title card, always** — topic, brand rule, `subject · paper · code`. Built with `title_card()`, 3–4 s. The hook is shot 2. See rule 30 |
 | **On-screen language** | **English, everywhere on the picture** — titles, labels, term cards, list items, DSE reasons, the question. The caption track is the **only** place 中文 appears. See rule 29 |
 | Subtitles | **Bilingual, always** — 繁體中文**書面語** on top, **English** underneath at 0.78× the size. The 中文 line is written in Chinese; the subject terms live in the English line (see `references/narration-and-subtitles.md`) |
+| Assembly | **Palmier Pro when its MCP server answers** — scenes as separate clips, two live caption tracks, and the **user exports by hand**. Otherwise `ffmpeg concat` to a flat master. Palmier is an editor, not an animation engine; it never draws a frame. See `references/palmier-assembly.md` |
 | Long form | 1920×1080 · 16:9 · **60 fps** · 5 min or longer |
 | Shorts | 1080×1920 · 9:16 · 60 fps · about 60 s |
 | Typography | **Computer Modern throughout** in the 3Blue1Brown manner — mathematics, titles, labels and every word on the picture. PingFang HK Bold for the caption track, which is the only other face. Not a per-project decision |
@@ -620,14 +621,32 @@ full-resolution checks in Gate 4 exist because low-resolution review misses them
 
 ## Gate 4 — Picture master and caption track
 
+### First, choose the assembly route
+
+Before rendering, check once whether **Palmier Pro**'s MCP server is up — `manage_project` with
+`action: "list"`. If it answers, the scenes are assembled there as separate clips with live
+caption tracks and **the user exports by hand**; follow `references/palmier-assembly.md`, then
+come back here for the 3D gates and Gate 5. If it does not answer, or the user asked for a flat
+file, take the ffmpeg route below.
+
+Do not stall on a missing editor and do not ask the user to start it — fall through, and say
+which route you took. The two routes end differently: one hands over `out/picture-subbed.mp4`,
+the other hands over an open project that is not yet a video.
+
+Everything before this point is identical on both routes. Gates 1, 2 and 3, all three approval
+stops, and the `build_captions.py` pacing and layout gates are unchanged.
+
 ### Render the animation
 
 ```bash
 export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"   # if TinyTeX is used
 manim -r 1920,1080 --fps 60 src/script.py <every scene>          # long form
 manim -r 1080,1920 --fps 60 src/script.py <every scene>          # shorts
-ffmpeg -f concat -safe 0 -i out/concat.txt -c copy out/picture.mp4
+ffmpeg -f concat -safe 0 -i out/concat.txt -c copy out/picture.mp4   # ffmpeg route only
 ```
+
+The scene renders themselves are route-independent. On the Palmier route, stop after the
+`manim` lines: the concat is what that route replaces.
 
 Scenes must be authored against the layout tokens in `scripts/smartquest_theme.py` so the same
 code renders both aspect ratios. Never hard-code a coordinate that assumes 16:9.
@@ -636,7 +655,11 @@ Measured throughput on an M-series Mac: about **39 frames/second at 1080p60**, s
 lesson renders in roughly 8 minutes and a 10-minute lesson in about 16. Length is not a reason
 to avoid Manim.
 
-### Render the caption track separately
+### Render the caption track separately — ffmpeg route
+
+On the Palmier route skip this section: the captions are drawn live from the sidecar `.srt` on
+two caption tracks, so `captions.py` is never rendered. The `build_captions.py` run itself still
+happens, at Gate 3, on both routes — it is what gates the cue pacing and layout.
 
 Subtitles are **not** drawn inside the lesson scenes. `scripts/build_captions.py` reads
 `video-plan.json` and emits both a Manim caption scene and a sidecar `.srt`, each carrying both
@@ -669,6 +692,12 @@ be checked against the marking scheme. Follow `references/3d-geometry.md`.
 
 ## Gate 5 — Narration handoff, recording, mux
 
+**Where the picture comes from.** On the ffmpeg route it is `out/picture-subbed.mp4`. On the
+Palmier route it is the file **the user exported by hand** — ask for that path, and run the
+final quality gate against it before building anything on top. A manual export is exactly where
+a wrong preset (30 fps, a stray letterbox, a caption track left hidden) enters, and every
+artifact below inherits it.
+
 The picture is finished before anyone speaks. Give the teacher three things:
 
 1. `out/guide-track.mp4` — the subbed picture with a burned-in shot marker and running timecode.
@@ -682,10 +711,14 @@ never describe the video as finished while the audio is missing.**
 When the recording returns:
 
 ```bash
+PICTURE=out/picture-subbed.mp4        # Palmier route: the file the user exported
 ffprobe -v error -show_entries format=duration -of default=nw=1:nk=1 narration.wav
-ffmpeg -y -i out/picture-subbed.mp4 -i narration.wav \
+ffmpeg -y -i "$PICTURE" -i narration.wav \
   -c:v copy -c:a aac -b:a 192k -shortest out/final.mp4
 ```
+
+`-c:v copy` means a wrong-preset export is carried into `out/final.mp4` untouched, so the
+quality gate on `$PICTURE` happens **before** this, not after.
 
 Listen for drift against the shot boundaries. If the teacher's delivery genuinely needs more
 time in a section, change `video-plan.json`, re-render the affected scenes, and re-verify —
@@ -865,6 +898,15 @@ instruction, and only from a draft the user has approved.
     the sentences to one clause, and let in **one new term per cue**, never before its bridge.
     The plain Chinese word lives on the caption line and never on the picture (rule 29).
     See `references/lesson-patterns.md`, pattern 9.
+32. **Never export on the user's behalf on the Palmier route, and never call a timeline a
+    delivered video.** Assembling the scenes and the two caption tracks produces an editable
+    project, not a master: the encode is the user's manual step, and the state until they have
+    done it is `awaiting-user-export`. Verify the file they export, not the timeline you built.
+33. **Never add a transition unasked.** Palmier has no transition primitive — a cross dissolve is
+    built from clip overlap, so every clip after the join moves and the `.srt` the teacher
+    records against goes out of sync. When a transition is asked for, show the cost of both
+    answers (overlap, which re-times; or a fade through the background, which does not) and let
+    the user choose. See `references/palmier-assembly.md`.
 
 ## Bundled resources
 
@@ -874,6 +916,8 @@ instruction, and only from a draft the user has approved.
 - `references/3d-geometry.md` — the extra gates a solid-geometry lesson needs.
 - `references/manim-traps.md` — the ways Manim renders without an error and is still wrong.
 - `references/engines-and-plugins.md` — when ManimGL is allowed, and the verified plugin state.
+- `references/palmier-assembly.md` — the Gate 4 alternative when Palmier Pro's MCP server is up:
+  scenes as separate clips, two live caption tracks, and a user-owned export.
 - `references/on-screen-language.md` — what may appear on the picture, and how to say in
   mathematics what you were about to write as a sentence.
 - `references/narration-and-subtitles.md` — the bilingual cue, 書面語 rules, what each language

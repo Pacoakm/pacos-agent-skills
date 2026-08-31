@@ -76,6 +76,10 @@ the implementation.
     "media": "audio/narration.wav",
     "guideTrack": "out/guide-track.mp4"
   },
+  "assembly": {
+    "route": "ffmpeg",
+    "project": null
+  },
   "captions": {
     "track": "src/captions.py",
     "sidecar": "out/subtitles.srt",
@@ -209,6 +213,12 @@ Check these; do not assume them.
     Build both from a shared helper so they cannot drift.
 11. `narration.status` is `awaiting-teacher-recording` until a real file exists at
     `narration.media`.
+
+    `assembly.route` is `"ffmpeg"` or `"palmier"`, written when Gate 4 chooses, never guessed
+    later. On `"palmier"`, `assembly.project` holds the `.palmier` path, `captions.burnedIn` is
+    `false` (the captions are live text clips, burned only by the user's export), and
+    `captions.track` is `null` — no `captions.py` is rendered on that route, and the status is
+    `awaiting-user-export` until they have exported.
 12. **A worked example carries its question.** If the lesson works one, `question.stem` holds it
     verbatim in the paper's English as LaTeX, and every shot of the example names a
     `questionPart` that exists in `question.parts`. A shot with a `questionPart` renders the stem
@@ -320,6 +330,10 @@ Use these exact strings in `video-plan.json` so a resumed session knows where it
 **`storyboard-awaiting-approval`** → `storyboard-approved` →
 **`draft-awaiting-approval`** → `draft-approved` →
 `picture-locked` → `awaiting-teacher-recording` → `audio-received` → `verified` → `delivered`
+
+On the Palmier assembly route `picture-locked` is reached only when the **user has exported**;
+until then the state is `awaiting-user-export`. A finished timeline is not a locked picture —
+see `references/palmier-assembly.md`.
 
 The three bold states are the mandatory approval stops. Each means: the artifact has been shown
 to the user and the session is stopped. Only the user's explicit approval moves it to the
