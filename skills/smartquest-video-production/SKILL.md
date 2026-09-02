@@ -94,6 +94,7 @@ actual re-render, not a description of what would change.
 | Narration | **A human teacher records it.** Never TTS. This skill writes the script, never the audio |
 | Order of work | **Picture first, voice second.** Animation and subtitles are finished, then the teacher records to picture |
 | **The first shot** | **The title card, always** — topic, brand rule, `subject · paper · code`. Built with `title_card()`, 3–4 s. The hook is shot 2. See rule 30 |
+| **The section tag** | **Long form: the knowledge point, in the top-left of every shot that is not a card** — `Plane to Plane`, `Line to Plane`. Built with `Stage.section_tag()`, ≤ 4 words, never animated. A short carries none. See rule 34 |
 | **On-screen language** | **English, everywhere on the picture** — titles, labels, term cards, list items, DSE reasons, the question. The caption track is the **only** place 中文 appears. See rule 29 |
 | Subtitles | **Bilingual, always** — 繁體中文**書面語** on top, **English** underneath at 0.78× the size. The 中文 line is written in Chinese; the subject terms live in the English line (see `references/narration-and-subtitles.md`) |
 | Assembly | **Palmier Pro when its MCP server answers** — scenes as separate clips, two live caption tracks, and the **user exports by hand**. Otherwise `ffmpeg concat` to a flat master. Palmier is an editor, not an animation engine; it never draws a frame. See `references/palmier-assembly.md` |
@@ -150,8 +151,8 @@ to read under time pressure in the exam hall, and a Chinese gloss on the picture
 recognise a term they will never be shown again. It also puts two scripts and two faces in one
 frame, which is the register problem in rule 2 wearing different clothes.
 
-The theme enforces it — `title()`, `body()`, `label()`, `term()` and `question_text()` **raise**
-on a CJK character rather than setting it. That is deliberate: a Chinese line on the picture is a
+The theme enforces it — `title()`, `body()`, `label()`, `term()`, `section_tag()` and
+`question_text()` **raise** on a CJK character rather than setting it. That is deliberate: a Chinese line on the picture is a
 design decision to reverse, not a font problem to fix at render time. See rule 29.
 
 Full rules, the translation table and a worked before/after in
@@ -279,6 +280,11 @@ Write `brief.md` covering, in this order:
   reason wrong is still a wrong lesson.
 - **Known limitations** — cases the video does not cover. Say so on the record; never let the
   video imply completeness it does not have.
+- **The knowledge points and their tags** — the two to four knowledge points in the order they
+  are taught, each with the ≤ 4-word English tag that sits in the top-left while it runs
+  (`Plane to Plane`, `Line to Plane`), and the shot where the tag changes. Long form only; a short
+  has one knowledge point and no tag. Confirm no tag names a term before the shot that bridges to
+  it — the tag is a section title, and rule 31 keeps the term out of one. See rule 34.
 - **The lesson patterns** — answer each explicitly, per `references/lesson-patterns.md`:
   1. **The title card, then the hook question.** Shot 1 is the title card (rule 30): give its
      topic line and its `subject · paper · code` parts, exactly as they will be set. Shot 2 is
@@ -355,7 +361,8 @@ be read without opening files:
 - **The full script** — every shot in order, as a table: shot ID, timecode, allotted seconds, the
   exact 書面語 subtitle text **and its English line**, 字數, and the pacing verdict against both
   the reading budget (`字數 ≤ 秒數 × 4.0`) and the breathing budget (`stillSeconds ≥ 秒數 × 0.25`).
-- **What is on the picture** — per shot, the `onScreenText` list, its word count, and confirmation
+- **What is on the picture** — per shot, its `sectionTitle` tag, the `onScreenText` list, its word
+  count, and confirmation
   that every entry is English, with a line on why
   each entry earns its place, so the split between picture and narration is visible before anything is drawn. Any
   sentence you moved off the frame: say where it went, and what mathematics replaced it.
@@ -370,7 +377,9 @@ be read without opening files:
   later one adds. Then, per example, the **full-solution page** written out line by line, with the
   general formula as line one and the substitution as line two. This is the cheapest place to
   catch an example that is too hard too early or a solution that opens on numbers.
-- **The timeline** — section structure, total duration, and the knowledge-point count.
+- **The timeline** — section structure, total duration, and the knowledge-point count. In long
+  form, give each section's **tag** as it will be set in the top-left and the shot range it covers,
+  so the user reads the film's spine as the student will see it (rule 34).
 - **Open questions** — anything you decided by assumption rather than instruction.
 
 Also point at `brief.md` and `video-plan.json` on disk for the full detail.
@@ -422,6 +431,10 @@ colour meaning stay constant, does each shot's end state match the next shot's s
   **displayed equation** alongside it means split the shot in two.
 - **Both** — no loose explanatory sentence anywhere, and nothing written in words that the
   figure could have shown as a mark, a colour, or a movement.
+- **The section tag** — in long form, every panel that is not a card carries one, and it is
+  character-for-character the tag on the panel before it except where the knowledge point changes.
+  A tag that re-words itself mid-section is a jump cut in the corner of the frame, and a tag
+  naming a term the lesson has not bridged to yet breaks rule 31.
 - **Worked-example panels** — the stem is on every one of them, identical and identically
   wrapped, with this shot's part under it. The stem does not count against the 字 budget; the
   rest of the panel still does. A panel showing a part without its stem fails here.
@@ -735,7 +748,8 @@ Run `scripts/verify_master.py`. It checks, and reports what it actually measured
 - subtitle cue count and per-cue reading rate
 
 Then confirm by eye: the aha moment lands, no text is clipped by a safe area, no label collides
-with a diagram, colour meanings never changed mid-video, and the DSE reasons are correct.
+with a diagram, colour meanings never changed mid-video, the section tag is present and steady
+through each knowledge point and changes only at its boundaries, and the DSE reasons are correct.
 
 Report what you verified and how. If something was not checked, say so.
 
@@ -876,8 +890,8 @@ instruction, and only from a draft the user has approved.
     top, English underneath. The teacher still narrates in Cantonese. The student sits an
     English-language paper, so the frame has to drill the English they must read in the exam
     hall; a Chinese gloss teaches a word the paper will never show them, and puts two scripts and
-    two faces in one frame. `title()`, `body()`, `label()`, `term()` and `question_text()` raise
-    on a CJK character — do not route around them with a bare `Text()` (rule 13).
+    two faces in one frame. `title()`, `body()`, `label()`, `term()`, `section_tag()` and
+    `question_text()` raise on a CJK character — do not route around them with a bare `Text()` (rule 13).
 30. **Never open on anything but the title card.** Shot 1 of every lesson is the locked title
     card — the topic, the brand rule, and `subject · paper · syllabus code` — built with
     `title_card()` and running 3–4 s. Not the hook, not a cold open, not a figure that appears
@@ -908,6 +922,21 @@ instruction, and only from a draft the user has approved.
     answers (overlap, which re-times; or a fade through the background, which does not) and let
     the user choose. See `references/palmier-assembly.md`.
 
+34. **Never leave a long-form shot unlabelled.** A 16:9 lesson names the knowledge point it is
+    on, in the **top-left of every shot that is not a card** — `Plane to Plane`, `Line to Plane`,
+    `Momentum` — built with `Stage.section_tag()`, four words at most, `MUTED`, never animated and
+    never mentioned by the narration. A 5-minute lesson holds three or four knowledge points and
+    one figure usually carries across several of them, so a student who looks up mid-shot, or who
+    lands in the middle of the video from a search, has nothing on the frame telling them where
+    they are; the narration cannot answer it either, because a subtitle is transient and the
+    sentence that would have said it is three cues back. The tag is **furniture, not content**: it
+    is exempt from the word budget, it is the same string on every shot of its section (so it is
+    part of invariant 10's end state), and it changes only where the knowledge point changes. It
+    **arrives with the term** — never on the everyday-opening shots that exist to make the student
+    feel the thing before it is named (rule 31, contract invariant 19). A 9:16 short carries none:
+    it is one knowledge point, so the tag would be labelling the whole video, and `section_tag()`
+    raises there. See `references/on-screen-language.md`, "The section tag".
+
 ## Bundled resources
 
 - `references/brand-theme.md` — the SmartQuest palette, typography, layout and motion grammar.
@@ -935,7 +964,7 @@ instruction, and only from a draft the user has approved.
 - `tools/verify.py` — the final quality gate, as a job with a log.
 - `scripts/check_camera.py` — rejects degenerate 3D camera angles before rendering.
 - `scripts/check_framing.py` — projects 3D camera keyframes through a real `ThreeDCamera`:
-  frame fill, off-screen elements, caption-band intrusions, and the angle a shot will actually
-  render. Seconds to run, and the only honest way to size a 3D shot.
+  frame fill, off-screen elements, caption-band and section-tag intrusions, and the angle a shot
+  will actually render. Seconds to run, and the only honest way to size a 3D shot.
 - `scripts/build_storyboard.py` — review sheets from a storyboard manifest.
 - `scripts/verify_master.py` — the final quality gate, as a runnable check.

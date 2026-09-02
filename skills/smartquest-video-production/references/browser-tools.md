@@ -30,7 +30,9 @@ http://127.0.0.1:8777/<path>/<project>/tools/dashboard.html
 ## dashboard.html
 
 **Gate 1** — tabs over the plan summary, `brief.md`, the narration script and the
-shot timeline. The aha shot is highlighted. This is what the user reads before
+shot timeline. The aha shot is highlighted, and each row carries its
+`sectionTitle`, so a tag that drifts inside one knowledge point is visible as a
+column rather than hunted for shot by shot. This is what the user reads before
 approving the teaching.
 
 **Gate 2** — the storyboard panels, from `storyboard/frames/`, each with its
@@ -163,7 +165,7 @@ than a request that hangs. The card runs it on `picture-subbed.mp4`, and on
 
 | Check | Catches | Written by |
 |---|---|---|
-| Camera poses | a label off frame, under the panel column or in the caption band; a solved camera that no longer satisfies its guarantee | `check_poses.py` + the lesson's `pose_guarantees.py` |
+| Camera poses | a label off frame, under the panel column, in the caption band or under the section tag; a solved camera that no longer satisfies its guarantee | `check_poses.py` + the lesson's `pose_guarantees.py` |
 | Cuts | camera or figure mismatch at a join, and anything that appears or vanishes in one frame | `check_joins.py` |
 | Labels | a label far from the thing it names, a label on screen before that thing exists, two labels overlapping | the render, every beat |
 

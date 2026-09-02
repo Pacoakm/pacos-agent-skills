@@ -75,6 +75,7 @@ def timeline(root):
         rec = {"id": s["id"], "scene": s["manimScene"], "start": s["start"],
                "end": s["end"], "purpose": s.get("purpose", ""),
                "knowledgePoint": s.get("knowledgePoint", ""),
+               "sectionTitle": s.get("sectionTitle") or "",
                "register": s.get("register", ""), "ponder": s.get("ponder"),
                "cues": len(s.get("subtitles") or []), "clip": None, "stale": None}
         if f.exists():

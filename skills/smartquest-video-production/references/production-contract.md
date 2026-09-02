@@ -140,9 +140,10 @@ the implementation.
       "transitionIn": "Cut",
       "transitionOut": "...",
       "knowledgePoint": "...",
+      "sectionTitle": "1 · centroid",     // top-left tag; null on a card, absent in 9:16
       "register": "math",
       "questionPart": "a-i",
-      "onScreenText": ["1 · centroid", "median", "AO : OM = 2 : 1", "A", "B", "C", "O", "M"],
+      "onScreenText": ["median", "AO : OM = 2 : 1", "A", "B", "C", "O", "M"],
       "movedToNarration": ["the longer part touches the vertex → AO : OM = 2 : 1 on the frame",
                            "always inside the triangle → S06, vertex is dragged"],
       "givens": ["AB = 12", "∠ABD = 72°"],
@@ -245,9 +246,9 @@ Check these; do not assume them.
     least `REST_RECAP` (4.0 s) long. That shot has no `beats` — nothing moves on it. The lines it
     renders are the example's `solutionLines` array, built with `solution_page()`.
     See rule 28.
-17. **Every string on the picture is English.** Every entry of every shot's `onScreenText`, the
-    `question` block, and each example's `solutionLines` carry no CJK character. The **only**
-    field in the plan that may hold 中文 is `subtitles[].text` (and the notes in
+17. **Every string on the picture is English.** Every entry of every shot's `onScreenText`, every
+    `sectionTitle`, the `question` block, and each example's `solutionLines` carry no CJK
+    character. The **only** field in the plan that may hold 中文 is `subtitles[].text` (and the notes in
     `movedToNarration`, which describe what left the frame). Grep the plan for CJK outside the
     subtitle cues before the Gate 2 render — the theme raises at build time, but catching it in
     the plan is a minute instead of a render. See rule 29.
@@ -263,6 +264,15 @@ Check these; do not assume them.
     the `termFirstShot` where that term first appears. `termFirstShot` comes **after** `shot`,
     and the term appears nowhere earlier — not in an `onScreenText`, not in a `subtitles[].en`,
     not in a section title. One entry per knowledge point. See rule 31.
+20. **A long-form shot names its knowledge point.** Every 16:9 shot that is not the title card and
+    not an end card carries `sectionTitle` — the knowledge point in the paper's English, four words
+    and 32 characters at most, rendered top-left by `Stage.section_tag()`. Every shot of one
+    knowledge point carries the **identical** string, which makes it part of invariant 10's end
+    state; it changes only where the knowledge point changes, and it appears no earlier than that
+    section's `termFirstShot`, because a tag *is* a section title and invariant 19 bans the term
+    from one. A shot that deliberately carries no tag says `"sectionTitle": null`, so a bare frame
+    is visibly a decision rather than an omission. A 9:16 short carries none at all —
+    `section_tag()` raises there. See rule 34.
 
 Invariant 10 is the one that bites. Scenes render independently, so a mismatch produces a jump
 cut that is invisible at draft resolution and obvious in the master.

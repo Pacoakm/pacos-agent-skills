@@ -188,6 +188,22 @@ SIZE_MIN = 22
 SIZE_QUESTION = 24
 SIZE_QUESTION_PART = 26
 
+# The section tag: the knowledge point, in the top-left of the title band. It is
+# FURNITURE, not content — findable when the student looks up, invisible when
+# they do not — so it sits between the question stem (24, the reference text of
+# the frame) and a figure label (30, read at a glance).
+#
+# Measured in the title band, 16:9: a cap-height line sets 0.205 units, 2.6% of
+# frame height, 28 px at 1080p; with a descender, 0.258. Set at title_y that
+# spans y 3.43–3.69, so it clears the top of the frame by 3.9% of the height and
+# still sits 0.23 above content_top — the tag lives entirely inside a band the
+# layout already reserved, and costs the lesson no room at all.
+#
+# It is deliberately below caption size (3.9% of height): the caption is read,
+# the tag is glanced at, and a tag that competes with the caption for attention
+# is a tag the student reads instead of the lesson.
+SIZE_SECTION = 28
+
 # The full-solution page that closes a worked example holds every step at once,
 # and those steps are being RE-read rather than met for the first time — so it
 # is the one block that sets below heading size. It is not a licence to shrink a
@@ -258,6 +274,9 @@ class Stage:
         # else, so a scene that never asks for a question band lays out exactly
         # as it did before the band existed.
         self.question_band = 0.0
+        # Set by section_tag(). None on a shot that carries no tag — the title
+        # card, an end card, any 9:16 short.
+        self._tag = None
 
     # -- anchors ------------------------------------------------------------
     @property
@@ -328,6 +347,101 @@ class Stage:
             mobject.scale_to_fit_width(w)
         return mobject
 
+    # -- the section tag -----------------------------------------------------
+    def section_tag(self, name, color=MUTED, size=SIZE_SECTION):
+        """The knowledge point this shot is on, set small in the top-left.
+
+            st = self.setup_stage()
+            self.add(st.section_tag("Plane to Plane"))   # furniture: no beat
+
+        A 5-minute lesson holds three or four knowledge points and one figure
+        usually carries across several of them, so a student who looks up
+        mid-shot has nothing on the frame telling them which one they are in.
+        The tag answers that from the corner of the eye: MUTED, one step above
+        the question stem, never animated, never narrated.
+
+        Long form only — it RAISES in 9:16. A short is one knowledge point, so
+        the tag would be labelling the whole video, and the portrait title band
+        is 11% of a frame that already gives 37% to captions.
+
+        Call it BEFORE `question()`: the stem then lays out under the tag.
+        Calling it after sets the paper's words across the heading.
+
+        Keep it to the knowledge point in the paper's English — `Plane to
+        Plane`, `Line to Plane`, `Momentum` — four words at most, no sentence,
+        no trailing stop. A leading section number (`2 · Plane to Plane`) is
+        allowed; use it on every section or on none.
+
+        In a `ThreeDScene` — which is what a 3D lesson subclasses, since SQScene
+        is a 2D base — register it with `add_fixed_in_frame_mobjects(tag)`, not
+        `add()`. A plain `add()` makes it an ordinary 3D mobject that the camera
+        projects: it tilts and drifts with every camera move, and nothing errors.
+
+        Every shot of one knowledge point builds the SAME tag from the scene's
+        shared helper (contract invariant 10): a tag that re-wraps or shifts
+        between two shots is a jump cut in the corner of the frame. The tag
+        changes only where the knowledge point does, and it arrives with the
+        term — never before the everyday opening has bridged to it (rule 31,
+        contract invariant 19).
+        """
+        if self.portrait:
+            raise ValueError(
+                "section_tag() is long form only. A 9:16 short is ONE knowledge "
+                "point, so a tag there labels the whole video rather than the "
+                "section, and the portrait title band is 11% of a frame that "
+                "already spends 37% on captions. Drop the tag in the short; the "
+                "title card has already named the topic.")
+        if self.question_band:
+            raise ValueError(
+                "section_tag() must be called BEFORE question() — the stem is "
+                "laid out under the tag, and by now it is already placed.")
+        text = str(name).strip()
+        if not text:
+            raise ValueError(
+                "section_tag() needs the knowledge point, e.g. "
+                '"Plane to Plane". A shot with no tag simply does not call it.')
+        _english_only(text, "section_tag()")
+        if text[-1] in ".:;,":
+            raise ValueError(
+                f"section_tag({text!r}): the tag is a name, not a sentence — "
+                "drop the trailing punctuation.")
+        words = [w for w in re.split(r"\s+", text.split("·")[-1]) if w]
+        if len(words) > 4 or len(text) > 32:
+            raise ValueError(
+                f"section_tag({text!r}) is {len(words)} words / {len(text)} "
+                "characters (max 4 / 32). The tag is read from the corner of "
+                "the eye, so it has to be graspable without being read: name "
+                'the knowledge point ("Angle Between Two Planes" -> "Plane to '
+                'Plane"), and put the explanation on the caption track.')
+        t = Tex(_texify(text), color=color, font_size=_pt(size),
+                tex_template=TEX_MAIN)
+        limit = (self.w - 2 * self.margin) * 0.42
+        if t.width > limit:
+            raise ValueError(
+                f"section_tag({text!r}) sets {t.width:.2f} units wide, past the "
+                f"{limit:.2f} the top-left corner holds. Past that it stops "
+                "being furniture and starts being a headline that the figure "
+                "has to work around. Shorten the wording.")
+        t.move_to(np.array([-self.w / 2 + self.margin + t.width / 2,
+                            self.title_y, 0.0]))
+        self._tag = t
+        return t
+
+    @property
+    def tag_box(self):
+        """(x0, x1, y0, y1) the section tag occupies, or None if there is none.
+
+        `check_framing.py` reads it, so a 3D figure can be measured against the
+        tag before a frame is rendered — a projected solid fills the frame far
+        more of the time than a 2D figure does, and it is what runs under the
+        corner.
+        """
+        if self._tag is None:
+            return None
+        pad = self.h * 0.015
+        return (self._tag.get_left()[0] - pad, self._tag.get_right()[0] + pad,
+                self._tag.get_bottom()[1] - pad, self._tag.get_top()[1] + pad)
+
     # -- the question band ---------------------------------------------------
     def question(self, stem, part=None, gap=None):
         """The DSE question, laid across the top and reserving its own band.
@@ -343,7 +457,8 @@ class Stage:
 
         CALL THIS BEFORE `figure_box()` / `panel_box()`. It moves `content_top`
         down by the height of the band, so the figure and the derivation lay out
-        under the question instead of behind it.
+        under the question instead of behind it. And call it AFTER
+        `section_tag()`, which the stem is laid out under.
 
         Raises if the band would eat the frame — that is the signal to cut the
         stem to what the part actually needs, or to split the part across two
@@ -357,6 +472,16 @@ class Stage:
         grp.arrange(DOWN, aligned_edge=LEFT, buff=self.h * 0.030)
         grp.to_edge(UP, buff=self.h * 0.050)
         grp.align_to(np.array([-self.w / 2 + self.margin, 0.0, 0.0]), LEFT)
+        if self._tag is not None:
+            # The tag owns the top-left, so the stem starts under it rather
+            # than across it. The gap is 5.5% of the frame height, not the 3%
+            # that separates the stem from its part: tag and stem are both set
+            # MUTED and only one size apart, so at the tighter gap they read as
+            # one three-line paragraph and the tag stops looking like furniture.
+            # This costs the example a slice of the frame; the band cap below is
+            # what catches a stem that no longer fits.
+            grp.shift(UP * (self._tag.get_bottom()[1] - self.h * 0.055
+                            - grp.get_top()[1]))
 
         gap = self.h * 0.045 if gap is None else gap
         band = max(0.0, (self.h / 2 - self.title_band)
@@ -370,7 +495,12 @@ class Stage:
                 f"question band is {band / self.h:.0%} of frame height "
                 f"(cap {cap / self.h:.0%}). The stem plus the part is too long "
                 "for one frame: quote only the sentences this part needs, or "
-                "split the part across two shots. Do not shrink the type.")
+                "split the part across two shots. Do not shrink the type."
+                + (" This shot also carries a section tag, which the stem is "
+                   "laid out under — on a worked example the question is "
+                   "already the heading, so dropping the tag for the example's "
+                   "shots is the other legitimate answer."
+                   if self._tag is not None else ""))
         self.question_band = band
         return grp
 
@@ -379,8 +509,18 @@ class Stage:
 class SQScene(Scene):
     """Base scene carrying the SmartQuest field and layout."""
 
-    def setup_stage(self, gradient=None):
+    def setup_stage(self, gradient=None, section=None):
         """Flat dark field, plus the layout Stage.
+
+        `section` is the knowledge point this shot is on — pass it and the tag
+        is built and added as the first thing on the frame:
+
+            st = self.setup_stage(section=SECTION_PLANES)
+
+        Hold the string in a module constant shared by every scene of that
+        section, never retyped per scene: the tag has to be identical on every
+        shot it covers (contract invariant 10), and two hand-typed copies are
+        exactly how it stops being.
 
         `gradient` is accepted and ignored — the field used to carry a
         top-to-bottom wash rectangle, and old scenes still pass the keyword.
@@ -392,6 +532,8 @@ class SQScene(Scene):
         sync_frame()                      # must run before anything is positioned
         self.camera.background_color = BG
         self.stage = Stage()
+        if section is not None:
+            self.add(self.stage.section_tag(section))
         return self.stage
 
 

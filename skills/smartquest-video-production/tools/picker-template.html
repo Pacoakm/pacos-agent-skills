@@ -356,6 +356,10 @@ function bands(){
   ctx.fillStyle = "rgba(152,163,186,.45)"; ctx.font = "10px ui-sans-serif";
   ctx.fillText("caption band", 8, H - 8);
   ctx.fillText("panel column", sx(pb.x) + 6, sy(pb.top) + 14);
+  // The title band is not empty on a long-form shot: the knowledge point sits
+  // in its top-left (hard rule 34), so a vertex that reaches up there lands
+  // under the tag.
+  ctx.fillText("section tag", 8, su(S.title_band) - 6);
   ctx.restore();
 }
 
@@ -427,12 +431,13 @@ function metrics(pr){
     if(d < worst){ worst = d; pair = keys[i]+"–"+keys[j]; }
   }
   const fb = S.figure_box, pb = S.panel_box;
-  let off = [], inPanel = [], inCaption = [];
+  let off = [], inPanel = [], inCaption = [], inTag = [];
   for(const k of keys){
     const q = sc[k];
     if(Math.abs(q[0]) > S.frame_w/2 || Math.abs(q[1]) > S.frame_h/2) off.push(k);
     else if(q[0] > pb.x) inPanel.push(k);
     if(q[1] < S.content_bottom) inCaption.push(k);
+    if(q[1] > S.frame_h/2 - S.title_band) inTag.push(k);
   }
   const src = shot().cameras[kfIx];
   const row = (k,v,cls)=>`<tr><td class="k">${k}</td><td class="v ${cls||''}">${v}</td></tr>`;
@@ -444,6 +449,7 @@ function metrics(pr){
     + row("off frame", list(off), off.length ? "bad" : "ok")
     + row("under panel column", list(inPanel), inPanel.length ? "bad" : "ok")
     + row("into caption band", list(inCaption), inCaption.length ? "bad" : "ok")
+    + row("into section tag", list(inTag), inTag.length ? "bad" : "ok")
     + row("figure offset", cam.offset.map(v=>v.toFixed(2)).join(", "));
   document.getElementById("delta").innerHTML =
     `source: φ ${src.phi.toFixed(1)}° θ ${src.theta.toFixed(1)}° γ ${src.gamma.toFixed(1)}° · `

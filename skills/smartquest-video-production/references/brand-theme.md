@@ -216,8 +216,8 @@ the mathematics under it. `FONT_DISPLAY` and `DISPLAY_MIN` survive only as depre
 older scenes still import.
 
 And now the picture is a **single** face, because the picture is English (hard rule 29): Songti TC
-no longer sets anything on it. `title()`, `body()`, `label()`, `term()` and `question_text()`
-**raise** on a CJK character instead of routing it to a Chinese face — the fix is to move the
+no longer sets anything on it. `title()`, `body()`, `label()`, `term()`, `section_tag()` and
+`question_text()` **raise** on a CJK character instead of routing it to a Chinese face — the fix is to move the
 sentence to the caption track or say it in mathematics, not to pick a font. Songti stays only as
 the fallback for a stray Unicode maths symbol (∠ △ ⊥ ° ′), and even those are better written as
 LaTeX — `label(r"$\angle BAD$")` — so they come out of Computer Modern too.
@@ -288,8 +288,8 @@ to make two letters touch. That is the "英文字距不一樣" defect, and it is
 renderer, not of the face: every candidate Latin font drifts the same way. See
 `manim-traps.md` #22 for the measurements.
 
-So: `title()`, `body()`, `label()`, `term()`, `question_text()`, `caption_text()`, `step()`, or
-`_text()` — never a bare `Text(...)`. A single stray `Text()` in a scene is visible as one word spaced differently from
+So: `title()`, `body()`, `label()`, `term()`, `section_tag()`, `question_text()`,
+`caption_text()`, `step()`, or `_text()` — never a bare `Text(...)`. A single stray `Text()` in a scene is visible as one word spaced differently from
 the identical word elsewhere in the same video.
 
 ### Mathematics is Computer Modern
@@ -511,7 +511,7 @@ the 16:9 lesson and the 9:16 short**.
 
 | Band | 16:9 | 9:16 |
 |---|---|---|
-| Title | 10% of height | 11% |
+| Title — holds the section tag | 10% of height | 11% |
 | Question | 0 unless asked for; capped at **22%** | capped at **26%** |
 | Caption safe band | 13% | **22%** — platform UI covers the lowest ~15% |
 | Figure | left 52% of width | **top 60% of content height** |
@@ -519,6 +519,44 @@ the 16:9 lesson and the 9:16 short**.
 
 A side column is unreadable at 1080 px wide, which is why portrait stacks instead. Ask
 `Stage.figure_box()` and `Stage.panel_box()` for regions; never hard-code a coordinate.
+
+### The section tag
+
+A long-form lesson names the knowledge point it is on, in the **top-left**, on every shot that is
+not a card (hard rule 34). `Stage.section_tag("Plane to Plane")` builds it and pins it inside the
+title band the layout already reserves, so it costs the lesson no room at all.
+
+| | |
+|---|---|
+| Says | the knowledge point in the paper's English — `Plane to Plane`, `Line to Plane`, `Momentum` |
+| Length | ≤ 4 words, ≤ 32 characters, no trailing stop. A leading section number (`2 · Plane to Plane`) is allowed; use it on every section or on none |
+| Set in | `SIZE_SECTION` 28, `MUTED`, Computer Modern like everything else on the frame |
+| Where | left edge on the margin, centred on `title_y` |
+| Motion | **none** — it is furniture. Added, not animated, and never mentioned by the narration |
+| Changes | only where the knowledge point changes, and never before that section's term has been bridged to (rule 31) |
+| In 9:16 | **raises.** A short is one knowledge point, so a tag there labels the whole video |
+| Too long, or wider than 42% of the content width | **raises** — shorten the wording, never the type |
+
+Measured at 16:9: a cap-height line sets **2.6%** of frame height (28 px at 1080p), 3.2% with a
+descender, spanning y 3.43–3.69 inside a title band of 3.20–4.00 — 3.9% of the height clear of the
+frame top, and still 0.23 units above `content_top`. It is deliberately **under** caption size
+(3.9%): the caption is read, the tag is glanced at, and a tag that competes with the caption is a
+tag the student reads instead of the lesson.
+
+In a 2D lesson `self.setup_stage(section=SECTION_PLANES)` builds and adds it in one call. Hold the
+string in a module constant shared by every scene of the section — the tag has to be identical on
+every shot it covers, and two hand-typed copies are how it stops being. A 3D lesson subclasses
+`ThreeDScene` and has no `setup_stage`, so it calls `Stage.section_tag()` itself and registers the
+result with **`add_fixed_in_frame_mobjects()`**: added with a plain `add()` the tag is a 3D mobject
+the camera projects, and it tilts with every camera move without erroring (`manim-traps.md` #29).
+
+**On a worked example the stem lays out under the tag**, so call `section_tag()` *before*
+`Stage.question()` — after it, the paper's words are set across the heading, and the method raises
+to say so. The gap between them is 5.5% of the height rather than the 3% between stem and part:
+both are `MUTED` and one size apart, and at the tighter gap they read as one three-line paragraph
+with the tag as its first line. A two-line stem plus its part then measures a 16% band against the
+22% cap. A stem long enough to raise is telling you to quote less of the paper — or to drop the
+tag for that example's shots, since there the question is already the heading.
 
 ### The question band
 

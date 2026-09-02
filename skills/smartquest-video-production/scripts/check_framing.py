@@ -15,7 +15,7 @@ Import it from a project's own check script:
     raise SystemExit(report(CAMS, NAMED, ON))
 
 `report` exits non-zero if anything is off-screen or intrudes into the caption
-band, so it can gate a build.
+band or the section-tag band, so it can gate a build.
 
 See references/manim-3d-and-camera.md for why each check exists.
 """
@@ -57,7 +57,8 @@ def project(cam, points, offset=None):
     return c.project_points(pts)
 
 
-def report(cams, named_points, on_screen=None, panel_width=2.6, verbose=True):
+def report(cams, named_points, on_screen=None, panel_width=2.6, verbose=True,
+           section_tag=True):
     """Print a framing report. Returns the number of problems found.
 
     cams          [(name, cam_dict, offset), ...]
@@ -65,11 +66,19 @@ def report(cams, named_points, on_screen=None, panel_width=2.6, verbose=True):
     on_screen     {cam_name: [point names visible in that shot]}. Checking every
                   point at every camera is noise: a deliberate close-up has
                   points outside the frame by design. Omit to check everything.
+    section_tag   True (the default in 16:9) treats the title band as occupied,
+                  because a long-form shot carries the knowledge point in its
+                  top-left — see hard rule 34. A projected solid fills the frame
+                  far more often than a flat figure does, so this is the check
+                  that catches a vertex running under the tag. Pass False for a
+                  shot that carries no tag: the title card, an end card.
     """
     sync_frame()
     stage = Stage()
     half_w, half_h = stage.w / 2, stage.h / 2
     cap_top = -half_h + stage.caption_band
+    tag_bottom = half_h - stage.title_band
+    tagged = bool(section_tag) and not stage.portrait
     panel_x = half_w - stage.margin - panel_width
 
     names = list(named_points)
@@ -78,7 +87,11 @@ def report(cams, named_points, on_screen=None, panel_width=2.6, verbose=True):
     if verbose:
         print(f"frame {stage.w:.2f} x {stage.h:.2f}   "
               f"caption band top y = {cap_top:+.2f}   "
-              f"readout column starts x = {panel_x:+.2f}\n")
+              f"readout column starts x = {panel_x:+.2f}")
+        print(f"section tag band bottom y = {tag_bottom:+.2f}"
+              if tagged else
+              "section tag: none on these shots (section_tag=False)")
+        print()
 
     problems = 0
     for name, cam, offset in cams:
@@ -93,6 +106,7 @@ def report(cams, named_points, on_screen=None, panel_width=2.6, verbose=True):
         ys = np.array([p[1] for _, p in live])
         off = [n for n, p in live if abs(p[0]) > half_w or abs(p[1]) > half_h]
         incap = [n for n, p in live if p[1] < cap_top]
+        intag = [n for n, p in live if tagged and p[1] > tag_bottom]
         if verbose:
             print(f"{name:10s} bbox x[{xs.min():+6.2f},{xs.max():+6.2f}] "
                   f"y[{ys.min():+6.2f},{ys.max():+6.2f}]  "
@@ -102,12 +116,15 @@ def report(cams, named_points, on_screen=None, panel_width=2.6, verbose=True):
                 print(f"           !! OFF-SCREEN: {off}")
             if incap:
                 print(f"           !! IN CAPTION BAND: {incap}")
+            if intag:
+                print(f"           !! IN SECTION TAG BAND: {intag}   "
+                      f"(pass section_tag=False if this shot carries no tag)")
             # A shot filling ~12% of the width is almost always the wrong
             # azimuth, not the wrong zoom — you are looking along the thing.
             if (xs.max() - xs.min()) / stage.w < 0.20:
                 print(f"           ?  fills < 20% of width — is the camera "
                       f"looking ALONG what this shot is meant to show?")
-        problems += len(off) + len(incap)
+        problems += len(off) + len(incap) + len(intag)
     return problems
 
 

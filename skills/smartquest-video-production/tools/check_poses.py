@@ -78,6 +78,11 @@ def framing(shot, pose, st):
             bad.append(f"{nm} off frame ({q[0]:.2f}, {q[1]:.2f})")
         elif q[1] < st.content_bottom:
             bad.append(f"{nm} in caption band (y={q[1]:.2f})")
+        elif not st.portrait and q[1] > st.content_top:
+            # The title band is not empty any more: a long-form shot carries the
+            # knowledge point in its top-left (hard rule 34). A projected solid
+            # reaches up there far more often than a flat figure does.
+            bad.append(f"{nm} in section-tag band (y={q[1]:.2f})")
         elif q[0] > st.panel_box()[0][0]:
             bad.append(f"{nm} under panel column (x={q[0]:.2f})")
     return bad

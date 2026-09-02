@@ -396,6 +396,7 @@ function timelineHTML(d){
   return `<table class="tl">` + d.timeline.map(s=>
     `<tr class="${s.id===d.ahaShotId?"aha":""}"><td class="i">${s.id}</td>`
     + `<td class="i">${s.start}–${s.end}s</td>`
+    + `<td class="i">${esc(s.sectionTitle||"—")}</td>`
     + `<td class="p">${esc(s.purpose||s.knowledgePoint||"")}</td>`
     + `<td class="i">${s.cues} cues</td></tr>`).join("") + `</table>`;
 }

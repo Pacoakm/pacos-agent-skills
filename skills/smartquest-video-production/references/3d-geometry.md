@@ -116,6 +116,11 @@ Labels must face the camera and must not collide, **at every camera the shot use
 Placing them by pushing outward from the centroid is not reliable — in the first cuboid render
 that put D and F on top of the edges they belonged to. Check each camera and nudge per label.
 
+They must also clear the **section tag** in the top-left (hard rule 34). A projected solid fills
+the frame far more of the time than a flat figure does, so the title band is where a 3D lesson
+collides first — `check_framing.report()` flags it by default in 16:9, `check_poses.py` gates it,
+and the picker shows the band. On a shot that genuinely carries no tag, pass `section_tag=False`.
+
 ## Camera moves that break, and how to choose one
 
 Four findings from a tilted-plane lesson, all measured.
@@ -172,7 +177,11 @@ weakness. Hold still for `REST_AHA` once the plane is square to the lens.
 
 `SQScene` is a 2D base; a 3D lesson subclasses `ThreeDScene` and applies the theme by hand —
 background from `BG`, colours from the semantic palette, strokes from `SW_*`, labels from
-`mtex()`. The colour contract is unchanged: `GIVEN` for what the question supplies, `UNKNOWN`
+`mtex()`, and the **section tag** from `Stage.section_tag()` (hard rule 34). Register that tag
+with `add_fixed_in_frame_mobjects(tag)`, never a plain `add()`: added the ordinary way it is a 3D
+mobject the camera projects, so it tilts and slides with every camera move and nothing errors.
+There is no `setup_stage(section=…)` shortcut here — that convenience is `SQScene`'s, and it uses
+the plain `add()` a 3D scene must not. The colour contract is unchanged: `GIVEN` for what the question supplies, `UNKNOWN`
 for the target, `AUX` for construction lines added to solve it.
 
 ## Gate B, in the browser — pick the camera by hand
@@ -183,8 +192,8 @@ user still had to fix eleven separate things by eye.
 
 So Gate B now has two halves. Scan to rule out the collapsed angles, then **pick by hand**
 in `tools/camera-picker.html`: drag to orbit, `shift`+drag to roll, `alt`+drag to move the
-figure, scroll to zoom, with the caption band and the panel column drawn on the frame and
-the framing measurements live beside it. Export writes `tools/camera-poses.json`, which
+figure, scroll to zoom, with the caption band, the section-tag band and the panel column drawn
+on the frame and the framing measurements live beside it. Export writes `tools/camera-poses.json`, which
 `src/` reads at import — so re-picking a camera never means editing scene code.
 
 **The picked values are the user's.** Tools may *measure* a pose and report that it breaks

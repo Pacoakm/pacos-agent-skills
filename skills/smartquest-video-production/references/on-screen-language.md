@@ -48,7 +48,7 @@ underneath, with the teacher speaking Cantonese over the whole video.
 
 | | |
 |---|---|
-| **The picture** | English only. `title()`, `body()`, `label()`, `term()` and `question_text()` **raise** on a CJK character |
+| **The picture** | English only. `title()`, `body()`, `label()`, `term()`, `section_tag()` and `question_text()` **raise** on a CJK character |
 | **The caption track** | bilingual, 中文 first — `caption_text()`, `build_captions.py`, `subtitles.srt`. Unchanged |
 | **The narration** | Cantonese, with the subject terms said in English. Unchanged |
 
@@ -72,7 +72,7 @@ the caption line. It just leaves the picture.
 
 | Kind | Allowed | Example |
 |---|---|---|
-| **Title** | one per shot, short | `1 · centroid` |
+| **The section tag** | one per shot in long form, top-left, the same on every shot of the knowledge point — see below | `Plane to Plane` |
 | **The figure** | in either register | △ABC with its medians |
 | **Mathematics** | unlimited — in the mathematical register | `AO : OM = 2 : 1`, `\vec{v}_1` |
 | **Figure labels** | point names, short object names — either register | `A`, `B`, `C`, `O`, `M`, `P` |
@@ -90,6 +90,38 @@ term is bold" below.
 
 "Loose prose" means a sentence that is not an item in an enumerated list. The list earns its place
 because its *structure* teaches — see below. A stray sentence has no structure to earn it.
+
+## The section tag
+
+**A long-form lesson says which knowledge point it is on, in the top-left of every shot that is
+not a card.** A 5-minute lesson holds three or four knowledge points (`pacing.md`), one figure
+usually carries across several of them, and a student who looks up mid-shot — or who arrives in
+the middle of the video from a search — has nothing on the frame telling them where they are. The
+narration cannot answer it either: a subtitle is linear and transient, and by the time they wonder,
+the sentence that would have told them is three cues back.
+
+It is **furniture, not content**: `MUTED`, one size above the question stem, added rather than
+animated, never referred to by the narration, and identical on every shot of its section.
+
+| | |
+|---|---|
+| It says | the knowledge point, in the paper's English — `Plane to Plane`, `Line to Plane`, `Momentum` |
+| Length | ≤ 4 words and ≤ 32 characters. `Angle Between Two Planes` → `Plane to Plane` |
+| Never | a sentence, a trailing stop, a 中文 gloss, a tease (`The Trick`), or the shot's job rather than the lesson's content (`Worked Example 2`) |
+| Budget | **exempt**, like the question stem — it is one string held across a whole section, not this shot's words |
+| Changes | only where the knowledge point changes |
+| In a short | none at all. A 9:16 short is one knowledge point, and `section_tag()` raises there |
+
+**The tag arrives with the term, never ahead of it.** Rule 31 opens every knowledge point on an
+everyday situation and lets the technical word land last, and contract invariant 19 says the term
+appears nowhere earlier — *including in a section title*. So a section's tag lands on the shot
+where its term does (`termFirstShot`); the everyday-opening shots before it keep the previous
+section's tag, or carry none if the lesson has not reached a named section yet. Teaching momentum,
+the shots where someone runs into you carry no `Momentum` tag — that would name the thing the
+opening exists to make them feel first.
+
+Build it with `Stage.section_tag()`, and call it before `Stage.question()`. See `brand-theme.md`,
+"The section tag".
 
 ## The question band
 
@@ -247,7 +279,8 @@ already split across two screens — give each half its own page.
 
 ## The budget
 
-Per shot, counting only text on the picture — not captions, and not the question band.
+Per shot, counting only text on the picture — not captions, not the question band, and not the
+section tag.
 
 Everything counted here is English — the picture carries no 中文 at all (above).
 
@@ -639,7 +672,7 @@ in a caption-heavy one: the colour is now carrying the definition.
 **Before** (five separate pieces of prose competing with the figure):
 
 ```
-title:  1 · centroid — the three medians
+tag:    1 · centroid — the three medians
 right:  the point where the three medians meet
         2 : 1
         the longer part touches the vertex
@@ -649,7 +682,7 @@ right:  the point where the three medians meet
 **After**:
 
 ```
-title:  1 · centroid
+tag:    1 · centroid
 figure: △ABC, medians in purple, centroid O marked,
         midpoint M labelled on the side AO crosses,
         tick marks on each bisected side
@@ -677,6 +710,10 @@ At the storyboard, per panel:
   (`term()`, not `label()`).
 - Ask of each remaining word: *would the frame still teach this if I deleted it?* If yes, delete
   it.
+- In long form: is the **section tag** there, and is it character-for-character the tag on the
+  panel before it — unless this is the panel where the knowledge point changes? A tag that
+  re-words itself mid-section is a jump cut in the corner of the frame. Does any tag name a term
+  the lesson has not bridged to yet?
 
 On a worked-example panel, additionally:
 

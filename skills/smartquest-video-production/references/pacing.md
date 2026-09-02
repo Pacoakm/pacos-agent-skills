@@ -91,6 +91,10 @@ One knowledge point per section. A section is: **set up → show → explain →
 A 5-minute lesson holds about **three** knowledge points. Four is already crowded. If the topic
 needs more, it is two videos.
 
+In long form the section is visible to the student, not just to you: the knowledge point sits in
+the top-left of every shot it covers, and the tag changing is how a section boundary reads on the
+picture (hard rule 34). If two sections would carry the same tag, they are one section.
+
 A 60-second short holds **one** point. Shorts are not compressed lessons; they are one idea with
 a hook and a payoff.
 

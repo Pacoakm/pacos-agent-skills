@@ -226,6 +226,11 @@ The narration column above is the **spoken** Cantonese. The caption's 中文 lin
 sentence in 書面語 — 「你在街上走，有人跑過來撞到你。」 — because plain means everyday vocabulary,
 not 口語 (`narration-and-subtitles.md`).
 
+The **section tag** obeys the same order. It is a section title, so a `Momentum` tag over beats
+1–4 hands the student the word the opening exists to make them feel first, and the everyday
+opening becomes an illustration of a term already named. The tag lands at beat 5, with the term
+card; the shots before it keep the previous section's tag, or none. See hard rule 34.
+
 Note beat 4. **「衝擊」 never goes on the picture** — it is Chinese, and the picture is English
 (rule 29). The plain word is spoken and captioned; the picture waits and then shows the English
 term. That is not a compromise: the student meets the idea in the language they think in and the
