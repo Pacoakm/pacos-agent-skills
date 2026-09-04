@@ -52,6 +52,10 @@ handoff, recording returned, audio mux, verified delivery.
 
 `video-plan.json` is the single timing authority from Gate 1 to delivery.
 
+**`SOP.md` is the run sheet** — the order of operations, the exact commands, each gate's exit
+criteria, who decides what, and the handover checklist. Read it before the first lesson and
+work from it during one. This file is what a lesson *is*; the SOP is what to *do*.
+
 ## Three mandatory approval stops
 
 Gates 1, 2 and 3 each end by **showing the user the actual work and stopping**. These are not
@@ -937,8 +941,36 @@ instruction, and only from a draft the user has approved.
     it is one knowledge point, so the tag would be labelling the whole video, and `section_tag()`
     raises there. See `references/on-screen-language.md`, "The section tag".
 
+35. **Never report a check against a threshold you chose yourself.** When a pipeline ships a
+    verifier, read its constant and measure against that. A continuity check was once reported as
+    "17 of 17 cuts continuous" on a self-chosen luma threshold of 3.0; `verify_master.py` uses
+    **0.5**, six times stricter, and ten of those cuts were dropping content — which surfaced only
+    at the final gate, after the 1080p60 master, the caption track and the composite had been
+    built. Grep the verifier, quote its number, and where no verifier exists say which threshold
+    is yours. "Verified" without a number is not a report. See `SOP.md`, section 4.
+36. **Never adjust a 3D camera pose the user picked.** The hand-picked angles and figure offsets
+    from the camera picker are final and go into the render verbatim — never corrected, snapped,
+    rounded or re-solved on your own initiative. The picker exists because automated camera choice
+    produced unreadable shots, so silently improving its output restores the problem it was built
+    to remove, and the user cannot tell which frames are theirs. `check_poses.py` may **report**
+    that a pose breaks a geometric guarantee and by how much; `snap_poses.py` runs only when the
+    user asks for that run. Surface the number and the consequence, and let them decide.
+37. **Never let a shared helper drift between lessons in a series.** `panel()`, `mrow()`,
+    `derivation_ref()`, `solution_page_ref()` and the rest of `kit.py`'s layout block are carried
+    into the next lesson unchanged. The library is one series to the student watching it: a helper
+    that drifts puts the stem two pixels left of where it was yesterday. If one genuinely must
+    change, change it and say which earlier lessons now differ. See
+    `references/project-scaffold.md`.
+38. **Never render on an unchecked machine.** Manim, LaTeX on the PATH, ffmpeg's filter set and
+    both caption fonts are verified before a render, not after a bad one. **Pango substitutes a
+    missing font silently** — a 中文 caption track rendered without `Songti TC` looks plausible
+    until it sits beside a lesson that was rendered correctly, which is usually at delivery. A
+    preflight that warns and proceeds is not a preflight. See `references/local-toolchain.md`.
+
 ## Bundled resources
 
+- `SOP.md` — **the run sheet.** Order of operations, commands, gate exit criteria, who decides
+  what, reporting rules, stop conditions, handover checklist.
 - `references/brand-theme.md` — the SmartQuest palette, typography, layout and motion grammar.
 - `references/browser-tools.md` — the dashboard, the camera picker, the beat review, the
   render driver and the checks. Install at the start of Gate 1.
@@ -955,6 +987,13 @@ instruction, and only from a draft the user has approved.
   before name, concrete before general, the ponder beat, argument versus illustration.
 - `references/pacing.md` — teaching rhythm, dwell times, narration room, checkable limits.
 - `references/production-contract.md` — `video-plan.json` schema, folder layout, invariants.
+- `references/project-scaffold.md` — the four files every project adds inside that layout:
+  `theme_boot.py`, `kit.py`, `make_plan.py`/`check_plan.py`, `講稿.md`, and what carries between
+  lessons in a series.
+- `references/local-toolchain.md` — the verified stack, the preflight, this ffmpeg's missing
+  filters, SVG rasterising, and the portable bundle for rendering on another machine.
+- `references/sound-and-voice.md` — why the narrator is a person (with the measurements), the
+  cleared SFX library and where sound is allowed to touch the pipeline.
 - `scripts/smartquest_theme.py` — importable Manim theme: colours, fonts, layout, helpers.
 - `scripts/build_captions.py` — plan → caption scene + `.srt` + pacing report.
 - `tools/install.py` — puts the browser tools into a project. Run at the start of Gate 1.
