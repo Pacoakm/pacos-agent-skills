@@ -971,6 +971,8 @@ instruction, and only from a draft the user has approved.
 
 - `SOP.md` — **the run sheet.** Order of operations, commands, gate exit criteria, who decides
   what, reporting rules, stop conditions, handover checklist.
+- `SOP-zh.md` — the same run sheet in 繁體中文, with Gate 4 written out for the Palmier Pro
+  route: installing the app, the MCP server it hosts, and the assembly steps.
 - `references/brand-theme.md` — the SmartQuest palette, typography, layout and motion grammar.
 - `references/browser-tools.md` — the dashboard, the camera picker, the beat review, the
   render driver and the checks. Install at the start of Gate 1.

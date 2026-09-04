@@ -37,6 +37,14 @@ Then run the font and filter checks in `references/local-toolchain.md`. **A miss
 raise — Pango substitutes silently.** Do not skip this because the last lesson rendered fine; it
 is the machine that changed, not the lesson.
 
+**Install Palmier Pro** — Gate 4's default route. Download the macOS app from
+`https://palmier.io/docs` (installers are published as GitHub releases on `palmier-io/palmier-pro`,
+which is also where the app's own updater points), then **leave it running**: the MCP server is
+hosted by the app itself at `http://127.0.0.1:19789/mcp`, so a closed app is a dead route. Register
+it as `"palmier-pro": {"type": "http", "url": "http://127.0.0.1:19789/mcp"}` and confirm with
+`lsof -nP -iTCP:19789 -sTCP:LISTEN` plus a `manage_project action:"list"` call. Verified against
+PalmierPro 0.8.1.
+
 ## 2. Once per lesson — Gate 0, the setup
 
 ```bash
@@ -107,7 +115,12 @@ rendering it.
 
 ### Gate 4 — picture master and caption track
 
-Only after an explicit instruction to render the master.
+Only after an explicit instruction to render the master. **The default route is Palmier Pro** when
+its MCP server answers — the master stays editable, so a re-rendered shot is a `swap_clip_media`
+rather than a whole re-encode. Follow `references/palmier-assembly.md` step by step; the Chinese
+SOP (`SOP-zh.md`, Gate 4) carries the same procedure in condensed form. If the server does not
+answer, do not ask the user to start it and do not wait — take the ffmpeg route below and say
+which route you took.
 
 ```bash
 python3 tools/render.py master           # 1920x1080 @60
