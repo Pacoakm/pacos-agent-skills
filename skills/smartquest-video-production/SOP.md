@@ -27,8 +27,9 @@ to do it fully rather than ask.
 ## 1. Once per machine
 
 ```bash
+export SKILL=~/.claude/skills/smartquest-video-production   # used throughout this SOP
 export PATH="$HOME/Library/TinyTeX/bin/universal-darwin:$PATH"
-python3 -c "import manim; print(manim.__version__)"        # expect 0.20.1
+python3 -c "import manim; print(manim.__version__)"         # expect 0.20.1
 which latex dvisvgm ffmpeg
 ```
 
@@ -39,9 +40,10 @@ is the machine that changed, not the lesson.
 ## 2. Once per lesson — Gate 0, the setup
 
 ```bash
-mkdir -p videos/<subject>/<nn>-<topic>
-python3 ~/.claude/skills/smartquest-video-production/tools/install.py videos/<subject>/<nn>-<topic>
-python3 videos/<subject>/<nn>-<topic>/tools/serve.py 8777 <dir above videos/>
+P=videos/<subject>/<nn>-<topic>
+mkdir -p $P
+python3 $SKILL/tools/install.py $P
+python3 $P/tools/serve.py 8777 <dir above videos/>
 ```
 
 Copy from the **most recent lesson of the same subject**, not from a template:
@@ -51,8 +53,8 @@ Then open the dashboard and leave it open for the whole build; every gate is sho
 
 The 3D pose tools are **project-owned, not shipped by the skill** — `install.py` deliberately
 leaves them alone so a lesson's hand-picked poses are never overwritten. For a solid-geometry
-lesson, copy `check_poses.py`, `pose_guarantees.py` and `snap_poses.py` from the most recent 3D
-lesson (`videos/dse-math/13-vector-product/tools/`) along with that lesson's `camera-poses.json`
+lesson, copy `check_poses.py`, `pose_guarantees.py` and `snap_poses.py` from the most recent 3D lesson
+(`videos/dse-math/13-vector-product/tools/`) with that lesson's `camera-poses.json`
 as a shape reference — then clear the poses and pick this lesson's own.
 
 ## 3. The run sheet
@@ -65,7 +67,7 @@ as a shape reference — then clear the poses and pick this lesson's own.
 2. Author `make_plan.py` — **shot and cue durations only**; every timecode is derived.
 3. `python3 make_plan.py && python3 check_plan.py` — fix until it is clean.
 4. `python3 make_script.py` → `講稿.md`.
-5. `python3 ~/.claude/skills/.../scripts/build_captions.py --plan video-plan.json --out-dir src`
+5. `python3 $SKILL/scripts/build_captions.py --plan video-plan.json --out-dir src`
 
 **Exit criteria:** `check_plan.py` clean · every cue ≤ 4.0 字/秒 · every shot ≥ 25% still · shot 1
 is a 3–4 s title card · the picture is 100% English · every example carries its question.
@@ -126,7 +128,7 @@ change is silently not in the output. Take the Palmier route instead when its MC
 4. Final gate:
 
 ```bash
-python3 ~/.claude/skills/.../scripts/verify_master.py \
+python3 $SKILL/scripts/verify_master.py \
   --plan video-plan.json --master out/final.mp4 --require-audio
 ```
 
