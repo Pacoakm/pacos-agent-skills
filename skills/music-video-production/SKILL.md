@@ -10,11 +10,12 @@ timing data, so the preview in the browser and the 60 fps export are identical, 
 its sung syllable, and every cut lands on a downbeat. The reference is mexicat/pdoom-video (MIT,
 made with Claude in Claude Code). This skill turns it into a repeatable pipeline for **any song**.
 
-It was built and tested on a 16.5 s clip of an original Suno song ("11:59", CUHK deadline humour):
-analysis → treatment → four plates written by four agents in parallel → review → render took about
-an hour, and a from-scratch rerun of the scripts in a fresh folder reproduced the same frames
-(SSIM 0.995–1.000). `examples/1159/` holds that clip's treatment, timeline, all scene code and stills —
-**study it before writing a scene; it is the quality bar.**
+It was built and tested on an original Suno song ("11:59", CUHK deadline humour): first a 16.5 s
+chorus clip (about an hour; a from-scratch rerun of the scripts reproduced the same frames, SSIM
+0.995–1.000), then the **whole song — 114 s, 20 plates, half of them 3D, one built on real campus terrain
+and roads** (~3.5 h of agent work at 4 in parallel, 40 min render). `examples/1159/` holds its treatment,
+timeline, all 38 scene files and stills — **study it before writing a scene; it is the quality bar.**
+For a whole song read `references/full-song.md`; for a real place, `references/geo.md`.
 
 ## The roles
 
@@ -103,9 +104,10 @@ public, don't push the song audio or its data unless the user owns the rights.
 - **Karaoke**: a word lights exactly at its start, never early; unsung words dimmed; words are part of the image.
 - **Originality**: no logos, no imitation of real product UIs, no copyrighted characters, no reproduction of anyone else's lyrics in docs or on screen beyond the song being used.
 - **Look before you claim**: every "done" is backed by a PNG or MP4 frame someone actually opened.
+- **Continuity across cuts** is the lead's job: pass exact positions, numbers and times to the next author.
 
 ## Files
 
-- `scripts/setup_project.sh` · `scripts/multi-song.patch` · `scripts/song_analysis.py` · `scripts/scaffold_song.py` · `scripts/render_clip.sh`
-- `references/` — `suno.md`, `setup.md`, `analysis.md`, `treatment.md`, `scene-brief.md`, `review.md`, `render.md`, `case-1159.md` (what happened on the test clip and why)
-- `examples/1159/` — treatment, timeline, 4 scenes (`clock`, `stack`, `submit`, `bigo`), stills
+- `scripts/setup_project.sh` · `scripts/multi-song.patch` · `scripts/song_analysis.py` · `scripts/scaffold_song.py` · `scripts/render_clip.sh` · `scripts/geo/` (DTM crop, contours, OSM roads/buildings, drawn-route matching)
+- `references/` — `suno.md`, `setup.md`, `analysis.md`, `treatment.md`, `scene-brief.md`, `review.md`, `render.md`, `full-song.md`, `geo.md`, `case-1159.md` (what happened on the clip and the full MV, and why)
+- `examples/1159/` — the full-song treatment and timeline, all 20 plates' scene code (38 files), stills of every plate and 20 frames of the final MP4

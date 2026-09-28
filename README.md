@@ -8,7 +8,7 @@
 | `smartquest-video-production` | SmartQuest DSE 教學影片：Manim 動畫、繁中書面語字幕（保留英文學科名詞）、動畫先行真人後錄 |
 | `peerpath-video-production` | PeerPath 真人說話 reels：用家剪好節奏後，在 Palmier Pro 加畫面文字、圖卡、字幕、畫面推拉、調色、人聲處理、配樂、音效，輸出 HDR／SDR；附量度及審核工具 |
 | `academic-video-production` | 個人 CUHK 課堂概念影片：把 lecture notes 的複雜概念做成 3Blue1Brown 風格 Manim 動畫，雙語字幕代替旁白，不限時長，Palmier Pro 組裝及出片 |
-| `music-video-production` | Code-rendered MV：用 mexicat/pdoom-video（P(doom) MV）的引擎為新歌（例如 Suno 生成）做 MV：Demucs＋Whisper 逐字對時、跟拍剪接、style bible treatment、多 agent 分場景製作及自我睇圖審稿、1080p60／4K 出片；附 setup、分析、scaffold、出片 scripts 及完整 16 秒範例 |
+| `music-video-production` | Code-rendered MV：用 mexicat/pdoom-video（P(doom) MV）的引擎為新歌（例如 Suno 生成）做 MV：Demucs＋Whisper 逐字對時、跟拍剪接、style bible treatment、多 agent 分場景製作及自我睇圖審稿、1080p60／4K 出片；支援全首歌（重複段落、2D／3D 混合）同真實地理數據（地政總署 DTM＋OpenStreetMap）；附 setup、分析、scaffold、地理、出片 scripts 及〈11:59〉全片 20 幕範例 |
 | `paco-interactive-educator` | 以 Puzzle → Explore → Name → Challenge 建立 Codex 原生探索式互動教材 |
 | `edge-tts` | 旁白試音、語音輸出及字幕時間 |
 | `seedance` | Seedance／即夢中文影片 prompt packet；由用戶手動生成影片 |

@@ -39,7 +39,41 @@ function wordOf(l: Line, q: string): Word {
   return w;
 }
 
-interface Piece { txt: string; fam: string; x: number; dy: number; s: number; word: Word }
+export interface Piece { txt: string; fam: string; x: number; dy: number; s: number; word: Word }
+
+/** The O(n²) label typeset as maths (size-100 units): O and n italic, ( ) and ² roman. Shared with bigo2. */
+export function buildHero(wO: Word, wOf: Word, wN: Word, wSq: Word): { pieces: Piece[]; width: number } {
+  const fi = F.serif(600, true), fr = F.serif(600, false);
+  const m = (s: string, f: string, sz = 100) => measure(s, f, sz);
+  const xO = 0, xP = xO + m('O', fi) + 1.5;
+  const xn = xP + m('(', fr) + 0.5;
+  const x2 = xn + m('n', fi) + 1.2;
+  const xC = x2 + m('2', fr, 58) + 2.5;
+  return {
+    pieces: [
+      { txt: 'O', fam: fi, x: xO, dy: 0, s: 1, word: wO },
+      { txt: '(', fam: fr, x: xP, dy: 0, s: 1, word: wOf },
+      { txt: 'n', fam: fi, x: xn, dy: 0, s: 1, word: wN },
+      { txt: '2', fam: fr, x: x2, dy: -36, s: 0.58, word: wSq },
+      { txt: ')', fam: fr, x: xC, dy: 0, s: 1, word: wSq },
+    ],
+    width: xC + m(')', fr),
+  };
+}
+
+/** A small "O(x)" in Cormorant: O italic, parentheses roman, argument italic (or a lining figure). */
+export function mathLabel(c: CanvasRenderingContext2D, x: number, y: number, size: number, arg: string, col: string) {
+  const fi = F.serif(400, true), fr = F.serif(400, false);
+  const argFam = /\d/.test(arg) ? fr : fi;
+  c.fillStyle = col;
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  let xx = x;
+  c.font = font(fi, size); c.fillText('O', xx, y); xx += measure('O', fi, size) + size * 0.015;
+  c.font = font(fr, size); c.fillText('(', xx, y); xx += measure('(', fr, size) + size * 0.005;
+  c.font = font(argFam, size); c.fillText(arg, xx, y); xx += measure(arg, argFam, size) + size * 0.02;
+  c.font = font(fr, size); c.fillText(')', xx, y);
+  return xx + measure(')', fr, size) - x;
+}
 
 export default class BigO extends Scene {
   grid = makeGridPass();
@@ -89,20 +123,7 @@ export default class BigO extends Scene {
     this.tLand = this.tSnap + SNAP_DUR * (Math.log2(1 / (1 - 1 / 1.12)) / 10);
 
     // ---- the O(n²) label, typeset as maths (size-100 units): O and n italic, ( ) and ² roman
-    const fi = F.serif(600, true), fr = F.serif(600, false);
-    const m = (s: string, f: string, sz = 100) => measure(s, f, sz);
-    const xO = 0, xP = xO + m('O', fi) + 1.5;
-    const xn = xP + m('(', fr) + 0.5;
-    const x2 = xn + m('n', fi) + 1.2;
-    const xC = x2 + m('2', fr, 58) + 2.5;
-    this.hero = [
-      { txt: 'O', fam: fi, x: xO, dy: 0, s: 1, word: this.wO },
-      { txt: '(', fam: fr, x: xP, dy: 0, s: 1, word: this.wOf },
-      { txt: 'n', fam: fi, x: xn, dy: 0, s: 1, word: this.wN },
-      { txt: '2', fam: fr, x: x2, dy: -36, s: 0.58, word: this.wSq },
-      { txt: ')', fam: fr, x: xC, dy: 0, s: 1, word: this.wSq },
-    ];
-    this.heroW = xC + m(')', fr);
+    ({ pieces: this.hero, width: this.heroW } = buildHero(this.wO, this.wOf, this.wN, this.wSq));
 
     // ---- "but I'm doing fine" (one kerned run; words drawn from its glyphs)
     const ws = [this.wBut, this.wIm, this.wDoing, this.wFine];
@@ -550,16 +571,7 @@ export default class BigO extends Scene {
 
   /** A small "O(x)" in Cormorant: O italic, parentheses roman, argument italic (or a lining figure). */
   mathLabel(c: CanvasRenderingContext2D, x: number, y: number, size: number, arg: string, col: string) {
-    const fi = F.serif(400, true), fr = F.serif(400, false);
-    const argFam = /\d/.test(arg) ? fr : fi;
-    c.fillStyle = col;
-    c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    let xx = x;
-    c.font = font(fi, size); c.fillText('O', xx, y); xx += measure('O', fi, size) + size * 0.015;
-    c.font = font(fr, size); c.fillText('(', xx, y); xx += measure('(', fr, size) + size * 0.005;
-    c.font = font(argFam, size); c.fillText(arg, xx, y); xx += measure(arg, argFam, size) + size * 0.02;
-    c.font = font(fr, size); c.fillText(')', xx, y);
-    return xx + measure(')', fr, size) - x;
+    return mathLabel(c, x, y, size, arg, col);
   }
 
   heroAnchor() {

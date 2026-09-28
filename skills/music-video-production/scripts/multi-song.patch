@@ -1,5 +1,5 @@
 diff --git a/app/scripts/render.ts b/app/scripts/render.ts
-index 0c2b32d..c28b471 100644
+index 0c2b32d..1b7a31f 100644
 --- a/app/scripts/render.ts
 +++ b/app/scripts/render.ts
 @@ -27,6 +27,8 @@ const SAMPLES = opt('samples', '1') === 'auto'
@@ -21,15 +21,17 @@ index 0c2b32d..c28b471 100644
      headless: !flag('headed'),
      args: ['--use-angle=metal', '--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'],
    });
-@@ -54,7 +57,7 @@ async function openPage(url: string) {
+@@ -54,8 +57,8 @@ async function openPage(url: string) {
    page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(`[${m.type()}] ${m.text()}`); });
    page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
    const only = opt('only');
 -  await page.goto(`${url}/?export=1${only ? `&only=${only}` : ''}${SCALE !== 1 ? `&scale=${SCALE}` : ''}`);
+-  await page.waitForFunction(() => (window as any).__pdoom?.ready || (window as any).__pdoom?.error, null, { timeout: 120000 });
 +  await page.goto(`${url}/?export=1${SONG !== 'pdoom' ? `&song=${SONG}` : ''}${only ? `&only=${only}` : ''}${SCALE !== 1 ? `&scale=${SCALE}` : ''}`);
-   await page.waitForFunction(() => (window as any).__pdoom?.ready || (window as any).__pdoom?.error, null, { timeout: 120000 });
++  await page.waitForFunction(() => (window as any).__pdoom?.ready || (window as any).__pdoom?.error, null, { timeout: +(process.env.BOOT_TIMEOUT_MS ?? 600000) }); // many heavy scenes can take minutes to init
    const err = await page.evaluate(() => (window as any).__pdoom.error);
    if (err) throw new Error(`app failed to boot:\n${err}\n${logs.join('\n')}`);
+   const size: [number, number] = await page.evaluate(() => [(window as any).__pdoom.width ?? 1920, (window as any).__pdoom.height ?? 1080]);
 @@ -105,7 +108,7 @@ async function sheet(page: Page, times: number[], cols: number, out: string) {
  async function video(page: Page, from: number, to: number, fps: number, out: string) {
    mkdirSync(path.dirname(out), { recursive: true });

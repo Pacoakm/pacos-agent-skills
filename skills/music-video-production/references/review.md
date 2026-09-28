@@ -19,6 +19,9 @@ change). Small fixes go back to the same author (it keeps its context); don't re
 - [ ] First and last frames of the window are clean (no element mid-flip exactly on the cut).
 - [ ] Continuity with neighbours: numbers, clocks, the motif's position don't contradict across a cut.
 - [ ] Performance < 25 ms/frame (the author's `perf` numbers).
+- [ ] Ink stays ink on hits: no post `flash` greying the frame (check a single-sample still on the hit).
+- [ ] Jokes that live in small text are on screen long enough to read (≥ ~1 s), or pinned.
+- [ ] The plate's last sung word has time to light before the cut.
 
 ## After all plates
 

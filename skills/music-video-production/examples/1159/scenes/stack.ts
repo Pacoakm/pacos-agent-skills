@@ -28,8 +28,8 @@ const ORANGE = (a = 1) => `rgba(0,0,255,${a})`;
 // ---- page layout (page px: x = screen x at rest, y up the stack is negative; the stack's floor is y = 0)
 const X0 = 440, X1 = 1220;            // the stack's column
 const BASE_H = 56, FRAME_H = 128;     // caller frames (already on the stack) / pushed frames
-const WORD_SIZE = 78, WORD_BASE = 104; // lyric stamp size and baseline (from the frame's top)
-const WORD_FAMILY = F.archivo(112.5, 900);
+export const WORD_SIZE = 78, WORD_BASE = 104; // lyric stamp size and baseline (from the frame's top)
+export const WORD_FAMILY = F.archivo(112.5, 900);
 const FLOOR_SCREEN = 880;              // the stack's floor never rises above this screen y
 const TOP_SCREEN = 290;                // the camera keeps the top frame's top edge here
 const Z_MAX = 1.45;                    // closest framing (the young stack)
@@ -37,12 +37,12 @@ const Z_MIN = 1.15;                    // widest framing (once it has outgrown t
 const STAMP_ROOM = 150;                // how far the top frame drops on screen when the error stamp lands
 const DROP = 0.075;                    // a pushed frame falls for this long and lands on the kick
 
-const BASE: [string, string][] = [
+export const BASE: [string, string][] = [
   ['main()', 'argv = ["--all-nighter"]'],
   ['semester_2026()', 'weeks_left = 0'],
   ['finish_everything(deadline="23:59")', 'done = False'],
 ];
-const PUSHED: [string, string][] = [
+export const PUSHED: [string, string][] = [
   ['coffee()', 'shot = 1'],
   ['coffee()', 'shot = 2'],
   ['proof_by_induction(n+1)', 'base_case = TODO'],
@@ -61,6 +61,30 @@ interface Fr {
   words: Slot[];
 }
 interface Cam { cx: number; cy: number; z: number; k: number }
+
+/** The cup glyph (body, handle, saucer) around its centre, in glyph px; the caller sets stroke style and width. */
+export function cupBody(c: Ctx2) {
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(-24, -16);
+  c.lineTo(24, -16);
+  c.lineTo(19, 16);
+  c.quadraticCurveTo(0, 23, -19, 16);
+  c.closePath();
+  c.stroke();
+  // handle
+  c.beginPath();
+  c.arc(26, -2, 9, -1.25, 1.35);
+  c.stroke();
+  // saucer
+  c.beginPath();
+  c.moveTo(-38, 25); c.quadraticCurveTo(0, 31, 38, 25);
+  c.stroke();
+}
+/** A point on steam wisp s (0 or 1) at u (0 = the rim, 1 = the top), in glyph px. */
+export function steamXY(s: number, u: number, t: number, seed: number) {
+  return { x: -8 + s * 14 + Math.sin(u * 5.2 - t * 7 + s * 2.1 + seed) * 4.2 * (0.4 + u), y: -21 - u * 25 };
+}
 
 export default class Stack extends Scene {
   ink = new Layer2D();
@@ -499,32 +523,14 @@ export default class Stack extends Scene {
     c.translate(x, y);
     c.strokeStyle = PRINT(1);
     c.lineWidth = 1.5;
-    c.lineJoin = 'round'; c.lineCap = 'round';
-    c.beginPath();
-    c.moveTo(-24, -16);
-    c.lineTo(24, -16);
-    c.lineTo(19, 16);
-    c.quadraticCurveTo(0, 23, -19, 16);
-    c.closePath();
-    c.stroke();
-    // handle
-    c.beginPath();
-    c.arc(26, -2, 9, -1.25, 1.35);
-    c.stroke();
-    // saucer
-    c.beginPath();
-    c.moveTo(-38, 25); c.quadraticCurveTo(0, 31, 38, 25);
-    c.stroke();
+    cupBody(c);
     // steam: two wisps drifting up, fading at the top
     c.lineWidth = 1.2;
     for (let s = 0; s < 2; s++) {
-      const x0 = -8 + s * 14;
       c.beginPath();
       for (let j = 0; j <= 14; j++) {
-        const u = j / 14;
-        const yy = -21 - u * 25;
-        const xx = x0 + Math.sin(u * 5.2 - t * 7 + s * 2.1 + seed) * 4.2 * (0.4 + u);
-        if (j === 0) c.moveTo(xx, yy); else c.lineTo(xx, yy);
+        const p = steamXY(s, j / 14, t, seed);
+        if (j === 0) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y);
       }
       c.strokeStyle = PRINT(0.55);
       c.stroke();

@@ -58,6 +58,10 @@ known weaknesses, engine changes you'd want.
 | typed tokens with probabilities | `prompt.ts` |
 | raymarched 3D, engraving shading | `shoggoth.ts` + `shoggoth-glsl.ts`, `paperclips-glsl.ts`, `ilya-glsl.ts` |
 | 3D line geometry, camera paths | `room.ts` + `room-geo.ts` |
+| 3D in this video's technical-figure style (hatched solids, no lights) | `examples/1159/scenes/induction*.ts`, `stack2*.ts`, `clock2*.ts` |
+| a camera flying through line geometry, a pinned readout | `examples/1159/scenes/night*.ts`, `linkedlist*.ts` |
+| a wireframe interior | `examples/1159/scenes/canteen*.ts` |
+| a real place from DTM + OSM data | `examples/1159/scenes/bus*.ts` (+ `references/geo.md`) |
 
 ## What good authors did on the test clip (keep asking for it)
 
@@ -65,7 +69,7 @@ known weaknesses, engine changes you'd want.
   energy peak, the grid marks the attack).
 - Split words with no syllable data evenly and flipped/filled per syllable for pickups.
 - Anticipated words dimly ≤ 0.4 s early; lit them exactly on time.
-- Used `post` returns for camera punches (`zoom`), `shake`, small `flash`, `ca` spikes on hits — and kept
-  flash tiny (it is additive and greys ink quickly).
+- Used `post` returns for camera punches (`zoom`), `shake`, `ca` spikes on hits — and avoided `flash` on
+  ink plates (it is additive and greys the whole frame); an exposure kick or a rim light reads better.
 - Rendered a few stills with `--samples 36` to see the whip as the export will blur it.
 - Reported weaknesses honestly, including seams with neighbours they couldn't see.

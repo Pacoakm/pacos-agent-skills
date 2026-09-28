@@ -24,20 +24,20 @@ import { clamp, ease, lerp, noise1, prog, pulse, smoothstep, hash, frameIdx } fr
 import { sparkHead, sparkParticles } from '../_motifs';
 
 // ------------------------------------------------------------------ world layout (camera zoom 1)
-const X0 = 160, X1 = 1760; // content margins (title-safe holds up to ~7% push-in)
-const CW = 356, CH = 440, GG = 18, CC = 140; // flap card w/h, gap inside a group, colon column
-const CY = 218; // card top
-const LBL = { base: 180, size: 64, br: 200 }; // digit labels (the first half of the lyric)
-const SEC = { w: 72, h: 100, gap: 8, top: 678 }; // seconds flaps
-const ROW = { base: 866, size: 104 }; // the lyric row that stands on the bar
-const BAR = { y: 902, h: 14, gap: 4, pad: 5 };
-const FOOT = 944; // footnote baseline
-const FOCUS = { x: 960, y: 548 }; // world point at the screen centre
-const Z_PRE = 0.64; // pre-drop camera zoom
+export const X0 = 160, X1 = 1760; // content margins (title-safe holds up to ~7% push-in)
+export const CW = 356, CH = 440, GG = 18, CC = 140; // flap card w/h, gap inside a group, colon column
+export const CY = 218; // card top
+export const LBL = { base: 180, size: 64, br: 200 }; // digit labels (the first half of the lyric)
+export const SEC = { w: 72, h: 100, gap: 8, top: 678 }; // seconds flaps
+export const ROW = { base: 866, size: 104 }; // the lyric row that stands on the bar
+export const BAR = { y: 902, h: 14, gap: 4, pad: 5 };
+export const FOOT = 944; // footnote baseline
+export const FOCUS = { x: 960, y: 548 }; // world point at the screen centre
+export const Z_PRE = 0.64; // pre-drop camera zoom
 
-const CARDX = [X0, X0 + CW + GG, X0 + 2 * CW + GG + CC, X0 + 3 * CW + 2 * GG + CC];
-const COLON_X = X0 + 2 * CW + GG + CC / 2;
-const SECX = [X1 - 2 * SEC.w - SEC.gap, X1 - SEC.w];
+export const CARDX = [X0, X0 + CW + GG, X0 + 2 * CW + GG + CC, X0 + 3 * CW + 2 * GG + CC];
+export const COLON_X = X0 + 2 * CW + GG + CC / 2;
+export const SECX = [X1 - 2 * SEC.w - SEC.gap, X1 - SEC.w];
 
 interface Flip { t: number; ch: string; dur: number }
 interface Module { x: number; y: number; w: number; h: number; r: number; fam: string; size: number; ev: Flip[]; tremble?: { t0: number; t1: number; next: string } }
@@ -80,7 +80,7 @@ export default class Clock extends Scene {
     this.D = au.downbeats.find((d) => d > this.wFif.start && d < this.wFif.end) ?? au.nearestBeat(lerp(this.wFif.start, this.wFif.end, 0.4));
     const bi = (t: number) => au.beatAt(t);
     this.tIn = au.timeOfBeat(Math.round(bi(this.wEl.start)) - 1);
-    this.tDraw0 = start + 0.05; this.tDraw1 = start + 0.55;
+    this.tDraw0 = start; this.tDraw1 = start + 0.5; // the spark is there from the first frame (upload1 hands it over idling at X0)
     this.tType0 = start + 0.2; this.tType1 = Math.min(this.tIn, start + 0.2 + 0.45);
     this.tNote0 = this.row[0]!.start;
     // syllables of "E-le-ven fif-ty-" (no syllable data: thirds of "Eleven", "fif" and "ty" split before the drop)
@@ -471,7 +471,7 @@ export default class Clock extends Scene {
 
   /** The spark: draws the hairline, idles at its end, then rides the burn edge. */
   private sparkAt(t: number): { x: number; y: number } | null {
-    if (t < this.tDraw0) return null;
+    if (t < this.tDraw0 - 0.6) return null; // particles born just before the cut: upload1 hands over a sputtering spark
     const cy = BAR.y + BAR.h / 2;
     const draw = ease.inOutCubic(prog(t, this.tDraw0, this.tDraw1));
     if (draw < 1) return { x: lerp(X0, X1, draw), y: cy };
