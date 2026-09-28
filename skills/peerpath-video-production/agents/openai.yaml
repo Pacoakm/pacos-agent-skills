@@ -1,0 +1,4 @@
+interface:
+  display_name: "PeerPath Reels 剪輯"
+  short_description: "在 Palmier Pro 為 PeerPath 真人說話 reels 加文字、圖片、字幕、配樂、音效，並輸出 HDR／SDR"
+  default_prompt: "使用 $peerpath-video-production 為這條 PeerPath reel 在 Palmier Pro 加入文字、圖片、字幕、配樂和音效。"
