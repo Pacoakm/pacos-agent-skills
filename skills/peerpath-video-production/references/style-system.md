@@ -28,6 +28,10 @@ y ≈ chin  CAPTION LINE — just under the chin, the anchor of the layout
 y 0.845 ─────────────────────────── FLOOR — Reels caption & UI below; the lowest drawn pixel
 ```
 
+The Reels like/comment/share column sits on the right edge in roughly y 0.55–0.85: in the lower
+half keep text inside x 0.08–0.88 where the copy allows (`timeline_audit.py` warns past 0.88). Wide
+hook lines have crossed it without complaint, so treat it as a preference, not the floor.
+
 Measure the footage, don't copy numbers: the caption line and slot come from where *this* speaker's
 chin and hands are.
 
@@ -74,6 +78,19 @@ Rules of thumb (they are what `timeline_audit.py` uses):
 - **Width per character**: AvenirNextCondensed-Heavy caps ≈ 1.08 px per pt (tracking 2–2.5);
   Helvetica-Bold caps ≈ 1.43 px per pt (tracking 2–3). So a row at 80 % of the width holds ≈ 26
   characters at 30 pt condensed, ≈ 22 at 28 pt Helvetica.
+- **Another face**: scale by its width relative to Avenir Next Condensed Heavy — same uppercase text,
+  same size (Pillow advance, `fc-list ":postscriptname=<name>" file index` for the file and face):
+
+  | Face (PostScript) | Width vs Avenir Next Condensed Heavy | ≈ characters per row at 30 pt |
+  |---|---|---|
+  | `DINCondensed-Bold` | 0.74 | ~35 |
+  | `AvenirNextCondensed-Heavy` | 1.00 | ~26 |
+  | `Futura-CondensedExtraBold` | 1.02 | ~25 |
+  | `Helvetica-Bold`, `HelveticaNeue-Bold` | 1.24 | ~21 |
+
+  A `.ttc` holds many faces — measure the one Palmier will use (Futura Condensed ExtraBold is index 4
+  of `Futura.ttc`; the wrong index once made a face look 30 % wider than it is). Absolute Pillow
+  estimates run up to 15 % wide; the ratio is reliable, and one full-resolution capture settles it.
 - **About 2.07 canvas px per point** on 1080×1920. The first Alex pass was sized as if 1 pt = 1 px
   and came out 1.78× too big.
 - Stack pitch must be **at least the drawn box + a gap**. Antony's pills went 0.050 → 0.067 → 0.108
@@ -134,12 +151,15 @@ logo stays navy/gold even when the reel's palette is not — a brand mark is not
 
 **Caption** (Antony):
 ```json
-add_captions {"language":"en-US","maxWords":4,"maxCharacters":26,"animation":"popIn",
+add_captions {"language":"en-US","maxWords":4,"maxCharacters":24,"animation":"popIn",
   "style":{"fontName":"AvenirNextCondensed-Heavy","fontSize":46,"fontCase":"uppercase","tracking":1.5,
            "color":"#FFFFFF","outline":{"enabled":true,"color":"#0E0E12","width":4.5},
            "shadow":{"enabled":true,"color":"#000000","opacity":0.85,"blur":20,"offset":{"x":0,"y":6}}},
   "transform":{"x":0.5,"y":0.59}}
 ```
+`maxCharacters 24` is the ceiling for this face at 46 pt: Antony's widest caption, 24 characters, filled
+92 % of the width. Another face: divide by its width ratio in §2 (≈ 19 for Helvetica-Bold at 46 pt).
+
 Captions must look unlike the graphics (「區分不了字幕和畫面文字」 on 0824): different case or weight
 or no plate, and **smaller than or equal to the display type** — a caption larger than the on-screen
 text inverts the hierarchy.
@@ -148,7 +168,8 @@ text inverts the hierarchy.
 
 ## 4. Two approved token sets
 
-Neither is a house default — build the next one for its footage. They show the level of restraint
+Neither is a house default. Design for the footage; carrying one over as a series look is fine when
+it suits the new speaker's skin, wardrobe and room — say so in the plan. They show the level of restraint
 that was approved.
 
 **"Blue Condensed" — Antony (approved, delivered v8)**

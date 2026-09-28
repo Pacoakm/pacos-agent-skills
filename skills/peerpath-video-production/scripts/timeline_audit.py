@@ -221,6 +221,9 @@ def main() -> int:
             add("WARN", f"f{c.start}–{c.end} {c.label()} within 3 % of the side edge (x {x0:.3f}–{x1:.3f})")
         if y0 < 0.025:
             add("WARN", f"f{c.start}–{c.end} {c.label()} reaches y {y0:.3f} — under the phone status bar")
+        if x1 > 0.88 and y1 > 0.55 and y0 < 0.85 and c.kind != "caption":
+            add("WARN", f"f{c.start}–{c.end} {c.label()} reaches x {x1:.3f} in the Reels button column (right edge,"
+                        " y 0.55–0.85) — keep within x 0.88 where the copy allows")
 
     # ---- collisions --------------------------------------------------------------------------
     def clash(a: Clip, b: Clip):

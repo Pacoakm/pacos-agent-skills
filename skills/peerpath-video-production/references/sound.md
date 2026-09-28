@@ -25,6 +25,8 @@ the camera's −27 LUFS — about 12 LU quieter than Antony on the same phone.
 **How it was chosen, every time it went right:**
 
 1. Pull 6–10 candidates (Mixkit chill / R&B / lo-fi pages — `assets-and-licensing.md`), longer than the reel.
+   Measure the speaking share on **this** reel's voice stem (`--voice`) — a stand-in file gave a
+   test run 46 % where the real transcript covered ~96 % of the runtime, and the bed choice flipped.
 2. `python3 scripts/music_profile.py Music/*.mp3 --seconds <reel> --voice <voice stem>`
    (`--target <liked.mp3>` when the user liked one and wants "another like it").
 3. Shortlist 2–3 by the numbers below, cut 25 s excerpts with 1 s / 2 s fades, send them with

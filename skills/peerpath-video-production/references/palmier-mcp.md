@@ -139,7 +139,7 @@ property's keyframes.
 
 ## 8. Captions
 
-- `add_captions {language: "en-US", maxWords: 4, maxCharacters: 26, animation, highlightColor, style,
+- `add_captions {language: "en-US", maxWords: 4, maxCharacters: 24, animation, highlightColor, style,
   transform: {x: 0.5, y: <caption line>}, trackIndex?}` transcribes (cloud when there are credits,
   otherwise local) and makes one caption group on a new top track. `subtitleMediaRef` (an imported
   .srt) excludes every other parameter.
