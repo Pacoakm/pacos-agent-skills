@@ -1,0 +1,4 @@
+interface:
+  display_name: "Music Video Production"
+  short_description: "Code-rendered MV：歌詞逐字同步、跟拍剪接，P(doom) pipeline 用喺新歌"
+  default_prompt: "使用 $music-video-production，為我的 Suno 歌做一段 code-rendered music video：先分析首歌，寫 treatment 俾我批，再分場景製作、審稿同出片。"

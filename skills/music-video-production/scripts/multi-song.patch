@@ -1,0 +1,119 @@
+diff --git a/app/scripts/render.ts b/app/scripts/render.ts
+index 0c2b32d..c28b471 100644
+--- a/app/scripts/render.ts
++++ b/app/scripts/render.ts
+@@ -27,6 +27,8 @@ const SAMPLES = opt('samples', '1') === 'auto'
+   : +opt('samples', '1')!;
+ const hist = (h: Record<string, number>) => Object.entries(h).sort((a, b) => +a[0] - +b[0]).map(([k, v]) => `${k}:${v}`).join(' ');
+ const ROOT = path.resolve(APP, '..');
++// --song <id>: another song's data and audio (data/<id>/, audio/<id>.wav); default the P(doom) video
++const SONG = opt('song', 'pdoom')!;
+ 
+ async function reachable(url: string) {
+   try { const r = await fetch(url, { signal: AbortSignal.timeout(1500) }); return r.ok; } catch { return false; }
+@@ -45,7 +47,8 @@ async function ensureServer(): Promise<{ url: string; stop: () => void }> {
+ 
+ async function openPage(url: string) {
+   const browser = await chromium.launch({
+-    channel: 'chrome',
++    // CHROME_PATH runs another Chromium build instead of Google Chrome
++    ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : { channel: 'chrome' as const }),
+     headless: !flag('headed'),
+     args: ['--use-angle=metal', '--enable-gpu-rasterization', '--ignore-gpu-blocklist', '--disable-background-timer-throttling', '--disable-renderer-backgrounding', '--disable-backgrounding-occluded-windows'],
+   });
+@@ -54,7 +57,7 @@ async function openPage(url: string) {
+   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') logs.push(`[${m.type()}] ${m.text()}`); });
+   page.on('pageerror', (e) => logs.push(`[pageerror] ${e.message}`));
+   const only = opt('only');
+-  await page.goto(`${url}/?export=1${only ? `&only=${only}` : ''}${SCALE !== 1 ? `&scale=${SCALE}` : ''}`);
++  await page.goto(`${url}/?export=1${SONG !== 'pdoom' ? `&song=${SONG}` : ''}${only ? `&only=${only}` : ''}${SCALE !== 1 ? `&scale=${SCALE}` : ''}`);
+   await page.waitForFunction(() => (window as any).__pdoom?.ready || (window as any).__pdoom?.error, null, { timeout: 120000 });
+   const err = await page.evaluate(() => (window as any).__pdoom.error);
+   if (err) throw new Error(`app failed to boot:\n${err}\n${logs.join('\n')}`);
+@@ -105,7 +108,7 @@ async function sheet(page: Page, times: number[], cols: number, out: string) {
+ async function video(page: Page, from: number, to: number, fps: number, out: string) {
+   mkdirSync(path.dirname(out), { recursive: true });
+   const crf = opt('crf', '16')!;
+-  const audio = path.join(ROOT, 'audio/pdoom.mp3');
++  const audio = path.join(ROOT, SONG === 'pdoom' ? 'audio/pdoom.mp3' : `audio/${SONG}.wav`);
+   const args = ['ffmpeg', '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${OW}x${OH}`, '-r', String(fps), '-i', 'pipe:0'];
+   if (!flag('noaudio')) args.push('-ss', String(from), '-t', String(to - from), '-i', audio);
+   // Frames are sRGB (toSRGB in the final pass): convert with the BT.709 matrix and tag the stream,
+diff --git a/app/src/engine/audio.ts b/app/src/engine/audio.ts
+index bc019af..dfc5e5d 100644
+--- a/app/src/engine/audio.ts
++++ b/app/src/engine/audio.ts
+@@ -1,4 +1,5 @@
+ // Music analysis (data/audio.json) sampled at arbitrary song time.
++import { DATA_DIR } from '../song';
+ 
+ export interface AudioJSON {
+   duration: number;
+@@ -43,7 +44,7 @@ export class AudioData {
+   }
+ 
+   static async load(): Promise<AudioData> {
+-    for (const url of ['data/audio.json', 'data/audio.approx.json']) {
++    for (const url of [`${DATA_DIR}audio.json`, `${DATA_DIR}audio.approx.json`]) {
+       const r = await fetch(url);
+       if (r.ok && (r.headers.get('content-type') ?? '').includes('json')) return new AudioData(await r.json());
+     }
+diff --git a/app/src/engine/lyrics.ts b/app/src/engine/lyrics.ts
+index 5d556d9..9985c01 100644
+--- a/app/src/engine/lyrics.ts
++++ b/app/src/engine/lyrics.ts
+@@ -1,5 +1,6 @@
+ // Word-timed lyrics (data/lyrics.json) with queries for karaoke rendering.
+ import { smart } from './type';
++import { DATA_DIR } from '../song';
+ 
+ export interface Word {
+   w: string; // display token (punctuation attached, typographic quotes: don’t, ’cause)
+@@ -37,7 +38,7 @@ export class Lyrics {
+   }
+ 
+   static async load(): Promise<Lyrics> {
+-    for (const url of ['data/lyrics.json', 'data/lyrics.approx.json']) {
++    for (const url of [`${DATA_DIR}lyrics.json`, `${DATA_DIR}lyrics.approx.json`]) {
+       const r = await fetch(url);
+       if (r.ok && (r.headers.get('content-type') ?? '').includes('json')) return new Lyrics(await r.json());
+     }
+diff --git a/app/src/main.ts b/app/src/main.ts
+index 010d21f..b1b192d 100644
+--- a/app/src/main.ts
++++ b/app/src/main.ts
+@@ -1,7 +1,13 @@
+ // Entry: preview player (default) or export mode (?export=1, driven by scripts/render.ts).
+ import { Engine, type AdaptiveSampling } from './engine/engine';
+ import { PW, PH, SCALE } from './engine/gl';
+-import { makeTimeline } from './timeline';
++import { makeTimeline as pdoomTimeline } from './timeline';
++import { SONG, AUDIO_URL } from './song';
++
++// Another song's edit lives in src/timeline-<song>.ts (?song=<id>).
++const songTimelines = import.meta.glob<{ makeTimeline: typeof pdoomTimeline }>('./timeline-*.ts', { eager: true });
++const makeTimeline = SONG === 'pdoom' ? pdoomTimeline : songTimelines[`./timeline-${SONG}.ts`]?.makeTimeline;
++if (!makeTimeline) throw new Error(`no timeline for ?song=${SONG}: add src/timeline-${SONG}.ts`);
+ 
+ const params = new URLSearchParams(location.search);
+ const EXPORT = params.has('export');
+@@ -95,7 +101,7 @@ function setupExport() {
+ 
+ // ------------------------------------------------------------------ preview player
+ function setupPlayer() {
+-  const audio = new Audio('audio/pdoom.mp3');
++  const audio = new Audio(AUDIO_URL);
+   audio.preload = 'auto';
+   const ui = document.getElementById('ui')!;
+   const scrub = document.getElementById('scrub') as HTMLInputElement;
+diff --git a/app/src/song.ts b/app/src/song.ts
+new file mode 100644
+index 0000000..9ce74c8
+--- /dev/null
++++ b/app/src/song.ts
+@@ -0,0 +1,5 @@
++// Which song the app plays: ?song=<id> (default: the P(doom) video).
++// A song other than pdoom keeps its analysis in data/<id>/ and its audio in audio/<id>.wav.
++export const SONG = new URLSearchParams(location.search).get('song') ?? 'pdoom';
++export const DATA_DIR = SONG === 'pdoom' ? 'data/' : `data/${SONG}/`;
++export const AUDIO_URL = SONG === 'pdoom' ? 'audio/pdoom.mp3' : `audio/${SONG}.wav`;
