@@ -188,7 +188,7 @@ def heard_windows(ww, texts):
     for a, b, n in sm.get_matching_blocks():
         for k in range(n):
             times[a + k] = (ww[b + k]["start"], ww[b + k]["end"])
-    win, lead, tail = [], [], []
+    win, lead, tail, unheard = [], [], [], set()
     for li in range(len(texts)):
         idx = [i for i, (l, _) in enumerate(toks) if l == li]
         got = [i for i in idx if i in times]
@@ -220,8 +220,10 @@ def heard_windows(ww, texts):
             nxt = next((win[j][0] for j in range(li + 1, len(win)) if win[j]), prev + 3.0)
             win[li] = (prev, max(prev + 0.5, nxt))
             lead[li] = tail[li] = 1
-            print(f"WARNING: line {li} '{texts[li]}' not heard by Whisper; placed {win[li][0]:.2f}-{win[li][1]:.2f}, check the QA plot")
-    return [(s - (0 if lead[i] else 0.15), e + (0 if tail[i] else 0.15)) for i, (s, e) in enumerate(win)]
+            unheard.add(li)
+            if not SRT.exists():
+                print(f"WARNING: line {li} '{texts[li]}' not heard by Whisper; placed {win[li][0]:.2f}-{win[li][1]:.2f}, check the QA plot")
+    return [(s - (0 if lead[i] else 0.15), e + (0 if tail[i] else 0.15)) for i, (s, e) in enumerate(win)], unheard, sounding
 
 
 def line_windows(ww):
@@ -229,18 +231,34 @@ def line_windows(ww):
     disagrees by more than 1 s (Suno's line times drift, e.g. a whole second chorus placed ~3 s early)."""
     if SRT.exists():
         texts, srt_win, tag_at = parse_srt()
-        heard = heard_windows(ww, texts)
+        heard, unheard, sounding = heard_windows(ww, texts)
+        dur = librosa.get_duration(path=str(MIX))
+        held = lambda a, b: np.mean([sounding(t) for t in np.arange(a, b, 0.05)]) > 0.6 if b > a else False
         wins = []
         for i, ((ss, se), (hs, he)) in enumerate(zip(srt_win, heard)):
-            s = ss if abs(ss - hs) <= 1.0 else hs
-            e = se if abs(se - he) <= 1.0 else he
-            if (s, e) != (ss, se):
-                print(f"NOTE: line {i} Suno window {ss:.2f}-{se:.2f} disagrees with the vocal; using {s:.2f}-{e:.2f}")
+            prev_end = wins[-1][1] if wins else 0.0
+            if i in unheard:
+                # Whisper heard nothing: Suno's window is the only evidence. Clip it to the song and to where
+                # the vocal actually sounds in it (Suno's last window often runs past the end of the audio).
+                s, e = ss, min(se, dur)
+                live = [t for t in np.arange(s, e, 0.05) if sounding(t)]
+                if live:
+                    s, e = max(s, live[0]), live[-1] + 0.15
+                print(f"NOTE: line {i} '{texts[i]}' not heard by Whisper; using Suno's {ss:.2f}-{se:.2f}, check the QA plot")
+            else:
+                # Suno's start is kept when close to the heard one, or when it is earlier and the vocal is
+                # already sounding from it (a held first syllable that Whisper dates late) without
+                # overlapping the previous line (a held last word of the previous line is not this line).
+                keep_s = abs(ss - hs) <= 1.0 or (ss < hs and ss >= prev_end - 0.05 and held(ss, hs))
+                s = ss if keep_s else hs
+                e = se if abs(se - he) <= 1.0 else he
+                if (s, e) != (ss, se):
+                    print(f"NOTE: line {i} Suno window {ss:.2f}-{se:.2f} disagrees with the vocal; using {s:.2f}-{e:.2f}")
             wins.append((s, max(e, s + 0.3)))
         print("line windows from", SRT.name, "checked against the vocal")
     elif A.lyrics:
         texts, tag_at = parse_text()
-        wins = heard_windows(ww, texts)
+        wins, _, _ = heard_windows(ww, texts)
         print("line windows from --lyrics aligned to Whisper (no .srt)")
     else:
         sys.exit("no timed lyrics: pass --lyrics <file> (plain text, one sung line per row, [Section] tags allowed)")

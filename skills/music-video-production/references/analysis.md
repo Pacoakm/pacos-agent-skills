@@ -25,8 +25,15 @@ helper (`lyrics.get`, `Lyrics.wordProgress`, `audio.beatAt`, `f.a.kick`, `audio.
    `fifty-nine,` = `fiftynine`). Whisper often misses a line's first words (pickups, held notes): the
    window is extended back to the first vocal onset where the vocal stem is sounding, at most ~0.7 s per
    missing word and never into the previous line; likewise forward at the end.
-3. **Suno's windows are only a hint**: kept when within 1 s of the heard window, replaced otherwise
-   (printed as `NOTE:`). On the test song Suno placed the whole second chorus ~3 s early.
+3. **Suno's windows are a hint, checked against the vocal** (printed as `NOTE:`):
+   - kept when within 1 s of the heard window;
+   - Suno's start is also kept when it is *earlier* and the vocal is already sounding from it without
+     overlapping the previous line — a held first syllable Whisper dates late (the test song's second
+     "Blackboard," at 69.25, which Whisper put at 70.38);
+   - replaced otherwise — on the test song Suno placed the whole second chorus ~3 s early (80.19 vs 83.00:
+     the vocal there was the previous line's held last word);
+   - a line Whisper never heard takes Suno's window, clipped to the song and to where the vocal sounds
+     (the test song's last line "...wrong file." at 112.24, alone after 5 s of silence).
 4. **Words**: matched words take Whisper's times, gaps are interpolated, starts snap to a vocal onset
    within 60 ms.
 
