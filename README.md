@@ -6,6 +6,8 @@
 |---|---|
 | `paco-video-production` | 從創意方向、逐秒腳本和故事板，到 Animatic、多引擎製作及成片驗證 |
 | `smartquest-video-production` | SmartQuest DSE 教學影片：Manim 動畫、繁中書面語字幕（保留英文學科名詞）、動畫先行真人後錄 |
+| `peerpath-video-production` | PeerPath 真人說話 reels：用家剪好節奏後，在 Palmier Pro 加畫面文字、圖卡、字幕、畫面推拉、調色、人聲處理、配樂、音效，輸出 HDR／SDR；附量度及審核工具 |
+| `academic-video-production` | 個人 CUHK 課堂概念影片：把 lecture notes 的複雜概念做成 3Blue1Brown 風格 Manim 動畫，雙語字幕代替旁白，不限時長，Palmier Pro 組裝及出片 |
 | `paco-interactive-educator` | 以 Puzzle → Explore → Name → Challenge 建立 Codex 原生探索式互動教材 |
 | `edge-tts` | 旁白試音、語音輸出及字幕時間 |
 | `seedance` | Seedance／即夢中文影片 prompt packet；由用戶手動生成影片 |
@@ -39,6 +41,17 @@ pacos-agent-skills/
     │   ├── agents/openai.yaml
     │   ├── references/
     │   └── scripts/
+    ├── peerpath-video-production/
+    │   ├── SKILL.md
+    │   ├── agents/openai.yaml
+    │   ├── assets/reel-plan-template.md
+    │   ├── references/
+    │   └── scripts/
+    ├── academic-video-production/
+    │   ├── SKILL.md
+    │   ├── agents/openai.yaml
+    │   ├── references/
+    │   └── scripts/
     └── paco-interactive-educator/
         ├── SKILL.md
         ├── agents/openai.yaml
@@ -67,7 +80,7 @@ cd "$HOME/.local/share/pacos-agent-skills"
 
 ## 安裝
 
-預設把六個可獨立安裝的 Skill 安裝到指定 agent：
+預設把所有可獨立安裝的 Skill 安裝到指定 agent：
 
 ```bash
 ./install.sh codex
@@ -82,6 +95,8 @@ cd "$HOME/.local/share/pacos-agent-skills"
 ./install.sh codex paco-interactive-educator
 ./install.sh codex paco-video-production
 ./install.sh codex smartquest-video-production
+./install.sh codex peerpath-video-production
+./install.sh codex academic-video-production
 ./install.sh codex edge-tts
 ./install.sh codex seedance
 ./install.sh codex video-use
@@ -124,6 +139,16 @@ cd "$HOME/.local/share/pacos-agent-skills"
 | `edge-tts` | 粵語／多語旁白試音、音訊及字幕 | Skill 已包含；`uvx edge-tts` 使用網上服務 |
 
 數學或物理題材不會因科目名稱而一律使用 Manim。以 slides、知識重溫、talking head、實驗錄影或軟件操作為主的影片仍會選用 Remotion 或 video-use；只有當程式化動畫能明顯改善概念理解時，才載入 `manim-video`。Manim 可製作完整的圖像主片，亦可輸出精確片段交由 Remotion／FFmpeg 加字幕、品牌、音樂及比例變體。這類可確定生成的教學畫面不使用 Seedance。
+
+## Academic Video Production
+
+給自己看的課堂概念影片：輸入 CUHK 課程的 lecture notes（PDF／PPT），把難明的概念做成 3Blue1Brown 風格的 Manim 動畫。流程沿用 `smartquest-video-production`，但目的是理解而非應試：
+
+1. 先讀 lecture notes，整理 `notes-map.md`（概念、slide 編號、記號、原文定義、slides 跳過的步驟），再寫 `brief.md`、雙語字幕稿及 `video-plan.json`。
+2. Storyboard 為真實 Manim 靜幀，draft 為 480p15 附軟字幕；三個關卡都要批准才繼續。
+3. 例子按角色挑選：concrete、varied、broken、connected——用來看見概念，不做考試題型階梯，不估 final。
+4. 不限時長；預設不配旁白，由雙語字幕承載講解；顏色主題與 SmartQuest 相同。
+5. 一律在 Palmier Pro 組裝（每個知識點一個 chapter marker）及出片，再以 `verify_master.py` 驗證匯出檔。
 
 ## Paco Interactive Educator
 

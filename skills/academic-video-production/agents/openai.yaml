@@ -1,0 +1,4 @@
+interface:
+  display_name: "Academic 概念影片製作"
+  short_description: "用 Manim 把 CUHK 課堂 lecture notes 的概念做成 3Blue1Brown 風格動畫，雙語字幕，Palmier Pro 出片"
+  default_prompt: "使用 $academic-video-production 把我的 lecture notes 概念做成動畫影片。"

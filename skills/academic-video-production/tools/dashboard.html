@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>13 Vector Product — production</title>
+<style>
+  :root{--bg:#0B0E14;--panel:#11151f;--edge:#232a3a;--ink:#E9EDF7;--muted:#98A3BA;
+        --line:#6B7893;--ok:#34D399;--warn:#FB7185;--accent:#7B8CF0;--amber:#FBBF24}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);min-height:100vh;
+       font:13px/1.55 ui-sans-serif,-apple-system,"PingFang HK",system-ui,sans-serif}
+  header{display:flex;align-items:center;gap:14px;padding:12px 20px;
+         border-bottom:1px solid var(--edge);position:sticky;top:0;background:var(--bg);z-index:5}
+  header h1{font-size:14px;margin:0;font-weight:600}
+  a.tool{display:inline-block;background:var(--accent);color:#0B0E14;font-weight:600;
+         text-decoration:none;border-radius:6px;padding:5px 12px;font-size:12px}
+  a.tool.alt{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  main{padding:16px 20px 60px;display:grid;gap:16px;
+       grid-template-columns:repeat(auto-fit,minmax(430px,1fr));max-width:1500px}
+  section{background:var(--panel);border:1px solid var(--edge);border-radius:10px;padding:14px 16px}
+  section h2{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.09em;
+             color:var(--muted);font-weight:600;display:flex;align-items:center;gap:9px}
+  .pill{font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--edge);color:var(--muted)}
+  .pill.ok{color:var(--ok);border-color:#1d4b3c}
+  .pill.bad{color:var(--warn);border-color:#5a2530}
+  .pill.warn{color:var(--amber);border-color:#5a4a20}
+  .sub{color:var(--line);font-size:12px;margin:0 0 10px}
+  button{background:#171d2b;border:1px solid var(--edge);color:var(--ink);border-radius:6px;
+         padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button[disabled]{opacity:.5;cursor:default}
+  pre{background:#0a0d13;border:1px solid var(--edge);border-radius:6px;padding:9px;
+      font:11px/1.5 ui-monospace,Menlo,monospace;max-height:280px;overflow:auto;
+      white-space:pre-wrap;color:var(--muted);margin:9px 0 0}
+  table{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px}
+  td{padding:2px 0;vertical-align:top}
+  td.k{color:var(--muted)} td.v{text-align:right;font-variant-numeric:tabular-nums}
+  .bar{height:9px;border-radius:5px;background:#0a0d13;border:1px solid var(--edge);overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--accent)}
+  .chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+  .chip{font-size:10px;padding:1px 5px;border-radius:4px;border:1px solid var(--edge);color:var(--line)}
+  .chip.done{color:var(--ok);border-color:#1d4b3c}
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  section.wide{grid-column:1 / -1}
+  .gate{font-size:10px;padding:1px 7px;border-radius:4px;background:#1b2233;color:var(--accent);
+        letter-spacing:.06em;font-weight:700}
+  .doc{max-height:420px;overflow:auto;border:1px solid var(--edge);border-radius:6px;
+       padding:10px 12px;background:#0a0d13}
+  .doc h1,.doc h2,.doc h3{font-size:13px;margin:12px 0 4px;color:var(--ink)}
+  .doc h1:first-child{margin-top:0}
+  .doc p,.doc li{color:var(--muted);font-size:12px;margin:3px 0}
+  .doc code{background:#151b28;padding:0 4px;border-radius:3px;font-size:11px}
+  .doc strong{color:var(--ink)}
+  .tl{width:100%;border-collapse:collapse;font-size:12px}
+  .tl td{padding:3px 6px;border-bottom:1px solid #171d2b;vertical-align:top}
+  .tl td.i{color:var(--accent);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .tl td.p{color:var(--muted)}
+  .tl tr.aha td{background:#1a1526}
+  .sb{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+      max-height:640px;overflow:auto;padding-right:4px}
+  .sb figure{margin:0;border:1px solid var(--edge);border-radius:8px;overflow:hidden;background:#0d1017}
+  .sb img{width:100%;display:block;background:#000;cursor:zoom-in}
+  .sb figcaption{padding:5px 7px;font-size:11px;color:var(--muted)}
+  .sb .id{color:var(--accent);font-variant-numeric:tabular-nums}
+  .tabs{display:flex;gap:4px;margin-bottom:8px}
+  .tabs button.on{border-color:var(--accent);color:var(--accent)}
+  video{width:100%;border-radius:6px;background:#000;display:block}
+  .stage{display:flex;align-items:center;gap:9px;padding:5px 0;font-size:12px}
+  .stage .dot{width:9px;height:9px;border-radius:50%;background:#2a3245;flex:0 0 auto}
+  .stage.run .dot{background:var(--amber)}
+  .stage.ok .dot{background:var(--ok)}
+  .stage .nm{flex:1 1 auto;color:var(--muted)}
+  .stage.run .nm,.stage.ok .nm{color:var(--ink)}
+  .stage .v{color:var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stage .mini{width:120px;height:6px;border-radius:3px;background:#0a0d13;
+               border:1px solid var(--edge);overflow:hidden;flex:0 0 auto}
+  .stage .mini i{display:block;height:100%;background:var(--amber)}
+  .scenestrip{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
+  .scenestrip button{padding:3px 8px;font-size:11px}
+  .scenestrip button.on{border-color:var(--accent);color:var(--accent)}
+  .scenestrip button.stale::before{content:"·";margin-right:4px;color:var(--amber)}
+  .scenestrip button.full{border-color:var(--muted);color:var(--ink)}
+  /* a shot someone has marked reads differently from one nobody has looked at */
+  .scenestrip button[data-marks]{border-color:var(--warn);color:var(--warn)}
+  .scenestrip button[data-marks].on{border-color:var(--warn);color:var(--warn);
+        box-shadow:inset 0 0 0 1px var(--warn)}
+  .scenestrip button[data-marks]::after{content:attr(data-marks);margin-left:5px;
+        background:var(--warn);color:#0B0E14;border-radius:8px;padding:0 4px;
+        font-size:9px;font-weight:700;vertical-align:1px}
+  .g3{display:flex;gap:14px;align-items:flex-start}
+  .g3 .left{flex:1 1 62%;min-width:0}
+  .g3 .right{flex:1 1 38%;min-width:280px;max-height:560px;overflow-y:auto;
+             border-left:1px solid var(--edge);padding-left:14px}
+  .g3 .right h3{font-size:11px;text-transform:uppercase;letter-spacing:.09em;
+                color:var(--muted);margin:0 0 6px;font-weight:600}
+  .g3 .right h3.sp{margin-top:16px}
+  @media (max-width:1100px){ .g3{flex-direction:column} .g3 .right{border-left:0;padding-left:0} }
+  .marks{margin-top:10px}
+  .mark{display:grid;grid-template-columns:auto auto 1fr;gap:4px 8px;padding:7px 8px;
+        border:1px solid var(--edge);border-radius:7px;margin-bottom:6px;background:#0d1017}
+  .mark textarea{grid-column:1 / -1}
+  .mark .acts{grid-column:1 / -1;justify-content:flex-end}
+  .mark.on{border-color:var(--accent)}
+  .mark .tc{font-variant-numeric:tabular-nums;color:var(--accent);white-space:nowrap;
+            cursor:pointer;font-size:12px;padding-top:3px}
+  .mark .sid{color:var(--amber);font-size:11px;white-space:nowrap;padding-top:4px}
+  .mark textarea{flex:1 1 auto;min-height:34px;height:34px;background:#0a0d13;color:var(--ink);
+    border:1px solid var(--edge);border-radius:5px;padding:4px 6px;font:inherit;font-size:12px;
+    resize:vertical}
+  .mark .acts{display:flex;gap:4px;flex-wrap:wrap}
+  .mark .acts button{padding:3px 7px;font-size:11px}
+  .markbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .markbar .live{color:var(--amber);font-size:11px;font-variant-numeric:tabular-nums}
+
+  /* ---- the shot the player is inside, right now -------------------------
+     Watching the full draft, the one thing you always want and never have is
+     WHICH SHOT this is. Reading it off the scrubber means doing arithmetic
+     against the plan while the video runs, so it is printed instead. */
+  .nowline{display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px;
+           min-height:20px;flex-wrap:wrap}
+  .nowline .tag{font-size:9px;font-weight:700;letter-spacing:.08em;padding:1px 5px;
+                border-radius:8px;background:var(--accent);color:#0B0E14}
+  .nowline b{color:var(--accent)}
+  .nowline .sc{color:var(--muted)}
+  .nowline .t{color:var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .nowline .pb{flex:0 0 90px;height:5px;border-radius:3px;background:#0a0d13;
+               border:1px solid var(--edge);overflow:hidden}
+  .nowline .pb i{display:block;height:100%;background:var(--accent)}
+  .nowline .what{color:var(--muted);flex:1 1 200px;min-width:0;overflow:hidden;
+                 text-overflow:ellipsis;white-space:nowrap}
+  .scenestrip button.now{background:#141b2b;box-shadow:inset 0 0 0 1px var(--accent)}
+
+  /* ---- storyboard lightbox ---------------------------------------------
+     A panel opened in a new tab is a dead end: the browser shows one PNG with
+     no shot id, no neighbours and no way back except the back button. Compare
+     is the whole job at Gate 2 — does S05 end where S06 opens — so the panels
+     open in place, with arrows. */
+  #lb{position:fixed;inset:0;z-index:60;background:rgba(6,8,12,.95);
+      display:flex;align-items:center;justify-content:center}
+  #lb[hidden]{display:none}
+  .lb-stage{flex:1 1 auto;height:100vh;display:flex;align-items:center;
+            justify-content:center;overflow:auto;padding:46px 8px 86px}
+  #lb-img{max-width:94vw;max-height:calc(100vh - 132px);display:block;background:#000;
+          border-radius:6px;cursor:zoom-in}
+  #lb-img.zoom{max-width:none;max-height:none;cursor:zoom-out}
+  .lb-nav{position:fixed;top:50%;transform:translateY(-50%);width:44px;height:64px;
+          font-size:26px;line-height:1;padding:0;border-radius:8px;
+          background:#0d1017;border:1px solid var(--edge);color:var(--ink);cursor:pointer}
+  .lb-nav:hover{border-color:var(--accent);color:var(--accent)}
+  .lb-nav.prev{left:10px} .lb-nav.next{right:10px}
+  .lb-x{position:fixed;top:10px;right:12px;width:32px;height:32px;font-size:18px;
+        line-height:1;padding:0;border-radius:8px;background:#0d1017;
+        border:1px solid var(--edge);color:var(--ink);cursor:pointer}
+  .lb-cap{position:fixed;left:0;right:0;bottom:0;padding:9px 58px;font-size:12px;
+          background:linear-gradient(to top,rgba(6,8,12,.98),rgba(6,8,12,.75));
+          border-top:1px solid var(--edge)}
+  .lb-cap b{color:var(--accent)}
+  .lb-cap .t{color:var(--line);font-variant-numeric:tabular-nums;margin-left:8px}
+  .lb-cap .n{float:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .lb-cap .l{color:var(--muted);margin-top:3px;max-height:34px;overflow:hidden}
+  .lb-cap .l.m{color:var(--line)}
+  .lb-hint{position:fixed;top:14px;left:14px;font-size:11px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">…</h1>
+  <a class="tool" href="camera-picker.html">Camera picker</a>
+  <a class="tool" href="review.html">Beat review</a>
+  <a class="tool alt" href="../out/draft.mp4">draft.mp4</a>
+  <span class="pill" id="served"></span>
+</header>
+<main>
+
+<section class="wide">
+  <h2><span class="gate">GATE 1</span> Lesson design, script, timeline
+      <span class="pill" id="g1-pill">—</span></h2>
+  <p class="sub">What the user approves first: the teaching, the wording, the timing.
+     Read it here rather than opening four files.</p>
+  <div class="tabs" id="g1-tabs"></div>
+  <div class="doc" id="g1-doc">—</div>
+</section>
+
+<section class="wide">
+  <h2><span class="gate">GATE 2</span> Storyboard <span class="pill" id="g2-pill">—</span></h2>
+  <p class="sub">One real Manim still per shot, with its visual, motion and transition.
+     Click a panel to open it full size in place — <b>←</b> / <b>→</b> step through the
+     shots in order, click the image again for 1:1, <b>Esc</b> closes. Never a hand-drawn
+     mock — the panel has to be the frame.</p>
+  <div class="sb" id="g2-sb"></div>
+</section>
+
+<section class="wide">
+  <h2><span class="gate">GATE 3</span> Draft <span class="pill" id="g3-pill">—</span></h2>
+  <p class="sub">The silent picture with its subtitles as a <b>soft track</b> — toggle them
+     in the player. Burned-in captions belong to the master only. While it plays, the line
+     above the video names the shot you are inside and the strip highlights it.</p>
+  <div class="g3">
+    <div class="left">
+      <div class="note" id="g3-which"></div>
+      <div class="nowline" id="g3-now"></div>
+      <video id="g3-vid" controls preload="metadata" crossorigin="anonymous"></video>
+      <div class="markbar">
+        <button id="mk-frame">Mark this frame</button>
+        <button id="mk-range">Mark range: set start</button>
+        <span class="live" id="mk-live"></span>
+        <span style="flex:1 1 auto"></span>
+        <a class="tool alt" id="g3-dl" href="#">download</a>
+        <a class="tool alt" href="review.html">beat review</a>
+        <span class="pill" id="g3-info"></span>
+      </div>
+    </div>
+    <div class="right">
+      <h3>Watch one shot</h3>
+      <div class="scenestrip" id="g3-scenes"></div>
+      <div class="row"><button id="g3-rerender" style="display:none">Re-render this scene</button></div>
+      <h3 class="sp">Marks <button id="mk-all" style="float:right;font-size:11px;padding:2px 7px">Copy all prompts</button></h3>
+      <div class="marks" id="mk-list"></div>
+    </div>
+  </div>
+  <canvas id="mk-canvas" style="display:none"></canvas>
+</section>
+
+<section>
+  <h2>Draft render <span class="pill" id="p-pill">—</span>
+      <span class="pill" id="draft-state">idle</span></h2>
+  <p class="sub">480p15, no captions — the version you review. Only scenes older than
+     <code>src/</code> are re-rendered; the rest are stitched as they are.
+     Result: <code>out/draft.mp4</code></p>
+  <div class="bar"><i id="p-bar" style="width:0"></i></div>
+  <table id="p-tab"></table>
+  <div class="chips" id="p-chips"></div>
+  <div class="row">
+    <button data-start="draft">Start draft render</button>
+    <button data-stop="draft">Stop</button>
+    <button data-run="progress">Refresh</button>
+    <label class="pill"><input type="checkbox" id="p-auto" checked> auto every 10s</label>
+  </div>
+  <pre id="draft-log">not started</pre>
+</section>
+
+<section>
+  <h2>Master render <span class="pill" id="m-pill">—</span>
+      <span class="pill" id="master-state">idle</span></h2>
+  <p class="sub" id="m-sub">1080p60 with the bilingual caption track burned on.
+     Hours, not minutes — start it when you are done reviewing.
+     Four steps: scenes, concat, caption track, then the one real encode.
+     Result: <code>out/picture-subbed.mp4</code></p>
+  <div class="bar"><i id="m-bar" style="width:0"></i></div>
+  <table id="m-tab"></table>
+  <div class="chips" id="m-chips"></div>
+  <div id="m-stages"></div>
+  <div class="row">
+    <button data-start="master">Start master render</button>
+    <button data-stop="master">Stop</button>
+  </div>
+  <pre id="master-log">not started</pre>
+</section>
+
+<section class="wide">
+  <h2>Final quality gate <span class="pill" id="v-pill">—</span>
+      <span class="pill" id="verify-state">idle</span></h2>
+  <p class="sub">Measures rather than assumes: duration, dimensions, frame rate, frame
+     count, codec, black frames, shot-boundary continuity, per-scene frame counts,
+     subtitle rate. It decodes every frame, so it runs as a job with a log.</p>
+  <div class="row">
+    <button data-start="verify">Run on picture-subbed.mp4</button>
+    <button data-stop="verify">Stop</button>
+    <span class="pill">out/final.mp4 (the Palmier export) is checked instead, once it exists</span>
+  </div>
+  <pre id="verify-log">not run</pre>
+</section>
+
+<section>
+  <h2>Camera poses <span class="pill" id="c-pill">—</span></h2>
+  <p class="sub">Framing against the reserved bands, plus the three cameras that carry a
+     geometric guarantee (true-size angle, edge-on plane).</p>
+  <div class="row"><button data-run="poses">Run check</button>
+    <a class="tool alt" href="camera-picker.html">open picker</a></div>
+  <div id="c-body"></div>
+</section>
+
+<section>
+  <h2>Cuts <span class="pill" id="j-pill">—</span></h2>
+  <p class="sub">Camera and figure either side of every join, and what is on stage before
+     and after. Pixels cannot tell those apart; this can.</p>
+  <div class="row"><button data-run="joins">Run check</button></div>
+  <pre id="j-out">not run yet</pre>
+</section>
+
+<section>
+  <h2>Labels <span class="pill" id="l-pill">—</span></h2>
+  <p class="sub">Written by the render itself: every label measured against the thing it
+     names, every beat. Distance, timing, collisions.</p>
+  <div id="l-body"></div>
+</section>
+
+<section>
+  <h2>Rebuild <span class="pill" id="d-pill">—</span></h2>
+  <p class="sub">Stitch without re-rendering, refresh the review page, re-extract the
+     3D figures the camera picker draws.</p>
+  <div class="row"><button data-run="concat">Stitch draft</button>
+    <button data-run="review">Rebuild beat review</button>
+    <button data-run="extract">Re-extract 3D for the picker</button>
+    <button data-run="dashboard">Reload gates 1–3</button></div>
+  <pre id="d-out">—</pre>
+</section>
+
+</main>
+
+<div id="lb" hidden>
+  <div class="lb-hint">← → to step · click the image for 1:1 · Esc to close</div>
+  <button class="lb-x" id="lb-x" title="close (Esc)">&times;</button>
+  <button class="lb-nav prev" id="lb-prev" title="previous panel (←)">&lsaquo;</button>
+  <div class="lb-stage" id="lb-stage"><img id="lb-img" alt=""></div>
+  <button class="lb-nav next" id="lb-next" title="next panel (→)">&rsaquo;</button>
+  <div class="lb-cap" id="lb-cap"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const HERE = location.pathname.replace(/\/tools\/[^/]*$/, "");
+const pill = (el, cls, text) => { el.className = "pill " + cls; el.textContent = text; };
+const esc = s => (s||"").replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+let live = false;
+
+async function jget(path){
+  try{ const r = await fetch(path + "?t=" + Date.now(), {cache:"no-store"});
+       return r.ok ? await r.json() : null; }catch(e){ return null; }
+}
+async function run(name, out){
+  const btns = document.querySelectorAll(`[data-run="${name}"]`);
+  btns.forEach(b=>b.disabled = true);
+  if(out) out.textContent = "running…";
+  try{
+    const r = await fetch(`${HERE}/run/${name}`, {method:"POST"});
+    if(!r.ok) throw new Error(r.status === 403 ? "server has no /run endpoint" : r.status);
+    const d = await r.json();
+    if(out) out.textContent = d.out.trim() || "(no output)";
+    live = true;
+    await refresh();
+  }catch(e){
+    if(out) out.textContent = "could not run: " + e.message
+      + "\n\nserve this page with tools/serve.py to get the buttons working.";
+  }finally{ btns.forEach(b=>b.disabled = false); }
+}
+/* ---- long jobs: start, stop, tail the log ---- */
+async function job(verb, name){
+  try{
+    const r = await fetch(`${HERE}/${verb}/${name}`, {method:"POST"});
+    const d = await r.json();
+    if(d.error) $(name + "-log").textContent = d.error;
+    live = true;
+  }catch(e){ $(name + "-log").textContent = "server not reachable: " + e.message; }
+  pollJob(name);
+}
+async function pollVerify(){
+  const running = await pollJob("verify");
+  const log = $("verify-log").textContent;
+  const m = log.match(/\n(PASS|FAIL) in/);
+  pill($("v-pill"), running ? "warn" : (m ? (m[1] === "PASS" ? "ok" : "bad") : ""),
+       running ? "running" : (m ? m[1] : "not run"));
+}
+async function pollJob(name){
+  try{
+    const r = await fetch(`${HERE}/job/${name}`, {method:"POST"});
+    const d = await r.json();
+    const st = $(name + "-state");
+    st.className = "pill " + (d.running ? "warn" : (d.lines ? "ok" : ""));
+    st.textContent = d.running ? "running" : (d.lines ? "finished" : "idle");
+    if(d.log) $(name + "-log").textContent = d.log.trim().split("\n").slice(-14).join("\n");
+    return d.running;
+  }catch(e){ return false; }
+}
+document.querySelectorAll("[data-start]").forEach(b=>
+  b.onclick = ()=> job("start", b.dataset.start));
+document.querySelectorAll("[data-stop]").forEach(b=>
+  b.onclick = ()=> job("stop", b.dataset.stop));
+
+document.querySelectorAll("[data-run]").forEach(b=>{
+  const targets = {joins:$("j-out"), concat:$("d-out"), review:$("d-out"), extract:$("d-out")};
+  b.onclick = ()=> run(b.dataset.run, targets[b.dataset.run] || null);
+});
+
+/* ---- gates 1-3 ---- */
+let DASH = null;
+const md = t => (t||"")
+  .replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]))
+  .replace(/^### (.*)$/gm,"<h3>$1</h3>").replace(/^## (.*)$/gm,"<h2>$1</h2>")
+  .replace(/^# (.*)$/gm,"<h1>$1</h1>")
+  .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>")
+  .replace(/`([^`]+)`/g,"<code>$1</code>")
+  .replace(/^[-*] (.*)$/gm,"<li>$1</li>")
+  .replace(/\n{2,}/g,"</p><p>");
+
+function timelineHTML(d){
+  return `<table class="tl">` + d.timeline.map(s=>
+    `<tr class="${s.id===d.ahaShotId?"aha":""}"><td class="i">${s.id}</td>`
+    + `<td class="i">${s.start}–${s.end}s</td>`
+    + `<td class="i">${esc(s.sectionTitle||"—")}</td>`
+    + `<td class="p">${esc(s.purpose||s.knowledgePoint||"")}</td>`
+    + `<td class="i">${s.cues} cues</td></tr>`).join("") + `</table>`;
+}
+function showG1(which){
+  const d = DASH; if(!d) return;
+  document.querySelectorAll("#g1-tabs button").forEach(b=>
+    b.className = b.dataset.g1 === which ? "on" : "");
+  const box = $("g1-doc");
+  if(which === "timeline") box.innerHTML = timelineHTML(d);
+  else if(which === "plan") box.innerHTML =
+      `<p><strong>${esc(d.title||"")}</strong> — ${esc(d.subject||"")} · ${esc(d.topic||"")}</p>`
+    + `<p>${d.format.w}×${d.format.h} @ ${d.format.fps}fps · ${d.format.seconds}s · status <code>${esc(d.status||"")}</code></p>`
+    + `<p><strong>Objective</strong> ${esc(d.learningObjective||"")}</p>`
+    + `<p><strong>Misconception</strong> ${esc(d.misconception||"")}</p>`
+    + `<p><strong>Aha</strong> ${esc(d.ahaShotId||"")}</p>`
+    + (d.justifications?.length ? `<p><strong>Justifications</strong> ${esc(d.justifications.join(", "))}</p>` : "");
+  else{
+    const doc = which === "brief" ? d.brief : d.script;
+    box.innerHTML = doc ? "<p>" + md(doc.text) + "</p>" : "<p>not written yet</p>";
+  }
+}
+function renderGates(d){
+  DASH = d;
+  const tabs = [["plan","plan"],["brief", d.brief?.name || "brief"],
+                ["script", d.script?.name || "script"],["timeline","timeline"]];
+  $("g1-tabs").innerHTML = tabs.map(([k,label])=>
+    `<button data-g1="${k}">${esc(label)}</button>`).join("");
+  document.querySelectorAll("#g1-tabs button").forEach(b=>
+    b.onclick = ()=> showG1(b.dataset.g1));
+  showG1("plan");
+  pill($("g1-pill"), d.brief && d.script ? "ok" : "warn",
+       `${d.timeline.length} shots · ${d.brief?"brief":"no brief"} · ${d.script?"script":"no script"}`);
+
+  LB = d.storyboard || [];
+  $("g2-sb").innerHTML = LB.map((s,i)=>
+    `<figure><img loading="lazy" src="${s.src}" data-lb="${i}" alt="${esc(s.id)}">`
+    + `<figcaption><span class="id">${s.id} · ${s.start}–${s.end}s</span><br>`
+    + `${esc((s.visual||"").slice(0,110))}</figcaption></figure>`).join("")
+    || `<p class="sub">no panels yet — render them at Gate 2</p>`;
+  pill($("g2-pill"), d.storyboard.length ? "ok" : "",
+       `${d.storyboard.length} panel(s)`);
+
+  // one button per shot: watch that scene's own file instead of scrubbing the
+  // whole draft, and re-render just it when the picture needs a change
+  const strip = $("g3-scenes");
+  strip.innerHTML = `<button class="full on" data-clip="">full draft</button>`
+    + d.timeline.map(s=>
+        `<button data-clip="${s.clip || ""}" data-scene="${s.scene}" data-id="${s.id}"`
+        + `${s.clip ? "" : " disabled"} class="${s.stale ? "stale" : ""}"`
+        + ` title="${s.start}–${s.end}s${s.stale ? "  · older than src/" : ""}">${s.id}</button>`).join("");
+  strip.querySelectorAll("button").forEach(b=> b.onclick = ()=> pickClip(b, d));
+  paintMarkedScenes();       // the strip was just rebuilt — colour it again
+  paintNow();                // and say which shot the player is sitting in
+
+  const v = $("g3-vid");
+  if(d.draft){
+    v.innerHTML = d.vtt
+      ? `<track default kind="subtitles" srclang="zh" label="中文/EN" src="${d.vtt}">` : "";
+    v.src = d.draft;
+    $("g3-dl").href = d.draft;
+    pill($("g3-pill"), "ok", d.vtt ? "draft + soft subs" : "draft, no subtitle track");
+    $("g3-info").textContent = d.vtt ? "subtitles: pick the track in the player"
+                                     : "no subtitle sidecar found";
+  }else pill($("g3-pill"), "", "not rendered");
+}
+
+/* ---- the storyboard lightbox ---------------------------------------------
+   Opening a panel in a new tab loses everything that made it a storyboard: the
+   shot id, the neighbours, the way back. Gate 2 is mostly a COMPARISON — does
+   S05 end on what S06 opens with (contract invariant 10) — and that needs the
+   two panels one keypress apart, not two browser tabs. */
+let LB = [], LBI = 0;
+function lbPaint(){
+  const s = LB[LBI]; if(!s) return;
+  const img = $("lb-img");
+  img.classList.remove("zoom");            // every panel opens fitted
+  img.src = s.src;
+  $("lb-cap").innerHTML =
+      `<b>${esc(s.id)}</b> <span class="t">${s.start}–${s.end}s</span>`
+    + `<span class="n">${LBI + 1} / ${LB.length}</span>`
+    + (s.visual ? `<div class="l">${esc(s.visual)}</div>` : "")
+    + (s.motion ? `<div class="l m">motion: ${esc(s.motion)}</div>` : "");
+  const nav = LB.length > 1 ? "" : "none";
+  $("lb-prev").style.display = nav; $("lb-next").style.display = nav;
+}
+function lbOpen(i){
+  if(!LB.length) return;
+  LBI = Math.max(0, Math.min(LB.length - 1, i));
+  $("lb").hidden = false;
+  lbPaint();
+}
+function lbGo(step){
+  if(!LB.length) return;
+  LBI = (LBI + step + LB.length) % LB.length;      // wraps, so it never dead-ends
+  lbPaint();
+}
+const lbOpenNow = ()=> !$("lb").hidden;
+function lbClose(){ $("lb").hidden = true; $("lb-img").src = ""; }
+$("g2-sb").addEventListener("click", e=>{
+  const i = e.target.dataset && e.target.dataset.lb;
+  if(i != null) lbOpen(+i);
+});
+$("lb-prev").onclick = e=>{ e.stopPropagation(); lbGo(-1); };
+$("lb-next").onclick = e=>{ e.stopPropagation(); lbGo(1); };
+$("lb-x").onclick = lbClose;
+/* click the image = 1:1, so type and hairlines can be judged at real size;
+   click anywhere else on the backdrop = close */
+$("lb-img").onclick = e=> e.target.classList.toggle("zoom");
+/* close only on the backdrop itself — a click on the caption or the arrows is
+   not a click on "outside" */
+$("lb").onclick = e=>{ if(e.target.id === "lb" || e.target.id === "lb-stage") lbClose(); };
+
+/* ---- which shot is on screen, right now ----------------------------------
+   Printed live under the player and highlighted in the strip. It runs off the
+   PLAN clock (planNow()), so it is correct whether the full draft or a single
+   scene's file is loaded. */
+function paintNow(){
+  const el = $("g3-now"); if(!el) return;
+  const strip = $("g3-scenes");
+  const s = (DASH && DASH.timeline) ? shotAt(planNow()) : null;
+  if(strip){
+    strip.querySelectorAll("button.now").forEach(b=> b.classList.remove("now"));
+    if(s){
+      const b = strip.querySelector(`button[data-id="${s.id}"]`);
+      if(b) b.classList.add("now");
+    }
+  }
+  if(!s){ el.innerHTML = ""; return; }
+  const into = Math.max(0, planNow() - s.start);
+  const len = Math.max(0.001, s.end - s.start);
+  el.innerHTML = `<span class="tag">NOW</span><b>${esc(s.id)}</b>`
+    + `<span class="sc">${esc(s.scene || "")}</span>`
+    + `<span class="t">${s.start.toFixed(1)}–${s.end.toFixed(1)}s · `
+    + `${into.toFixed(1)}s in</span>`
+    + `<span class="pb"><i style="width:${Math.min(100, 100 * into / len).toFixed(1)}%"></i></span>`
+    + `<span class="what">${esc(s.knowledgePoint || s.purpose || "")}</span>`;
+}
+
+/* ---- one scene at a time -------------------------------------------------
+   TWO CLOCKS are in play. Marks are stored on the PLAN clock — the whole
+   draft, so a prompt reads the same whichever way you were watching. The
+   player runs on the clock of whatever file is loaded, and a single scene's
+   mp4 starts at 0. Every seek therefore has to be converted; seeking to a raw
+   plan timecode inside a clip lands tens of seconds away, or past its end. */
+let CLIP = null;                        // null = the whole draft
+const clipShot = ()=> (CLIP && (DASH?.timeline || []).find(x => x.scene === CLIP.scene)) || null;
+const planOf   = t => { const s = clipShot(); return s ? t + s.start : t; };
+const localOf  = t => { const s = clipShot(); return s ? t - s.start : t; };
+const planNow  = ()=> planOf(V3.currentTime);
+// is this plan time inside the file the player has loaded?
+const holds = t => { const s = clipShot(); return !s || (t >= s.start && t < s.end); };
+function seekWhenReady(v, t){
+  const go = ()=>{ v.removeEventListener("loadedmetadata", go);
+                   try{ v.currentTime = Math.max(0, t); }catch(e){} };
+  if(v.readyState >= 1) go(); else v.addEventListener("loadedmetadata", go);
+}
+function pickClip(btn, d, at){
+  const strip = $("g3-scenes");
+  strip.querySelectorAll("button").forEach(x=> x.classList.remove("on"));
+  btn.classList.add("on");
+  const v = $("g3-vid");
+  const keep = at != null ? at : planNow();   // plan clock, so the place survives
+  CLIP = btn.dataset.clip ? {src: btn.dataset.clip, scene: btn.dataset.scene,
+                             id: btn.dataset.id} : null;
+  if(CLIP){
+    // the subtitle sidecar is written on the plan clock: on a one-scene file it
+    // would caption the wrong lines, so it stays with the full draft
+    v.innerHTML = "";
+    v.src = CLIP.src;
+    const s = clipShot() || d.timeline.find(t => t.scene === CLIP.scene);
+    $("g3-which").innerHTML = `<b>${CLIP.id}</b> ${CLIP.scene} · plan ${s.start}–${s.end}s`
+      + (s.stale ? ` · <span style="color:var(--amber)">older than src/ — re-render it</span>` : "")
+      + ` · the player runs from 0, marks are still written on the draft clock`;
+    $("g3-rerender").style.display = "";
+    $("g3-rerender").textContent = `Re-render ${CLIP.id}`;
+    seekWhenReady(v, keep >= s.start && keep < s.end ? keep - s.start : 0);
+  }else{
+    v.src = d.draft;
+    v.innerHTML = d.vtt ? `<track default kind="subtitles" srclang="zh" src="${d.vtt}">` : "";
+    $("g3-which").textContent = "";
+    $("g3-rerender").style.display = "none";
+    if(keep) seekWhenReady(v, keep);
+  }
+  paintNow();
+}
+$("g3-rerender").onclick = async (e)=>{
+  if(!CLIP) return;
+  e.target.disabled = true;
+  try{
+    const r = await fetch(`${HERE}/render/draft+${CLIP.scene}`, {method:"POST"});
+    const j = await r.json();
+    $("draft-log").textContent = j.error || `re-rendering ${CLIP.id}…`;
+    live = true; pollJob("draft");
+  }finally{ setTimeout(()=> e.target.disabled = false, 1500); }
+};
+
+/* ---- marking the draft --------------------------------------------------
+   Reporting a fault used to mean three separate chores: screenshot the frame,
+   read the timecode off the scrubber, then write a prompt naming the shot.
+   Mark it here instead and the page does all three. */
+const V3 = $("g3-vid");        // the element, not a getter — it exists by now
+["timeupdate","seeked","seeking","loadedmetadata","play","pause"]
+  .forEach(ev=> V3.addEventListener(ev, paintNow));
+const MARKS_FILE = "draft-marks.json";
+let MARKS = [], mkEtag = null, mkStart = null, mkCur = null, mkLoaded = false;
+
+const tc = t => `${String(Math.floor(t/60)).padStart(2,"0")}:`
+              + `${String(Math.floor(t%60)).padStart(2,"0")}`;
+function shotAt(t){
+  const tl = (DASH && DASH.timeline) || [];
+  return tl.find(s => t >= s.start && t < s.end) || null;
+}
+async function marksLoad(){
+  try{
+    const r = await fetch(MARKS_FILE, {cache:"no-store"});
+    if(!r.ok) throw 0;
+    mkEtag = r.headers.get("ETag");
+    MARKS = await r.json();
+  }catch(e){ MARKS = []; }
+  mkLoaded = true;
+  drawMarks();
+}
+async function marksSave(){
+  try{
+    const h = {"Content-Type":"application/json"};
+    if(mkEtag) h["If-Match"] = mkEtag;
+    const r = await fetch(MARKS_FILE, {method:"PUT", headers:h,
+                                        body: JSON.stringify(MARKS)});
+    if(r.ok) mkEtag = r.headers.get("ETag") || mkEtag;
+  }catch(e){ /* browser-only; the page still works */ }
+}
+function promptFor(m){
+  const s = shotAt(m.t);
+  const when = m.t2 != null ? `${tc(m.t)}-${tc(m.t2)}` : tc(m.t);
+  const where = s ? `${s.id} (${s.scene})` : "?";
+  return `${when}  ${where}  ${m.note || "(no note)"}`;
+}
+/* land the player on a mark whatever is loaded: its own clip if the strip
+   offers one, otherwise the full draft, then the CONVERTED timecode */
+async function seekMark(m){
+  if(!holds(m.t)){
+    const s = shotAt(m.t), strip = $("g3-scenes");
+    const btn = (s && [...strip.querySelectorAll("button[data-scene]")]
+                       .find(b => b.dataset.scene === s.scene && b.dataset.clip))
+              || strip.querySelector("button.full");
+    if(btn) pickClip(btn, DASH, m.t);
+  }
+  const want = localOf(m.t);
+  if(V3.readyState >= 2 && Math.abs(V3.currentTime - want) < 0.02) return;
+  await new Promise(r=>{
+    let done = false;
+    const fin = ()=>{ if(done) return; done = true;
+                      V3.removeEventListener("seeked", fin); r(); };
+    V3.addEventListener("seeked", fin);
+    seekWhenReady(V3, want);
+    setTimeout(fin, 1500);
+  });
+}
+// "seeked" promises the position, not the pixels — grabbing immediately can
+// copy the frame you were on before
+function frameReady(){
+  if(!V3.requestVideoFrameCallback) return new Promise(r=> setTimeout(r, 150));
+  return new Promise(r=>{ let done = false;
+    V3.requestVideoFrameCallback(()=>{ done = true; r(); });
+    setTimeout(()=>{ if(!done) r(); }, 500); });
+}
+/* a shot carrying marks is coloured in the strip, with how many — so a second
+   pass shows at a glance which scenes still have notes on them */
+function paintMarkedScenes(){
+  const strip = $("g3-scenes"); if(!strip) return;
+  const n = {};
+  MARKS.forEach(m=>{ const s = shotAt(m.t); if(s) n[s.id] = (n[s.id] || 0) + 1; });
+  strip.querySelectorAll("button[data-id]").forEach(b=>{
+    if(n[b.dataset.id]) b.dataset.marks = n[b.dataset.id];
+    else delete b.dataset.marks;
+  });
+  const full = strip.querySelector("button.full");
+  if(full){ if(MARKS.length) full.dataset.marks = MARKS.length;
+            else delete full.dataset.marks; }
+}
+function drawMarks(){
+  const box = $("mk-list");
+  paintMarkedScenes();
+  if(!MARKS.length){ box.innerHTML =
+    `<p class="sub">nothing marked. Play the draft, hit <b>Mark this frame</b> when
+     something is wrong, type what it is, then copy the prompt.</p>`; return; }
+  box.innerHTML = "";
+  MARKS.slice().sort((a,b)=>a.t-b.t).forEach(m=>{
+    const s = shotAt(m.t);
+    const d = document.createElement("div");
+    d.className = "mark" + (m.id === mkCur ? " on" : "");
+    const when = m.t2 != null ? `${tc(m.t)}–${tc(m.t2)}` : tc(m.t);
+    d.innerHTML = `<span class="tc">${when}</span>`
+      + `<span class="sid">${s ? s.id : "?"}</span>`
+      + `<textarea placeholder="what is wrong here">${esc(m.note||"")}</textarea>`
+      + `<span class="acts">`
+      + (m.t2 == null ? `<button data-a="frame">Copy frame</button>` : "")
+      + `<button data-a="prompt">Copy prompt</button>`
+      + `<button data-a="del">×</button></span>`;
+    d.querySelector(".tc").onclick = ()=>{ mkCur = m.id; drawMarks(); seekMark(m); };
+    const ta = d.querySelector("textarea");
+    ta.oninput = ()=>{ m.note = ta.value.trim(); marksSave(); };
+    d.querySelectorAll("[data-a]").forEach(b=> b.onclick = async ()=>{
+      if(b.dataset.a === "del"){
+        MARKS = MARKS.filter(x=>x.id !== m.id); marksSave(); drawMarks(); return;
+      }
+      if(b.dataset.a === "prompt"){
+        await copyText(promptFor(m), b); return;
+      }
+      await copyFrame(m, b);
+    });
+    box.appendChild(d);
+  });
+}
+async function copyText(text, btn){
+  try{ await navigator.clipboard.writeText(text); flash(btn, "copied"); }
+  catch(e){ flash(btn, "blocked"); }
+}
+async function copyFrame(m, btn){
+  // the frame has to be ON SCREEN to be grabbed, so seek there first — through
+  // seekMark, which converts the plan timecode to the loaded file's clock and
+  // loads the mark's own scene if the player is showing a different one
+  const src0 = V3.currentSrc, was = V3.currentTime;
+  V3.pause();
+  await seekMark(m);
+  await frameReady();
+  const c = $("mk-canvas");
+  c.width = V3.videoWidth || 854; c.height = V3.videoHeight || 480;
+  c.getContext("2d").drawImage(V3, 0, 0, c.width, c.height);
+  try{
+    const blob = await new Promise(r=> c.toBlob(r, "image/png"));
+    await navigator.clipboard.write([new ClipboardItem({"image/png": blob})]);
+    flash(btn, "copied");
+  }catch(e){
+    // clipboard images need a secure context; localhost is one, but fall back
+    const a = document.createElement("a");
+    a.href = c.toDataURL("image/png");
+    a.download = `mark-${tc(m.t).replace(":","")}.png`;
+    a.click(); flash(btn, "saved");
+  }
+  if(V3.currentSrc === src0) V3.currentTime = was;   // same file: put it back
+}
+function flash(btn, word){
+  const old = btn.textContent; btn.textContent = word;
+  setTimeout(()=> btn.textContent = old, 900);
+}
+function addMark(t, t2){          // PLAN time — the callers convert, once
+  MARKS.push({id: "m" + Math.round(t*1000) + (t2?"-"+Math.round(t2*1000):""),
+              t: +t.toFixed(2), t2: t2 == null ? null : +t2.toFixed(2), note: ""});
+  mkCur = MARKS[MARKS.length-1].id;
+  marksSave(); drawMarks();
+  const ta = document.querySelector(".mark.on textarea"); if(ta) ta.focus();
+}
+
+/* ---- render ---------------------------------------------------------------
+   Progress is asked of the server, not read from a file someone had to
+   regenerate by hand. The old way meant a render started from a terminal — or
+   the master, which had no refresh button at all — showed nothing. */
+const mm = s => s == null ? "—" : `${Math.floor(s/60)}m${String(Math.round(s%60)).padStart(2,"0")}s`;
+
+async function refreshQuality(q, ids){
+  let d = null;
+  try{
+    const r = await fetch(`${HERE}/progress/${q}`, {method:"POST"});
+    if(r.ok){ d = await r.json(); live = true; }
+  }catch(e){ /* no server: fall back to whatever a tool last wrote */ }
+  if(!d) d = await jget(`../out/render-progress${q === "master" ? "-master" : ""}.json`);
+  if(!d){ pill($(ids.pill), "", "no data"); return; }
+  // while a run is going, report ITS scenes — a two-scene re-render showing
+  // 2/18 reads as sixteen still to come
+  const r = d.run;
+  const num = r ? r.done : d.done, den = r ? r.total : d.total;
+  const pc = Math.round(100 * num / den);
+  pill($(ids.pill), num === den ? "ok" : (num ? "warn" : ""),
+       `${num}/${den}  ${pc}%` + (r ? `  · ${r.scenes.length === 1
+          ? r.scenes[0] : r.scenes.length + " scenes"}` : ""));
+  $(ids.bar).style.width = pc + "%";
+  // elapsed and eta only mean something while it is running; after a finished
+  // run they just count how long ago it was
+  const done = d.done === d.total;
+  if(ids.tab) $(ids.tab).innerHTML = done
+    ? `<tr><td class="k">all scenes rendered</td><td class="v">${d.total}</td></tr>`
+    : `<tr><td class="k">elapsed</td><td class="v">${mm(d.elapsed)}</td></tr>`
+      + `<tr><td class="k">per scene</td><td class="v">${d.per_scene ?? "—"}s</td></tr>`
+      + `<tr><td class="k">eta</td><td class="v">${mm(d.eta)}</td></tr>`
+      + `<tr><td class="k">rendering</td><td class="v">${d.current || "—"}</td></tr>`;
+  const inRun = r ? new Set(r.scenes) : null;
+  $(ids.chips).innerHTML = d.scenes.map(s=>
+    `<span class="chip ${s.fresh?"done":""}"`
+    + (inRun && !inRun.has(s.scene) ? ' style="opacity:.35"' : "")
+    + `>${s.id}</span>`).join("");
+  if(ids.stages) drawStages(d);
+}
+
+/* The scene bar reaching 18/18 is only the first of four things. Concat is
+   instant, the caption track is a render of its own, and the overlay is the one
+   real encode — twenty minutes where the old card showed nothing at all. */
+function drawStages(d){
+  const st = d.stages;
+  if(!st){ $("m-stages").innerHTML = ""; return; }
+  const cur = st.current;
+  const row = (key, name, done, right, pct) =>
+    `<div class="stage ${done ? "ok" : (cur === key ? "run" : "")}">`
+    + `<span class="dot"></span><span class="nm">${name}</span>`
+    + (pct != null && !done
+       ? `<span class="mini"><i style="width:${pct}%"></i></span>` : "")
+    + `<span class="v">${right || (done ? "done" : (cur === key ? "running" : "—"))}</span></div>`;
+  const scenesDone = d.done === d.total;
+  $("m-stages").innerHTML =
+      row("scenes", "1. scenes", scenesDone, `${d.done}/${d.total}`,
+          Math.round(100 * d.done / d.total))
+    + row("picture", "2. " + st.picture.name, st.picture.done,
+          st.picture.mb ? st.picture.mb + " MB" : null)
+    + row("captions", "3. " + st.captions.name, st.captions.done,
+          st.captions.mb ? st.captions.mb + " MB" : null)
+    + row("subbed", "4. " + st.subbed.name, st.subbed.done,
+          st.subbed.done ? (st.subbed.mb + " MB")
+          : (st.subbed.pct != null
+             ? `${st.subbed.encoded}s / ${st.subbed.of}s` + (st.subbed.speed ? ` · ${st.subbed.speed}` : "")
+             : null),
+          st.subbed.pct);
+}
+const refreshProgress = ()=> refreshQuality("draft",
+  {pill:"p-pill", bar:"p-bar", tab:"p-tab", chips:"p-chips"});
+const refreshMaster = ()=> refreshQuality("master",
+  {pill:"m-pill", bar:"m-bar", tab:"m-tab", chips:"m-chips", stages:"m-stages"});
+
+/* ---- poses ---- */
+async function refreshPoses(){
+  const d = await jget("../out/check-poses.json");
+  if(!d){ pill($("c-pill"), "", "not run"); return; }
+  pill($("c-pill"), d.problems ? "bad" : "ok",
+       d.problems ? `${d.problems} problem(s)` : `${d.poses} poses clean`);
+  const bad = d.rows.filter(r=>r.framing.length || (r.guarantee && !r.guarantee.ok));
+  $("c-body").innerHTML = bad.length
+    ? bad.map(r=>`<pre>${esc(r.key)}  φ${r.cam.phi.toFixed(1)} θ${r.cam.theta.toFixed(1)} γ${r.cam.gamma.toFixed(1)}\n`
+        + esc([...r.framing, r.guarantee && !r.guarantee.ok
+               ? r.guarantee.name + ": " + r.guarantee.detail : ""].filter(Boolean)
+              .map(x=>"  " + x).join("\n")) + `</pre>`).join("")
+    : `<pre>all ${d.poses} poses pass framing and every geometric guarantee</pre>`;
+}
+
+/* ---- labels ---- */
+async function refreshLabels(){
+  const d = await jget("../out/label-faults.json");
+  if(!d){ pill($("l-pill"), "", "no render yet"); $("l-body").innerHTML =
+    `<pre>renders write this automatically — nothing recorded yet</pre>`; return; }
+  const n = Object.values(d).reduce((a,v)=>a+v.length,0);
+  pill($("l-pill"), n ? "bad" : "ok", n ? `${n} fault(s)` : "clean");
+  $("l-body").innerHTML = n
+    ? Object.entries(d).map(([sid,rows])=>`<pre>${sid}\n`
+        + esc(rows.map(r=>`  ${r[0].toFixed(1)}s  ${r[1]}`).join("\n")) + `</pre>`).join("")
+    : `<pre>every label sits on what it names, at every beat</pre>`;
+}
+
+/* ---- cuts + draft ---- */
+async function refreshJoins(){
+  const d = await jget("../out/joins.json");
+  if(!d){ pill($("j-pill"), "", "not run"); return; }
+  const bad = d.filter(j=>j.disappears.length || j.appears.length);
+  pill($("j-pill"), bad.length ? "warn" : "ok",
+       bad.length ? `${bad.length} join(s) pop` : `${d.length} joins clean`);
+}
+async function refreshDraft(){
+  pill($("d-pill"), "", (await jget("../out/dashboard-data.json"))?.draft
+       ? "draft stitched" : "no draft yet");
+}
+async function refresh(){
+  const dash = await jget("../out/dashboard-data.json");
+  if(dash) renderGates(dash);
+  // marks are read back HERE, not just written — without this they saved to
+  // disk correctly and vanished on the next reload. DASH first, so each row can
+  // name its shot.
+  if(!mkLoaded) await marksLoad(); else drawMarks();
+  await Promise.all([refreshProgress(), refreshMaster(), refreshPoses(),
+                     refreshLabels(), refreshJoins(), refreshDraft()]);
+  pill($("served"), live ? "ok" : "", live ? "server connected" : "static view");
+}
+setInterval(()=>{
+  if($("p-auto").checked){ refreshProgress(); refreshMaster(); }
+  pollJob("draft"); pollJob("master"); pollVerify();
+}, 6000);
+pollJob("draft"); pollJob("master"); pollVerify();
+$("mk-frame").onclick = ()=>{ V3.pause(); addMark(planNow()); };
+$("mk-range").onclick = ()=>{
+  const b = $("mk-range");
+  if(mkStart == null){
+    mkStart = planNow();          // plan clock, so a range survives a clip swap
+    b.textContent = "Mark range: set end";
+    $("mk-live").textContent = "start " + tc(mkStart);
+  }else{
+    const now = planNow();
+    const a = Math.min(mkStart, now), z = Math.max(mkStart, now);
+    mkStart = null; b.textContent = "Mark range: set start"; $("mk-live").textContent = "";
+    if(z - a > 0.05) addMark(a, z); 
+  }
+};
+$("mk-all").onclick = async (e)=>{
+  const rows = MARKS.slice().sort((a,b)=>a.t-b.t).map(promptFor);
+  await copyText(rows.length ? "draft.mp4 問題：\n" + rows.join("\n") : "nothing marked",
+                 e.target);
+};
+addEventListener("keydown", e=>{
+  if(e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT") return;
+  // the lightbox owns the keyboard while it is open — otherwise "m" would mark
+  // a frame of a video nobody is looking at
+  if(lbOpenNow()){
+    if(e.key === "ArrowLeft"){ lbGo(-1); e.preventDefault(); }
+    else if(e.key === "ArrowRight"){ lbGo(1); e.preventDefault(); }
+    else if(e.key === "Escape"){ lbClose(); e.preventDefault(); }
+    return;
+  }
+  if(e.key === "m"){ $("mk-frame").click(); e.preventDefault(); }
+  if(e.key === "M"){ $("mk-range").click(); e.preventDefault(); }
+});
+
+(async()=>{
+  const p = await jget("../video-plan.json");
+  if(p){ $("title").textContent = p.title || "video";
+         document.title = (p.title || "video") + " — production";
+         $("m-sub").innerHTML = `${p.width}x${p.height} at ${p.fps}fps`
+           + (p.captions?.burnedIn ? ", with the caption track burned on" : "")
+           + `. Hours, not minutes. Result: <code>out/picture-subbed.mp4</code>`; }
+})();
+refresh();
+</script>
+</body>
+</html>
