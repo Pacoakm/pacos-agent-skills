@@ -50,7 +50,7 @@ changes and run at −27 LUFS. Fix these before any re-export.
 ## 3. `antony` — showing passion in a personal statement (2026-09-22 → 09-23)
 
 Project `~/Documents/Palmier Pro/antony.palmier`, 1325 f. 「我已經剪輯好節奏，你負責聲音、文字、字幕、效果等等」.
-Its own style ("Blue Condensed"), not Alex's.
+Its own style ("Blue Condensed"), not Alex's — the user, mid-turn: 「reels風格不用跟peerpath網站，自己設計」.
 
 | The user said | What changed |
 |---|---|

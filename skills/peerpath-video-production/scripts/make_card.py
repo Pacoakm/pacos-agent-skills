@@ -23,9 +23,12 @@ Palmier also caches media by path: when you rebuild a card, write it under a NEW
          (rasterise SVG via the Wikimedia API's thumburl). Record licence + trademark in the ledger.
   doc    DST --title "PERSONAL STATEMENT" [--kicker ABSTRACT] [--highlight "The moment I realised…"]
          [--tags "NOT PUBLISHED,STILL COUNTS"] [--accent 2E6BFF] [--ink 0E0E12] [--header accent|ink]
+         [--font Futura-CondensedExtraBold]
          An authored document mock-up in the reel's palette (Antony's card-research / card-ps-anchor):
          a page with a title bar, placeholder text lines, an optional highlighted sentence and tag
          chips. Use it where stock has nothing honest to show — an essay, a research abstract, a form.
+         --font takes the reel's PostScript name (the same one Palmier uses) so the card matches the
+         on-screen type; lines that don't fit are shrunk, never cut.
 
 Every command prints the output size so the placement numbers can be read straight off it.
 Dependencies: ffmpeg/ffprobe + Pillow.
@@ -34,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -42,6 +46,19 @@ from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
 CONDENSED = "/System/Library/Fonts/Avenir Next Condensed.ttc"  # index 8 = Heavy, 0 = Bold (4 is Italic!)
 HELVETICA = "/System/Library/Fonts/Helvetica.ttc"             # index 1 = Bold
+FACE: tuple[str, int] | None = None  # set by --font; None = Avenir Next Condensed Heavy
+
+
+def resolve_font(ps_name: str) -> tuple[str, int]:
+    """PostScript name → (file, face index), the way Palmier names fonts. A .ttc holds many faces;
+    guessing the index gives the wrong one (Antony's first cards came out italic from index 4)."""
+    out = subprocess.run(["fc-list", f":postscriptname={ps_name}", "file", "index"],
+                         capture_output=True, text=True).stdout
+    for line in out.splitlines():
+        m = re.match(r"(.+?):\s*:index=(\d+)", line.strip())
+        if m:
+            return m.group(1), int(m.group(2))
+    raise SystemExit(f"font '{ps_name}' not installed — list them with: fc-list : postscriptname")
 
 
 def size_arg(s: str) -> tuple[int, int]:
@@ -60,10 +77,19 @@ def hex_rgb(h: str) -> tuple[int, int, int]:
 
 
 def font(size: int, heavy: bool = True) -> ImageFont.FreeTypeFont:
+    if FACE:
+        return ImageFont.truetype(FACE[0], size, index=FACE[1])
     try:
         return ImageFont.truetype(CONDENSED, size, index=8 if heavy else 5)
     except OSError:
         return ImageFont.truetype(HELVETICA, size, index=1)
+
+
+def fitted(d: ImageDraw.ImageDraw, text: str, size: int, max_w: int, heavy: bool = True) -> ImageFont.FreeTypeFont:
+    """The largest font ≤ size whose line fits max_w — a wider face shrinks instead of spilling."""
+    while size > 12 and d.textlength(text, font=font(size, heavy)) > max_w:
+        size -= 1
+    return font(size, heavy)
 
 
 def crop_box(sw: int, sh: int, tw: int, th: int, focus: tuple[float, float], zoom: float) -> tuple[int, int, int, int]:
@@ -153,10 +179,13 @@ def cmd_doc(a) -> Path:
     d = ImageDraw.Draw(im)
     bar_h = int(96 * s)
     d.rectangle((0, 0, W, bar_h), fill=accent if a.header == "accent" else ink)
-    d.text((int(40 * s), bar_h // 2), a.title.upper(), font=font(int(46 * s)), fill=paper, anchor="lm")
+    text_w = W - int(80 * s)
+    d.text((int(40 * s), bar_h // 2), a.title.upper(), font=fitted(d, a.title.upper(), int(46 * s), text_w),
+           fill=paper, anchor="lm")
     y = bar_h + int(44 * s)
     if a.kicker:
-        d.text((int(40 * s), y), a.kicker.upper(), font=font(int(26 * s), heavy=False), fill=grey, anchor="lm")
+        d.text((int(40 * s), y), a.kicker.upper(), font=fitted(d, a.kicker.upper(), int(26 * s), text_w, heavy=False),
+               fill=grey, anchor="lm")
         y += int(46 * s)
     lines = 5 if not a.highlight else 3
     widths = [0.86, 0.92, 0.74, 0.88, 0.62]
@@ -170,7 +199,8 @@ def cmd_doc(a) -> Path:
         tint = tuple(int(c + (255 - c) * 0.84) for c in accent)
         d.rectangle((int(40 * s), y, W - int(40 * s), y + box_h), fill=tint)
         d.rectangle((int(40 * s), y, int(48 * s), y + box_h), fill=accent)
-        d.text((int(72 * s), y + box_h // 2), a.highlight, font=font(int(34 * s)), fill=ink, anchor="lm")
+        d.text((int(72 * s), y + box_h // 2), a.highlight, font=fitted(d, a.highlight, int(34 * s), W - int(112 * s)),
+               fill=ink, anchor="lm")
         y += box_h + int(28 * s)
         d.rounded_rectangle((int(40 * s), y, int(40 * s + (W - 80 * s) * 0.7), y + int(16 * s)), radius=int(8 * s),
                             fill=(214, 217, 224))
@@ -210,7 +240,11 @@ def main() -> int:
     p.add_argument("--title", required=True); p.add_argument("--kicker"); p.add_argument("--highlight")
     p.add_argument("--tags"); p.add_argument("--accent", default="2E6BFF"); p.add_argument("--ink", default="0E0E12")
     p.add_argument("--header", choices=["accent", "ink"], default="ink")
+    p.add_argument("--font", help="PostScript name of the reel's face, e.g. Futura-CondensedExtraBold")
     a = ap.parse_args()
+    if getattr(a, "font", None):
+        global FACE
+        FACE = resolve_font(a.font)
 
     for attr in ("dst",):
         out = getattr(a, attr)

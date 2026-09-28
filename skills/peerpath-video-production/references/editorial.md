@@ -32,6 +32,11 @@ THEMES", "STAY UP TO DATE", "MEDICAL BREAKTHROUGHS", "NHS CHALLENGES", "PANEL IN
 MEMORISE", "PRACTISE OUT LOUD", "FIRST-HAND EXPERIENCE", "OR SEND US A DM"… Each was the sentence
 being spoken, retyped.
 
+**Displays are the one exception**: the hook and the pivot's question → answer ("THE MOST VALUABLE
+PREP?" → "PRACTISE WITH A MENTOR", kept through Alex's de-duplication pass). A display condenses the
+idea to ≤ 5 words and is set large; it never retypes the sentence ("FEEDBACK FROM SOMEONE WHO'S SAT IT"
+is the sentence). Captions go off under the hook; under the pivot they may stay if the display is short.
+
 Two tests for a borderline line: **does it hold more than the caption at that moment** (a list does,
 a phrase doesn't)? **Would a muted viewer lose something without it** (the CTA — yes)?
 
@@ -87,7 +92,8 @@ element (`timeline_audit.py` lists them).
 
 ## 4. Captions
 
-- Generate with `add_captions` (`maxWords 4`, `maxCharacters 26`), then read every clip
+- Generate with `add_captions` (`maxWords 4`, `maxCharacters` sized to the face — 24 for Avenir Next
+  Condensed Heavy at 46 pt, see `style-system.md` §2), then read every clip
   (`get_timeline {captionDetail:true}`) against the audio. Local transcription got 11 of 57 Antony
   captions wrong — names, institutions and the CTA keyword are the usual casualties ("come in the
   word" for "comment the word" would break the CTA).
@@ -145,7 +151,9 @@ alternating with text beats. The first Antony cut had none (「要加入一些�
 - Accent chip `COMMENT "KEYWORD"` (the exact word the speaker says, in quotes) + the offer as a row
   (`FREE QUESTION PACK`, `FREE CONSULTATION CALL`) + optionally `+ FOLLOW FOR MORE TIPS`.
 - On screen from the moment it's spoken **to the last frame** — the reel loops, and the colleague
-  asked for at least 2 s of readable hold.
+  asked for at least 2 s of readable hold. When the spoken CTA is shorter than 2 s, bring the chip in
+  on the sentence before it (a 1.9 s "Comment LNAT…" gets its chip ~1.5 s early). Never lengthen the
+  user's cut to make room; ask if a longer hold matters.
 - Captions off underneath it; the ding (the payoff sound) on the offer, on its own track.
 - Brand just before it: `PEERPATH MENTORS` chip, then the logo badge, while the speaker describes the
   network — the only place the brand appears (no watermark).

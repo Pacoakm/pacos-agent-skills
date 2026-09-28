@@ -24,7 +24,7 @@ record of what the user asked for, in their words, and what they rejected.
 | **Tip 1…N** | 8–15 s each | A TIP chip (+ progress badge) opens the section, then one graphic per phrase: card, row, list, a struck-through myth |
 | **Pivot** | 2–4 s | A question display, then the answer in the accent ("THE MOST VALUABLE PREP?" → "PRACTISE WITH A MENTOR") |
 | **Brand** | 2–4 s | `PEERPATH MENTORS` chip, then the round logo badge |
-| **CTA** | last 4–8 s | `COMMENT "KEYWORD"` in the accent + the offer rows. Captions off. Held to the last frame — reels loop |
+| **CTA** | last 4–8 s | `COMMENT "KEYWORD"` in the accent + the offer rows. Captions off. Held to the last frame — reels loop. If the spoken CTA is under 2 s, bring the chip in on the sentence before it; never lengthen the user's cut |
 
 ## Already decided — do not re-ask
 
@@ -35,9 +35,9 @@ record of what the user asked for, in their words, and what they rejected.
 | The speaker | **On screen every frame.** No full-screen cutaways, nothing over the face — 「全程要看到alex在說話，內容可以遮住一部分，但不要全屏」 |
 | The slot | Graphics sit in the lower-middle, over the chest; the caption line sits just under the chin, above them. The top band carries only a progress badge or TIP label |
 | One at a time | Caption + **one** element. Text rows and image cards swap on the beat; they never share the slot |
-| On-screen text | Only what captions can't do: **structure** (TIP chips, badge), a **complete scannable list**, **brand**, the **CTA**, a **meaning-changing device** (a struck-through myth). Never re-type the sentence being spoken — 「很多字幕和畫面文字有相同的地方很confuse」 |
+| On-screen text | Only what captions can't do: **structure** (TIP chips, badge), a **complete scannable list**, **brand**, the **CTA**, a **meaning-changing device** (a struck-through myth). Never re-type the sentence being spoken — 「很多字幕和畫面文字有相同的地方很confuse」. The two **displays** — the hook and the pivot's question → answer — are the exception: the idea condensed to ≤ 5 words ("PRACTISE WITH A MENTOR"), never the sentence |
 | Captions | Transcript-timed, every ASR error fixed, British spelling. **The caption is the anchor: move graphics, never the caption** |
-| Style | A system built **for this footage**: white + ink + **one** accent, one heavy sans, uppercase. Not the PeerPath website palette (navy/cream/gold), not the last reel's look — 「自己想一種trending的theme，簡單一點，不用花里胡哨」. A cool acid green on warm skin was 「好醜」 |
+| Style | Designed by you **for this footage** — 「reels風格不用跟peerpath網站，自己設計」: white + ink + **one** accent, one heavy sans, uppercase, 「簡單一點，不用花里胡哨」. Never the PeerPath website palette (navy/cream/gold). An earlier reel's approved system may carry over as a series look if it suits the footage — say which you chose and why. A cool acid green on warm skin was 「好醜」 |
 | Images | Topic-accurate and varied: authored cards, motion b-roll, real institution imagery, stock stills — 「not only from pexel」. Every file in the ledger |
 | Watermark | None. The `@PEERPATH` pill was removed on request |
 | Sound | Processed voice ≈ −15 LUFS; a chill, sparse bed the user picked **by ear** from measured candidates; one sound per element type |
@@ -87,6 +87,10 @@ python3 scripts/probe_source.py ~/Downloads/<source> --loudness --md5
   SDR and the script finds a same-length 10-bit/HDR/ProRes twin, **ask whether that is the original
   before grading anything**. Antony v1–v7 were built on an HLG→SDR conversion; the grade stacked on
   it turned the skin orange, and the user had to ask 「為什麼顏色好像不對」.
+- Confirm it is **this** take before anything else: its frame count matches the timeline, and its
+  visible jump cuts fall on the transcript's word gaps. Offline, a sheet shows both —
+  `verify_export.py SOURCE --skip-slow --sheet <scratchpad>/src.png --every 2` (HLG looks flat on the
+  sheet: judge framing and wardrobe there, not colour).
 - Record path, format and MD5 of the A-roll in the plan. Palmier references it in place.
 
 ### 2 · Read the performance
@@ -97,7 +101,8 @@ python3 scripts/probe_source.py ~/Downloads/<source> --loudness --md5
 - List the ASR errors now and confirm the speaker's name spelling. Seen so far: LSC→**LSE**,
   Emissions→**Admissions** officers, "30 year"→**3rd year**, "come in the word"→**comment the word**,
   "from our"→**for more**, Anthony→**Antony**, US spellings (memorize, practice as a verb).
-- Measure the framing on one frame: chin line, hairline, where the hands move. That sets the caption
+- Measure the framing on one frame (`inspect_media`, or the offline sheet): chin line, hairline, where
+  the hands move, what the speaker wears. That sets the caption
   line and the slot (Antony: chin 0.48, hands 0.72–1.00; Alex was framed too wide and needed a 1.15×
   push-in to open his chest as the graphics zone).
 
@@ -139,7 +144,8 @@ Every call shape and trap: `references/palmier-mcp.md`.
   track at frame 0; mute the A-roll's linked audio (−60 dB **and** the Dialogue track muted). The Alex
   reel shipped with its camera audio at −27 LUFS, 12 LU quieter than Antony.
 - **Bed** — `scripts/music_profile.py <candidates> --voice <voice> [--target <liked track>]`. Shortlist
-  2–3, send 25 s excerpts with `SendUserFile`; **the user picks by ear**. "Faster" meant more forward
+  2–3, send 25 s excerpts with `SendUserFile`; **the user picks by ear**. Measure the speaking share on
+  this reel's own voice stem (or its transcript's gaps) — never a stand-in file. "Faster" meant more forward
   motion, not a harder beat (「節奏快一點不是節奏感強一點」); later, "match his pace" (Alex speaks only
   45 % of the time, so the sparsest bed won). Level the bed 12–18 LU under the voice, lift it ~4 dB
   before the first word and at the CTA, fade in 18 f / out 45 f.
